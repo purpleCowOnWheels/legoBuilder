@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  color: #0b1020;
+  background: radial-gradient(1200px circle at 20% -10%, rgba(59, 130, 246, 0.18), transparent 40%),
+    radial-gradient(900px circle at 100% 0%, rgba(236, 72, 153, 0.14), transparent 38%),
+    linear-gradient(to bottom, #f8fafc, #eef2ff);
+}
+
+.card {
+  @apply rounded-2xl border border-black/10 bg-white/70 shadow-sm backdrop-blur;
+}
+
+

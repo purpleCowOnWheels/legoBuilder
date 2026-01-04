@@ -1,0 +1,8 @@
+.next
+node_modules
+.DS_Store
+.env.local
+env.local
+data/db.json
+
+
