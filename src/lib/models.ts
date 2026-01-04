@@ -36,10 +36,35 @@ export type BuildGuide = {
   model?: string;
 };
 
+export type BuildIdeaResult = {
+  title: string;
+  description: string;
+  number_of_parts: number;
+  difficulty: "easy" | "medium" | "hard";
+  thumbnail: string | null; // URL (served from /public)
+  thumbnail_prompt: string;
+};
+
+export type IdeaSearch = {
+  id: Id;
+  createdAt: string;
+  preferences?: string;
+  // New (range); leave undefined for "Any"
+  targetPartsMin?: number;
+  targetPartsMax?: number;
+  difficulty?: "easy" | "medium" | "hard";
+  age?: number;
+  buildTimeMinutes?: number;
+  model?: string;
+  imageModel?: string;
+  ideas: BuildIdeaResult[]; // max 2
+};
+
 export type DbShape = {
   sets: LegoSet[];
   inventory: InventoryItem[];
   builds: BuildGuide[];
+  ideaSearches: IdeaSearch[];
 };
 
 

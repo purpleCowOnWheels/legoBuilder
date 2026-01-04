@@ -18,7 +18,14 @@ function ensureDbFile() {
 export function readDb(): DbShape {
   ensureDbFile();
   const raw = fs.readFileSync(DB_FILE, "utf8");
-  return JSON.parse(raw) as DbShape;
+  const parsed = JSON.parse(raw) as Partial<DbShape>;
+  // Be tolerant of schema changes as we iterate locally.
+  return {
+    sets: parsed.sets ?? [],
+    inventory: parsed.inventory ?? [],
+    builds: parsed.builds ?? [],
+    ideaSearches: parsed.ideaSearches ?? []
+  };
 }
 
 export function writeDb(db: DbShape) {

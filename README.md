@@ -16,6 +16,19 @@ npm install
    - See `env.example` for the full list.
    - Copy `env.example` to `.env.local` and fill in keys.
 
+### OpenAI sanity check (structured outputs)
+If you’re hitting API schema errors, you can run a direct OpenAI structured-output test:
+
+```bash
+npm run test:openai
+```
+
+And for Images API:
+
+```bash
+npm run test:openai:image
+```
+
 3. Start:
 
 ```bash

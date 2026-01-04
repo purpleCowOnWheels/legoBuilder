@@ -7,7 +7,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:openai": "node tests/openai-structured.test.mjs",
+    "test:openai:image": "node tests/openai-image.test.mjs"
   },
   "dependencies": {
     "next": "14.2.24",
