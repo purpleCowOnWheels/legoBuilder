@@ -5,6 +5,9 @@ node_modules
 env.local
 data/db.json
 public/generated-thumbs
+public/generated-instructions
+data/ldraw
 data/openai-debug
+log.out
 
 

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { readDb, writeDb } from "@/lib/storage";
-import { BuildIdea, generateBuildIdeasStructured } from "@/lib/openai";
 import { newId } from "@/lib/ids";
+import { enqueueIdeaJob } from "@/lib/ideaQueue";
 
 export async function GET() {
   const db = readDb();
@@ -16,6 +16,7 @@ export async function POST(req: Request) {
     difficulty?: "easy" | "medium" | "hard";
     age?: number;
     buildTimeMinutes?: number;
+    count?: number;
   };
   const preferences = body?.preferences;
   const targetPartsMin = typeof body?.targetPartsMin === "number" ? body?.targetPartsMin : undefined;
@@ -23,6 +24,7 @@ export async function POST(req: Request) {
   const difficulty = body?.difficulty;
   const age = typeof body?.age === "number" ? body?.age : undefined;
   const buildTimeMinutes = typeof body?.buildTimeMinutes === "number" ? body?.buildTimeMinutes : undefined;
+  const count = typeof body?.count === "number" ? Math.floor(body.count) : undefined;
 
   const db = readDb();
   if (db.inventory.length === 0) {
@@ -33,25 +35,9 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { ideas, model } = await generateBuildIdeasStructured({
-      inventory: db.inventory,
-      preferences,
-      targetPartsMin,
-      targetPartsMax,
-      difficulty,
-      age,
-      buildTimeMinutes
-    });
-
-    // No thumbnails yet; each idea can be generated on demand.
-    const withThumbs: Array<BuildIdea & { thumbnail: string | null }> = ideas
-      .slice(0, 2)
-      .map((idea) => ({ ...idea, thumbnail: null }));
-
-    // Persist search + results
     const now = new Date().toISOString();
-    const updatedDb = readDb();
     const searchId = newId("idea");
+    const updatedDb = readDb();
     updatedDb.ideaSearches.unshift({
       id: searchId,
       createdAt: now,
@@ -61,13 +47,25 @@ export async function POST(req: Request) {
       difficulty,
       age,
       buildTimeMinutes,
-      model,
-      imageModel: undefined,
-      ideas: withThumbs
+      count,
+      status: "queued",
+      updatedAt: now,
+      ideas: []
     });
     writeDb(updatedDb);
 
-    return NextResponse.json({ ideas: withThumbs, model, searchId });
+    const job = enqueueIdeaJob(searchId);
+    // Link job back to the search
+    const db2 = readDb();
+    const s2 = db2.ideaSearches.find((s) => s.id === searchId);
+    if (s2) {
+      s2.jobId = job.id;
+      s2.updatedAt = new Date().toISOString();
+      writeDb(db2);
+    }
+
+    // Return immediately; UI will poll status.
+    return NextResponse.json({ searchId, jobId: job.id });
   } catch (e) {
     // Surface debugId in errors (if enabled) so you can find artifacts under data/openai-debug/.
     return NextResponse.json(

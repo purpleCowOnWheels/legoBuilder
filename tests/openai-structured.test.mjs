@@ -22,7 +22,7 @@ if (!model) {
 const prompt = [
   "Return JSON only.",
   "Return exactly 2 ideas.",
-  "Each idea must have: title (string), description (string), number_of_parts (int), difficulty (easy|medium|hard), thumbnail_prompt (string)."
+  "Each idea must have: title (string), description (string), estimated_time_minutes (int), spec (object with concept, key_features, color_palette, step_count_estimate)."
 ].join("\n");
 
 const schema = {
@@ -37,13 +37,22 @@ const schema = {
       items: {
         type: "object",
         additionalProperties: false,
-        required: ["title", "description", "number_of_parts", "difficulty", "thumbnail_prompt"],
+        required: ["title", "description", "estimated_time_minutes", "spec"],
         properties: {
           title: { type: "string", minLength: 1 },
           description: { type: "string", minLength: 1 },
-          number_of_parts: { type: "integer", minimum: 1 },
-          difficulty: { type: "string", enum: ["easy", "medium", "hard"] },
-          thumbnail_prompt: { type: "string", minLength: 1 }
+          estimated_time_minutes: { type: "integer", minimum: 1 },
+          spec: {
+            type: "object",
+            additionalProperties: false,
+            required: ["concept", "key_features", "color_palette", "step_count_estimate"],
+            properties: {
+              concept: { type: "string", minLength: 1 },
+              key_features: { type: "array", items: { type: "string", minLength: 1 }, minItems: 1 },
+              color_palette: { type: "array", items: { type: "string", minLength: 1 }, minItems: 1 },
+              step_count_estimate: { type: "integer", minimum: 1 }
+            }
+          }
         }
       }
     }
@@ -53,7 +62,6 @@ const schema = {
 const body = {
   model,
   input: prompt,
-  temperature: 0,
   text: {
     format: {
       type: "json_schema",

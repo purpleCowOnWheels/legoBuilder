@@ -24,7 +24,11 @@ export function readDb(): DbShape {
     sets: parsed.sets ?? [],
     inventory: parsed.inventory ?? [],
     builds: parsed.builds ?? [],
-    ideaSearches: parsed.ideaSearches ?? []
+    ideaSearches: parsed.ideaSearches ?? [],
+    ideaGenerationJobs: parsed.ideaGenerationJobs ?? [],
+    ldrawGenerationJobs: (parsed as any).ldrawGenerationJobs ?? [],
+    previewGenerationJobs: (parsed as any).previewGenerationJobs ?? [],
+    savedBuilds: parsed.savedBuilds ?? []
   };
 }
 

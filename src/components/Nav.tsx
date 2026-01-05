@@ -7,7 +7,8 @@ const tabs = [
   { href: "/", label: "Home" },
   { href: "/sets", label: "Sets" },
   { href: "/inventory", label: "Inventory" },
-  { href: "/ideas", label: "Ideas" }
+  { href: "/ideas", label: "Ideas" },
+  { href: "/saved-builds", label: "Saved Builds" }
 ];
 
 export function Nav() {
