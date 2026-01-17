@@ -12,6 +12,16 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { compareImages, type SimilarityScore } from "@/lib/imageSimilarity";
+import { 
+  executeLPub3D, 
+  getLPub3DBin, 
+  isLPub3DAvailable,
+  killOrphanedLPub3DProcesses,
+  diagnoseRenderFailure,
+  type LPub3DExecResult,
+  type LPub3DError,
+  type RenderDiagnostic
+} from "@/lib/lpub3d";
 import {
   validateLDrawMpdOrThrow,
   validateLDrawPartialMpdOrThrow,
@@ -83,6 +93,12 @@ export interface RenderValidationInput {
   
   /** Which subassembly is being built in this chunk (for targeted validation) */
   current_subassembly?: string;
+  
+  /** Always render for logging purposes, even if no comparison is done. Default: false */
+  always_render_for_logging?: boolean;
+  
+  /** Round number (for logging purposes) */
+  validation_round?: number;
 }
 
 export interface StructureIssue {
@@ -659,7 +675,7 @@ function checkContinuity(ldrawMpd: string): StructureIssue[] {
 }
 
 /**
- * Render MPD to PNG using LPub3D
+ * Render MPD to PNG using LPub3D with retry and crash handling
  * Returns path to rendered image or null if rendering fails
  */
 function renderMpdToPng(params: {
@@ -667,8 +683,12 @@ function renderMpdToPng(params: {
   outputDir: string;
   baseName: string;
   size: number;
+  timeoutMs?: number;
+  maxRetries?: number;
 }): string | null {
   const { ldrawMpd, outputDir, baseName, size } = params;
+  const timeoutMs = params.timeoutMs ?? 60000;
+  const maxRetries = params.maxRetries ?? 2;
   
   // Write MPD to temp file
   fs.mkdirSync(outputDir, { recursive: true });
@@ -677,29 +697,70 @@ function renderMpdToPng(params: {
   
   fs.writeFileSync(mpdPath, ldrawMpd, "utf8");
   
-  // Try LPub3D first
-  const lpub3dBin = process.env.LPUB3D_BIN || "/Applications/LPub3D.app/Contents/MacOS/LPub3D";
+  // Count steps to render the final state
+  const stepMatches = ldrawMpd.match(/^\s*0\s+STEP\s*$/gim);
+  const totalSteps = stepMatches ? stepMatches.length + 1 : 1;
   
-  if (fs.existsSync(lpub3dBin)) {
-    try {
-      // LPub3D command-line rendering
-      const result = spawnSync(lpub3dBin, [
-        "-p", // Process file
-        "-o", pngPath,
-        "-w", String(size),
-        "-h", String(size),
-        mpdPath
-      ], {
-        encoding: "utf8",
-        timeout: 60000,
-        cwd: outputDir
-      });
+  // Try LPub3D first with proper crash handling
+  if (isLPub3DAvailable()) {
+    const args = [
+      "--liblego",           // Use LEGO parts library
+      "-i", pngPath,         // Output image path
+      "-w", String(size),    // Width
+      "-h", String(size),    // Height
+      "--from", String(totalSteps),  // From step
+      "--to", String(totalSteps),    // To step (render final state)
+      "--viewpoint", "home", // Default viewpoint
+      mpdPath                // Input file
+    ];
+    
+    const result = executeLPub3D({
+      args,
+      cwd: outputDir,
+      context: "validation render",
+      timeoutMs,
+      maxRetries,
+      killOrphans: false  // Don't kill orphans for quick validation renders
+    });
+    
+    if (fs.existsSync(pngPath)) {
+      return pngPath;
+    }
+    
+    // Log detailed failure info
+    if (!result.success) {
+      const errorType = result.error?.type || "unknown";
+      const errorMsg = result.error?.message || "Unknown error";
+      // eslint-disable-next-line no-console
+      console.warn(`[renderValidation] LPub3D render failed (${errorType}, ${result.attempts} attempts): ${errorMsg}`);
       
-      if (fs.existsSync(pngPath)) {
-        return pngPath;
+      // If it was a crash, try killing orphans and retry once more
+      if (result.error?.type === "crash" || result.error?.type === "timeout") {
+        // eslint-disable-next-line no-console
+        console.warn("[renderValidation] Attempting recovery after crash/timeout...");
+        killOrphanedLPub3DProcesses();
+        
+        // One more attempt
+        const retryResult = executeLPub3D({
+          args,
+          cwd: outputDir,
+          context: "validation render (recovery)",
+          timeoutMs,
+          maxRetries: 0,  // No more retries
+          killOrphans: false
+        });
+        
+        if (fs.existsSync(pngPath)) {
+          // eslint-disable-next-line no-console
+          console.log("[renderValidation] Recovery render succeeded");
+          return pngPath;
+        }
+        
+        if (!retryResult.success) {
+          // eslint-disable-next-line no-console
+          console.warn(`[renderValidation] Recovery render also failed: ${retryResult.error?.message}`);
+        }
       }
-    } catch (e) {
-      console.warn("LPub3D rendering failed:", e);
     }
   }
   
@@ -707,26 +768,45 @@ function renderMpdToPng(params: {
   const ldviewBin = process.env.LDVIEW_BIN || "/Applications/LDView.app/Contents/MacOS/LDView";
   
   if (fs.existsSync(ldviewBin)) {
-    try {
-      const result = spawnSync(ldviewBin, [
-        mpdPath,
-        `-SaveSnapshot=${pngPath}`,
-        `-SaveWidth=${size}`,
-        `-SaveHeight=${size}`,
-        "-SaveAlpha=1"
-      ], {
-        encoding: "utf8",
-        timeout: 60000
-      });
-      
-      if (fs.existsSync(pngPath)) {
-        return pngPath;
+    // LDView doesn't have the same crash issues, use simpler handling
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const result = spawnSync(ldviewBin, [
+          mpdPath,
+          `-SaveSnapshot=${pngPath}`,
+          `-SaveWidth=${size}`,
+          `-SaveHeight=${size}`,
+          "-SaveAlpha=1"
+        ], {
+          encoding: "utf8",
+          timeout: timeoutMs
+        });
+        
+        if (fs.existsSync(pngPath)) {
+          return pngPath;
+        }
+        
+        // Log failure
+        if (result.error || result.status !== 0) {
+          // eslint-disable-next-line no-console
+          console.warn(`[renderValidation] LDView render attempt ${attempt + 1} failed:`, 
+            result.error?.message || `exit code ${result.status}`);
+        }
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.warn(`[renderValidation] LDView render exception (attempt ${attempt + 1}):`, e);
       }
-    } catch (e) {
-      console.warn("LDView rendering failed:", e);
+      
+      // Small delay before retry
+      if (attempt < maxRetries) {
+        const delayUntil = Date.now() + 500;
+        while (Date.now() < delayUntil) { /* wait */ }
+      }
     }
   }
   
+  // eslint-disable-next-line no-console
+  console.warn("[renderValidation] All render attempts failed, returning null");
   return null;
 }
 
@@ -831,18 +911,20 @@ export function validateRender(input: RenderValidationInput): RenderValidationRe
   result.continuity.valid = continuityIssues.filter(i => i.severity === "error").length === 0;
   
   // -------------------------------------------------------------------------
-  // 3. Render and Image Comparison (if reference provided)
+  // 3. Render Progress Image (always for logging, optionally for comparison)
   // -------------------------------------------------------------------------
-  const shouldRender = input.do_render_comparison !== false && 
-                       input.reference_image_path && 
-                       fs.existsSync(input.reference_image_path);
+  const hasReferenceImage = input.reference_image_path && fs.existsSync(input.reference_image_path);
+  const shouldCompare = input.do_render_comparison !== false && hasReferenceImage;
+  const shouldRenderForLogging = input.always_render_for_logging === true;
+  const shouldRender = shouldCompare || shouldRenderForLogging;
   
-  if (shouldRender && input.reference_image_path) {
-    checksRun.push("render_comparison");
+  if (shouldRender) {
+    checksRun.push(shouldCompare ? "render_comparison" : "render_progress");
     
     // Create temp directory for render
     const tempDir = path.join(process.cwd(), "data", "render-validation-temp");
-    const baseName = `validate_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const roundSuffix = input.validation_round ? `_round${input.validation_round}` : "";
+    const baseName = `validate_${Date.now()}${roundSuffix}_${Math.random().toString(36).slice(2, 8)}`;
     
     // For chunk mode, we need to wrap in FILE/NOFILE for rendering
     const mpdForRender = mode === "chunk" 
@@ -867,45 +949,49 @@ export function validateRender(input: RenderValidationInput): RenderValidationRe
         // Ignore base64 encoding errors
       }
       
-      // Compare to reference
-      try {
-        const similarity = compareImages(renderedPath, input.reference_image_path);
-        
-        result.similarity = {
-          score: similarity.overall,
-          passes_threshold: similarity.overall >= minSimilarity,
-          threshold: minSimilarity,
-          method: similarity.details?.method || "basic",
-          metrics: {
-            ssim: similarity.metrics.ssim,
-            mse: similarity.metrics.mse,
-            psnr: similarity.metrics.psnr
-          }
-        };
-      } catch (e) {
+      // Compare to reference (only if we have a reference image)
+      if (shouldCompare && input.reference_image_path) {
+        try {
+          const similarity = compareImages(renderedPath, input.reference_image_path);
+          
+          result.similarity = {
+            score: similarity.overall,
+            passes_threshold: similarity.overall >= minSimilarity,
+            threshold: minSimilarity,
+            method: similarity.details?.method || "basic",
+            metrics: {
+              ssim: similarity.metrics.ssim,
+              mse: similarity.metrics.mse,
+              psnr: similarity.metrics.psnr
+            }
+          };
+        } catch (e) {
+          result.similarity = {
+            score: 0,
+            passes_threshold: false,
+            threshold: minSimilarity,
+            method: "skipped"
+          };
+          result.structure.issues.push({
+            type: "other",
+            severity: "warning",
+            message: `Image comparison failed: ${e instanceof Error ? e.message : "unknown error"}`
+          });
+        }
+      }
+    } else {
+      if (shouldCompare) {
         result.similarity = {
           score: 0,
           passes_threshold: false,
           threshold: minSimilarity,
           method: "skipped"
         };
-        result.structure.issues.push({
-          type: "other",
-          severity: "warning",
-          message: `Image comparison failed: ${e instanceof Error ? e.message : "unknown error"}`
-        });
       }
-    } else {
-      result.similarity = {
-        score: 0,
-        passes_threshold: false,
-        threshold: minSimilarity,
-        method: "skipped"
-      };
       result.structure.issues.push({
         type: "other",
         severity: "warning",
-        message: "Rendering failed - could not generate comparison image"
+        message: "Rendering failed - could not generate progress image"
       });
     }
   }
