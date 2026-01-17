@@ -550,7 +550,7 @@ function checkContinuity(ldrawMpd: string): StructureIssue[] {
   const issues: StructureIssue[] = [];
   const lines = ldrawMpd.split(/\r?\n/);
   
-  // Extract all part placements with their positions
+  // Extract all part placements with their positions and matrices
   const parts: Array<{
     line: number;
     x: number;
@@ -558,6 +558,7 @@ function checkContinuity(ldrawMpd: string): StructureIssue[] {
     z: number;
     partId: string;
     raw: string;
+    matrix: number[];
   }> = [];
   
   for (let i = 0; i < lines.length; i++) {
@@ -571,6 +572,11 @@ function checkContinuity(ldrawMpd: string): StructureIssue[] {
     const x = parseFloat(tokens[2]);
     const y = parseFloat(tokens[3]);
     const z = parseFloat(tokens[4]);
+    const matrix = [
+      parseFloat(tokens[5]), parseFloat(tokens[6]), parseFloat(tokens[7]),
+      parseFloat(tokens[8]), parseFloat(tokens[9]), parseFloat(tokens[10]),
+      parseFloat(tokens[11]), parseFloat(tokens[12]), parseFloat(tokens[13])
+    ];
     const partId = tokens[14];
     
     if (isNaN(x) || isNaN(y) || isNaN(z)) {
@@ -583,7 +589,7 @@ function checkContinuity(ldrawMpd: string): StructureIssue[] {
       continue;
     }
     
-    parts.push({ line: i + 1, x, y, z, partId, raw: line });
+    parts.push({ line: i + 1, x, y, z, partId, raw: line, matrix });
   }
   
   if (parts.length === 0) {
@@ -657,26 +663,120 @@ function checkContinuity(ldrawMpd: string): StructureIssue[] {
     }
   }
   
-  // Check 4: Extreme coordinate values (likely errors)
+  // Check 4: Extreme coordinate values (likely errors that cause crashes)
   const COORD_LIMIT = 10000; // Reasonable build shouldn't exceed this
   for (const p of parts) {
     if (Math.abs(p.x) > COORD_LIMIT || Math.abs(p.y) > COORD_LIMIT || Math.abs(p.z) > COORD_LIMIT) {
       issues.push({
         type: "continuity",
         severity: "error",
-        message: `Part at extreme coordinates (${p.x}, ${p.y}, ${p.z}): ${p.partId}`,
+        message: `Part at extreme coordinates (${p.x}, ${p.y}, ${p.z}): ${p.partId} - THIS WILL CRASH THE RENDERER`,
         line_number: p.line,
         part_id: p.partId
       });
     }
   }
   
+  // Check 5: Invalid transformation matrix values (causes SIGABRT crashes)
+  // Matrix should have values between -1 and 1 for rotation components
+  // Position is separate (x, y, z already checked above)
+  const invalidMatrices = parts.filter(p => {
+    // Matrix elements are indices 3-11 in the line (after color and x,y,z)
+    // Format: 1 <color> <x> <y> <z> <a> <b> <c> <d> <e> <f> <g> <h> <i> <partId>
+    // [a b c]
+    // [d e f]
+    // [g h i]
+    return (
+      Math.abs(p.matrix[0]) > 1 || Math.abs(p.matrix[1]) > 1 || Math.abs(p.matrix[2]) > 1 ||
+      Math.abs(p.matrix[3]) > 1 || Math.abs(p.matrix[4]) > 1 || Math.abs(p.matrix[5]) > 1 ||
+      Math.abs(p.matrix[6]) > 1 || Math.abs(p.matrix[7]) > 1 || Math.abs(p.matrix[8]) > 1
+    );
+  });
+  
+  for (const p of invalidMatrices) {
+    issues.push({
+      type: "continuity",
+      severity: "error",
+      message: `Part has invalid rotation matrix values: ${p.partId} - THIS WILL CRASH THE RENDERER`,
+      line_number: p.line,
+      part_id: p.partId
+    });
+  }
+  
+  // Check 6: NaN or Infinity in coordinates or matrix
+  const invalidNumbers = parts.filter(p => {
+    return !isFinite(p.x) || !isFinite(p.y) || !isFinite(p.z) ||
+      p.matrix.some((v: number) => !isFinite(v));
+  });
+  
+  for (const p of invalidNumbers) {
+    issues.push({
+      type: "continuity",
+      severity: "error",
+      message: `Part has NaN or Infinity in coordinates/matrix: ${p.partId} - THIS WILL CRASH THE RENDERER`,
+      line_number: p.line,
+      part_id: p.partId
+    });
+  }
+  
   return issues;
+}
+
+interface RenderResult {
+  imagePath: string | null;
+  error?: LPub3DError;
+}
+
+/**
+ * Fast-fail validation using LDView's check mode (if available)
+ * Returns true if valid, false if invalid (with console warnings)
+ */
+function quickValidateWithLDView(ldrawMpd: string, mpdPath: string): boolean {
+  const ldviewBin = process.env.LDVIEW_BIN || "/Applications/LDView.app/Contents/MacOS/LDView";
+  
+  if (!fs.existsSync(ldviewBin)) {
+    return true; // Can't validate, assume OK
+  }
+  
+  try {
+    // LDView can do a quick syntax/part check without full rendering
+    // Using -CheckPartTracker to validate part references
+    const result = spawnSync(ldviewBin, [
+      mpdPath,
+      "-CheckPartTracker=1",
+      "-SaveSnapshot=/dev/null" // Don't actually render
+    ], {
+      encoding: "utf8",
+      timeout: 5000 // Quick check, 5 second timeout
+    });
+    
+    // Check stderr for errors
+    const stderr = result.stderr || "";
+    const stdout = result.stdout || "";
+    const output = stderr + stdout;
+    
+    // Look for critical errors
+    const hasMissingParts = /could not find|part not found|missing part/i.test(output);
+    const hasParseError = /parse error|syntax error|invalid/i.test(output);
+    
+    if (hasMissingParts || hasParseError) {
+      // eslint-disable-next-line no-console
+      console.warn("[validation] LDView detected errors:", output.slice(0, 500));
+      return false;
+    }
+    
+    return true;
+  } catch (e) {
+    // Validation failed, but don't block the render attempt
+    // eslint-disable-next-line no-console
+    console.warn("[validation] LDView quick check failed:", e);
+    return true; // Assume OK if we can't validate
+  }
 }
 
 /**
  * Render MPD to PNG using LPub3D with retry and crash handling
- * Returns path to rendered image or null if rendering fails
+ * Returns path to rendered image and error information if failed
  */
 function renderMpdToPng(params: {
   ldrawMpd: string;
@@ -685,15 +785,24 @@ function renderMpdToPng(params: {
   size: number;
   timeoutMs?: number;
   maxRetries?: number;
-}): string | null {
+}): RenderResult {
   const { ldrawMpd, outputDir, baseName, size } = params;
-  const timeoutMs = params.timeoutMs ?? 60000;
-  const maxRetries = params.maxRetries ?? 2;
+  const timeoutMs = params.timeoutMs ?? 15000; // Aggressive 15s timeout - simple models render in <5s
+  const maxRetries = params.maxRetries ?? 1; // Reduce retries - crashes won't fix themselves
   
   // Write MPD to temp file
   fs.mkdirSync(outputDir, { recursive: true });
   const mpdPath = path.join(outputDir, `${baseName}.mpd`);
   const pngPath = path.join(outputDir, `${baseName}.png`);
+  
+  // Clean up any existing PNG to ensure we detect new output
+  try {
+    if (fs.existsSync(pngPath)) {
+      fs.unlinkSync(pngPath);
+    }
+  } catch {
+    // Ignore cleanup errors
+  }
   
   fs.writeFileSync(mpdPath, ldrawMpd, "utf8");
   
@@ -701,113 +810,132 @@ function renderMpdToPng(params: {
   const stepMatches = ldrawMpd.match(/^\s*0\s+STEP\s*$/gim);
   const totalSteps = stepMatches ? stepMatches.length + 1 : 1;
   
-  // Try LPub3D first with proper crash handling
-  if (isLPub3DAvailable()) {
-    const args = [
-      "--liblego",           // Use LEGO parts library
-      "-i", pngPath,         // Output image path
-      "-w", String(size),    // Width
-      "-h", String(size),    // Height
-      "--from", String(totalSteps),  // From step
-      "--to", String(totalSteps),    // To step (render final state)
-      "--viewpoint", "home", // Default viewpoint
-      mpdPath                // Input file
-    ];
-    
-    const result = executeLPub3D({
-      args,
-      cwd: outputDir,
-      context: "validation render",
-      timeoutMs,
-      maxRetries,
-      killOrphans: false  // Don't kill orphans for quick validation renders
-    });
-    
-    if (fs.existsSync(pngPath)) {
-      return pngPath;
-    }
-    
-    // Log detailed failure info
-    if (!result.success) {
-      const errorType = result.error?.type || "unknown";
-      const errorMsg = result.error?.message || "Unknown error";
-      // eslint-disable-next-line no-console
-      console.warn(`[renderValidation] LPub3D render failed (${errorType}, ${result.attempts} attempts): ${errorMsg}`);
-      
-      // If it was a crash, try killing orphans and retry once more
-      if (result.error?.type === "crash" || result.error?.type === "timeout") {
-        // eslint-disable-next-line no-console
-        console.warn("[renderValidation] Attempting recovery after crash/timeout...");
-        killOrphanedLPub3DProcesses();
-        
-        // One more attempt
-        const retryResult = executeLPub3D({
-          args,
-          cwd: outputDir,
-          context: "validation render (recovery)",
-          timeoutMs,
-          maxRetries: 0,  // No more retries
-          killOrphans: false
-        });
-        
-        if (fs.existsSync(pngPath)) {
-          // eslint-disable-next-line no-console
-          console.log("[renderValidation] Recovery render succeeded");
-          return pngPath;
-        }
-        
-        if (!retryResult.success) {
-          // eslint-disable-next-line no-console
-          console.warn(`[renderValidation] Recovery render also failed: ${retryResult.error?.message}`);
-        }
-      }
-    }
-  }
-  
-  // Try LDView as fallback
+  // Use LDView for all validation renders
+  // NOTE: LDView is REQUIRED - no fallbacks. Install from: https://github.com/tcobbs/ldview/releases
   const ldviewBin = process.env.LDVIEW_BIN || "/Applications/LDView.app/Contents/MacOS/LDView";
   
-  if (fs.existsSync(ldviewBin)) {
-    // LDView doesn't have the same crash issues, use simpler handling
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
-      try {
-        const result = spawnSync(ldviewBin, [
-          mpdPath,
-          `-SaveSnapshot=${pngPath}`,
-          `-SaveWidth=${size}`,
-          `-SaveHeight=${size}`,
-          "-SaveAlpha=1"
-        ], {
-          encoding: "utf8",
-          timeout: timeoutMs
-        });
-        
-        if (fs.existsSync(pngPath)) {
-          return pngPath;
-        }
-        
-        // Log failure
-        if (result.error || result.status !== 0) {
-          // eslint-disable-next-line no-console
-          console.warn(`[renderValidation] LDView render attempt ${attempt + 1} failed:`, 
-            result.error?.message || `exit code ${result.status}`);
-        }
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.warn(`[renderValidation] LDView render exception (attempt ${attempt + 1}):`, e);
+  if (!fs.existsSync(ldviewBin)) {
+    throw new Error(
+      `LDView is required for rendering but not found at: ${ldviewBin}\n` +
+      `Install from: https://github.com/tcobbs/ldview/releases\n` +
+      `Or set LDVIEW_BIN environment variable to the correct path.`
+    );
+  }
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const result = spawnSync(ldviewBin, [
+        mpdPath,
+        `-SaveSnapshot=${pngPath}`,
+        `-SaveWidth=${size}`,
+        `-SaveHeight=${size}`,
+        "-SaveAlpha=1"
+      ], {
+        encoding: "utf8",
+        timeout: timeoutMs
+      });
+      
+      if (fs.existsSync(pngPath)) {
+        return { imagePath: pngPath };
       }
       
-      // Small delay before retry
-      if (attempt < maxRetries) {
-        const delayUntil = Date.now() + 500;
-        while (Date.now() < delayUntil) { /* wait */ }
+      if (result.error || result.status !== 0) {
+        // eslint-disable-next-line no-console
+        console.warn(`[renderValidation] LDView render attempt ${attempt + 1} failed:`, 
+          result.error?.message || `exit code ${result.status}`);
       }
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.warn(`[renderValidation] LDView render exception (attempt ${attempt + 1}):`, e);
+    }
+    
+    if (attempt < maxRetries) {
+      const delayUntil = Date.now() + 500;
+      while (Date.now() < delayUntil) { /* wait */ }
     }
   }
   
+  // All attempts failed
   // eslint-disable-next-line no-console
-  console.warn("[renderValidation] All render attempts failed, returning null");
-  return null;
+  console.error("[renderValidation] All LDView render attempts failed");
+  return { imagePath: null };
+}
+
+// ============================================================================
+// Pre-Validation: Fast Syntax Check
+// ============================================================================
+
+interface SyntaxValidationResult {
+  valid: boolean;
+  errors: string[];
+}
+
+/**
+ * Run fast syntax validation using Python validator.
+ * Returns immediately if validation fails to prevent crashes.
+ */
+function fastSyntaxCheck(ldrawMpd: string): SyntaxValidationResult {
+  const tmpDir = path.join(process.cwd(), "data", "render-validation-temp");
+  if (!fs.existsSync(tmpDir)) {
+    fs.mkdirSync(tmpDir, { recursive: true });
+  }
+  
+  const tmpFile = path.join(tmpDir, `syntax_check_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.mpd`);
+  
+  try {
+    fs.writeFileSync(tmpFile, ldrawMpd, "utf-8");
+    
+    const scriptPath = path.join(process.cwd(), "scripts", "validate_ldraw_syntax.py");
+    const result = spawnSync("python3", [scriptPath, tmpFile], {
+      encoding: "utf-8",
+      timeout: 5000, // 5 second timeout
+      maxBuffer: 1024 * 1024 // 1MB buffer
+    });
+    
+    // Clean up temp file
+    try {
+      fs.unlinkSync(tmpFile);
+    } catch {
+      // Ignore cleanup errors
+    }
+    
+    if (result.error) {
+      return {
+        valid: false,
+        errors: [`Syntax validator error: ${result.error.message}`]
+      };
+    }
+    
+    if (result.status !== 0) {
+      // Parse JSON output
+      try {
+        const output = JSON.parse(result.stdout);
+        return {
+          valid: false,
+          errors: output.errors || ["Unknown syntax validation failure"]
+        };
+      } catch {
+        return {
+          valid: false,
+          errors: [`Syntax validator exited with code ${result.status}: ${result.stderr || result.stdout}`]
+        };
+      }
+    }
+    
+    return { valid: true, errors: [] };
+  } catch (e) {
+    // Clean up temp file on error
+    try {
+      fs.unlinkSync(tmpFile);
+    } catch {
+      // Ignore cleanup errors
+    }
+    
+    return {
+      valid: false,
+      errors: [`Syntax check exception: ${e instanceof Error ? e.message : String(e)}`]
+    };
+  }
 }
 
 // ============================================================================
@@ -841,9 +969,37 @@ export function validateRender(input: RenderValidationInput): RenderValidationRe
   };
   
   // -------------------------------------------------------------------------
+  // 0. Fast Syntax Pre-Check (runs first, fast-fails on syntax errors)
+  // -------------------------------------------------------------------------
+  checksRun.push("fast_syntax");
+  console.log("  [Validation] Running fast syntax check...");
+  
+  const syntaxResult = fastSyntaxCheck(ldraw);
+  if (!syntaxResult.valid) {
+    console.log(`  ❌ [Validation] Fast syntax check FAILED: ${syntaxResult.errors.length} error(s)`);
+    syntaxResult.errors.forEach((err, i) => console.log(`    ${i + 1}. ${err}`));
+    result.valid = false;
+    result.structure.valid = false;
+    for (const error of syntaxResult.errors) {
+      result.structure.issues.push({
+        type: "syntax",
+        severity: "error",
+        message: `Syntax validation failed: ${error}`
+      });
+    }
+    // Fast-fail: don't proceed with other checks
+    result.meta.duration_ms = Date.now() - startTime;
+    result.meta.checks_run = checksRun;
+    result.failure_reason = "Fast syntax validation failed";
+    return result;
+  }
+  console.log("  ✅ [Validation] Fast syntax check passed");
+  
+  // -------------------------------------------------------------------------
   // 1. Structure Validation
   // -------------------------------------------------------------------------
   checksRun.push("structure");
+  console.log("  [Validation] Running structure validation...");
   
   try {
     if (mode === "chunk") {
@@ -901,14 +1057,37 @@ export function validateRender(input: RenderValidationInput): RenderValidationRe
   
   result.structure.valid = result.structure.issues.filter(i => i.severity === "error").length === 0;
   
+  if (result.structure.valid) {
+    const warnings = result.structure.issues.filter(i => i.severity === "warning").length;
+    console.log(`  ✅ [Validation] Structure validation passed${warnings > 0 ? ` (${warnings} warning(s))` : ""}`);
+  } else {
+    const errors = result.structure.issues.filter(i => i.severity === "error").length;
+    console.log(`  ❌ [Validation] Structure validation FAILED: ${errors} error(s)`);
+    result.structure.issues.filter(i => i.severity === "error").slice(0, 3).forEach((issue, i) => {
+      console.log(`    ${i + 1}. ${issue.message}`);
+    });
+  }
+  
   // -------------------------------------------------------------------------
   // 2. Continuity Checks
   // -------------------------------------------------------------------------
   checksRun.push("continuity");
+  console.log("  [Validation] Running continuity checks...");
   
   const continuityIssues = checkContinuity(ldraw);
   result.continuity.issues = continuityIssues;
   result.continuity.valid = continuityIssues.filter(i => i.severity === "error").length === 0;
+  
+  if (result.continuity.valid) {
+    const warnings = continuityIssues.filter(i => i.severity === "warning").length;
+    console.log(`  ✅ [Validation] Continuity checks passed${warnings > 0 ? ` (${warnings} warning(s))` : ""}`);
+  } else {
+    const errors = continuityIssues.filter(i => i.severity === "error").length;
+    console.log(`  ❌ [Validation] Continuity checks FAILED: ${errors} error(s)`);
+    continuityIssues.filter(i => i.severity === "error").slice(0, 3).forEach((issue, i) => {
+      console.log(`    ${i + 1}. ${issue.message}`);
+    });
+  }
   
   // -------------------------------------------------------------------------
   // 3. Render Progress Image (always for logging, optionally for comparison)
@@ -920,6 +1099,7 @@ export function validateRender(input: RenderValidationInput): RenderValidationRe
   
   if (shouldRender) {
     checksRun.push(shouldCompare ? "render_comparison" : "render_progress");
+    console.log(`  [Validation] ${shouldCompare ? "Rendering and comparing to reference..." : "Rendering for progress logging..."}`);
     
     // Create temp directory for render
     const tempDir = path.join(process.cwd(), "data", "render-validation-temp");
@@ -931,14 +1111,17 @@ export function validateRender(input: RenderValidationInput): RenderValidationRe
       ? `0 FILE model.ldr\n${ldraw}\n0 NOFILE`
       : ldraw;
     
-    const renderedPath = renderMpdToPng({
+    const renderResult = renderMpdToPng({
       ldrawMpd: mpdForRender,
       outputDir: tempDir,
       baseName,
       size: renderSize
     });
     
+    const renderedPath = renderResult.imagePath;
+    
     if (renderedPath && fs.existsSync(renderedPath)) {
+      console.log(`  ✅ [Validation] Render succeeded: ${path.basename(renderedPath)}`);
       result.rendered_image_path = renderedPath;
       
       // Read as base64 for MCP response
@@ -951,6 +1134,7 @@ export function validateRender(input: RenderValidationInput): RenderValidationRe
       
       // Compare to reference (only if we have a reference image)
       if (shouldCompare && input.reference_image_path) {
+        console.log(`  [Validation] Comparing to reference image...`);
         try {
           const similarity = compareImages(renderedPath, input.reference_image_path);
           
@@ -965,7 +1149,14 @@ export function validateRender(input: RenderValidationInput): RenderValidationRe
               psnr: similarity.metrics.psnr
             }
           };
+          
+          if (result.similarity.passes_threshold) {
+            console.log(`  ✅ [Validation] Similarity check passed: ${similarity.overall.toFixed(1)}% (threshold: ${minSimilarity}%)`);
+          } else {
+            console.log(`  ❌ [Validation] Similarity check FAILED: ${similarity.overall.toFixed(1)}% < ${minSimilarity}%`);
+          }
         } catch (e) {
+          console.log(`  ⚠️  [Validation] Image comparison error: ${e instanceof Error ? e.message : "unknown"}`);
           result.similarity = {
             score: 0,
             passes_threshold: false,
@@ -980,6 +1171,46 @@ export function validateRender(input: RenderValidationInput): RenderValidationRe
         }
       }
     } else {
+      // Render failed - generate diagnostic feedback
+      console.log(`  ❌ [Validation] Render FAILED`);
+      if (renderResult.error) {
+        const diagnostic = diagnoseRenderFailure(renderResult.error, mpdForRender);
+        console.log(`    Error type: ${diagnostic.errorType}`);
+        console.log(`    Message: ${diagnostic.message}`);
+        
+        // Add render failure as ERROR (not warning) - this invalidates the build
+        result.structure.issues.push({
+          type: "other",
+          severity: "error",
+          message: `RENDER FAILED: ${diagnostic.message}`
+        });
+        
+        // Add detailed causes
+        for (const cause of diagnostic.likelyCauses) {
+          result.structure.issues.push({
+            type: "other",
+            severity: "error",
+            message: `Likely cause: ${cause}`
+          });
+        }
+        
+        // Add suggested fixes
+        for (const fix of diagnostic.suggestedFixes) {
+          result.structure.issues.push({
+            type: "other",
+            severity: "warning",
+            message: `Fix: ${fix}`
+          });
+        }
+      } else {
+        // Unknown render failure
+        result.structure.issues.push({
+          type: "other",
+          severity: "error",
+          message: "RENDER FAILED: Could not generate image (unknown error)"
+        });
+      }
+      
       if (shouldCompare) {
         result.similarity = {
           score: 0,
@@ -988,11 +1219,6 @@ export function validateRender(input: RenderValidationInput): RenderValidationRe
           method: "skipped"
         };
       }
-      result.structure.issues.push({
-        type: "other",
-        severity: "warning",
-        message: "Rendering failed - could not generate progress image"
-      });
     }
   }
   

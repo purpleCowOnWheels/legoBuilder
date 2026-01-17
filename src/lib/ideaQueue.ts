@@ -1,13 +1,12 @@
 import { readDb, writeDb } from "@/lib/storage";
 import { newId } from "@/lib/ids";
 import type { IdeaGenerationJob, IdeaJobLogEvent } from "@/lib/models";
-import { generatePreviewImagesFromPrompt, extractTitleFromPrompt } from "@/lib/openai";
+import { extractTitleFromPrompt } from "@/lib/openai";
 import { config } from "dotenv";
 import path from "node:path";
 
 // Load .env.local explicitly (Next.js API routes auto-load it, but background workers don't)
 config({ path: path.join(process.cwd(), ".env.local") });
-import { writeGeneratedThumbPng } from "@/lib/generatedAssets";
 
 const inMemoryQueue: string[] = []; // job ids
 let workerRunning = false;
@@ -113,30 +112,11 @@ async function runWorker() {
         const s2 = db2.ideaSearches.find((s) => s.id === job.ideaSearchId);
         if (!s2) throw new Error("Idea search missing during execution");
 
-        const count = s2.count ?? 2;
-        pushLog(job, {
-          type: "openai_round_start",
-          message: `Generating ${count} preview image(s) directly from user prompt…`
-        });
+        // New architecture: User uploads their own reference image.
+        // This job just extracts a title from the prompt.
+        pushLog(job, { type: "openai_round_start", message: "Extracting title from prompt…" });
         writeDb(db2);
 
-        // Step 1: Generate N preview images from the user's original prompt
-        const images = await generatePreviewImagesFromPrompt({
-          userPrompt: s2.preferences || "A fun LEGO build",
-          constraints: {
-            targetPartsMin: s2.targetPartsMin,
-            targetPartsMax: s2.targetPartsMax,
-            difficulty: s2.difficulty,
-            age: s2.age,
-            buildTimeMinutes: s2.buildTimeMinutes
-          },
-          count
-        });
-
-        pushLog(job, { type: "openai_round_done", message: `${images.length} preview image(s) generated` });
-
-        // Step 2: Extract a short title (single lightweight call, or use first image's revised_prompt)
-        pushLog(job, { type: "openai_round_start", message: "Extracting title…" });
         const title = await extractTitleFromPrompt({ userPrompt: s2.preferences || "A fun LEGO build" });
         pushLog(job, { type: "openai_round_done", message: `Title extracted: "${title}"` });
 
@@ -148,19 +128,16 @@ async function runWorker() {
         j3.stage = "done";
         j3.updatedAt = now();
 
-        // Step 3: Write thumbnails to disk and create lightweight idea candidates
-        const ideas = images.map((img, idx) => {
-          const baseName = `preview_${s3.id}_${idx + 1}`;
-          const written = writeGeneratedThumbPng({ baseName, pngBase64: img.pngBase64 });
-          return {
-            title: count > 1 ? `${title} (${idx + 1})` : title, // e.g., "Space Shuttle (1)", "Space Shuttle (2)" or just "Space Shuttle" if count=1
-            preview_thumbnail: written.url,
-            previewStatus: "done" as const,
-            ldrawStatus: "not_started" as const
-          };
-        });
+        // Create a single idea candidate (user will provide reference image separately)
+        const ideas = [{
+          title,
+          // No preview_thumbnail - user uploads their own reference image
+          preview_thumbnail: null,
+          previewStatus: "not_started" as const,
+          ldrawStatus: "not_started" as const
+        }];
 
-        s3.title = title; // Store extracted title on the search itself
+        s3.title = title;
         s3.ideas = ideas as any;
         s3.status = "done";
         s3.updatedAt = now();
@@ -170,11 +147,9 @@ async function runWorker() {
         j3.stage = "done";
         j3.updatedAt = s3.updatedAt!;
         j3.finishedAt = j3.updatedAt;
-        pushLog(j3, { type: "done", message: "Job complete" });
+        pushLog(j3, { type: "done", message: "Job complete - user should upload reference image to continue" });
 
         writeDb(db3);
-
-        // No need to enqueue preview jobs anymore — previews are already generated!
       } catch (e) {
         const dbErr = readDb();
         const jErr = dbErr.ideaGenerationJobs.find((x) => x.id === jobId);

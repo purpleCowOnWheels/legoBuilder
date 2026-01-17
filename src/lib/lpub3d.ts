@@ -413,6 +413,11 @@ export function executeLPub3D(options: LPub3DExecOptions): LPub3DExecResult {
     }
     
     try {
+      // Determine Qt platform based on OS
+      // macOS uses "cocoa", Linux can use "offscreen"
+      const isMac = process.platform === "darwin";
+      const qtPlatform = isMac ? undefined : "offscreen";
+      
       const result = spawnSync(bin, options.args, {
         encoding: "utf8",
         timeout: timeoutMs,
@@ -420,7 +425,7 @@ export function executeLPub3D(options: LPub3DExecOptions): LPub3DExecResult {
         // Prevent LPub3D from trying to open GUI dialogs
         env: {
           ...process.env,
-          QT_QPA_PLATFORM: "offscreen",
+          ...(qtPlatform ? { QT_QPA_PLATFORM: qtPlatform } : {}),
           DISPLAY: process.env.DISPLAY || ""
         }
       });

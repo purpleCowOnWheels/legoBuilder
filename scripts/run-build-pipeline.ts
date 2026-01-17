@@ -32,7 +32,6 @@ import { readDb } from "../src/lib/storage";
 import { 
   generateBlueprintForIdea, 
   generateLDrawMpdChunkForIdea,
-  extractTitleFromPrompt,
   type OpenAIValidateEvent,
   type VisualFeedbackMode
 } from "../src/lib/openai";
@@ -150,6 +149,9 @@ function renderMpdToImage(params: {
   const totalSteps = stepMatches ? stepMatches.length + 1 : 1;
   const targetStep = stepNumber ?? totalSteps;
   
+  // Ensure output directory exists
+  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+  
   // Try LPub3D first
   const lpub3dBin = process.env.LPUB3D_BIN || "/Applications/LPub3D.app/Contents/MacOS/LPub3D";
   
@@ -165,13 +167,22 @@ function renderMpdToImage(params: {
       mpdPath
     ];
     
-    const res = spawnSync(lpub3dBin, args, { encoding: "utf8", timeout: 60000 });
+    const res = spawnSync(lpub3dBin, args, { 
+      encoding: "utf8", 
+      timeout: 60000,
+      cwd: tempDir
+    });
     
     // Clean up temp file
     try { fs.unlinkSync(mpdPath); } catch {}
     
     if (fs.existsSync(outputPath)) {
       return true;
+    }
+    
+    // Debug: log stderr if render failed
+    if (res.stderr && res.stderr.length > 0) {
+      console.warn("  [render] LPub3D stderr:", res.stderr.slice(0, 200));
     }
   }
   
@@ -213,7 +224,44 @@ function formatDuration(ms: number): string {
   return `${Math.floor(ms / 60000)}m ${Math.round((ms % 60000) / 1000)}s`;
 }
 
-function createProgressLogger(verbose: boolean) {
+function createProgressLogger(verbose: boolean, runDir: string) {
+  // Track similarity scores to show improvement trends
+  const similarityHistory: Array<{ round: number; score: number; target: string }> = [];
+  
+  // Create validation images directory
+  const validationImagesDir = path.join(runDir, "validation_images");
+  if (!fs.existsSync(validationImagesDir)) {
+    fs.mkdirSync(validationImagesDir, { recursive: true });
+  }
+  
+  const getTrend = (currentScore: number, target: string): string => {
+    // Find previous scores for the same target type
+    const previousScores = similarityHistory
+      .filter(h => h.target === target)
+      .map(h => h.score);
+    
+    if (previousScores.length === 0) return "";
+    
+    const lastScore = previousScores[previousScores.length - 1];
+    const diff = currentScore - lastScore;
+    
+    if (diff > 5) return ` 📈 +${diff}% (IMPROVING)`;
+    if (diff > 0) return ` ↗️ +${diff}%`;
+    if (diff < -5) return ` 📉 ${diff}% (REGRESSING!)`;
+    if (diff < 0) return ` ↘️ ${diff}%`;
+    return " → (no change)";
+  };
+  
+  const getSummary = (): string => {
+    if (similarityHistory.length < 2) return "";
+    const scores = similarityHistory.map(h => h.score);
+    const first = scores[0];
+    const last = scores[scores.length - 1];
+    const max = Math.max(...scores);
+    const min = Math.min(...scores);
+    return `\n    📊 Similarity trend: ${first}% → ${last}% (range: ${min}%-${max}%, ${similarityHistory.length} measurements)`;
+  };
+  
   return {
     section: (title: string) => {
       console.log(`\n${"=".repeat(60)}`);
@@ -226,7 +274,20 @@ function createProgressLogger(verbose: boolean) {
     warning: (msg: string) => console.log(`  ⚠️  ${msg}`),
     error: (msg: string) => console.error(`  ❌ ${msg}`),
     debug: (msg: string) => verbose && console.log(`  [debug] ${msg}`),
+    getSimilaritySummary: getSummary,
+    resetSimilarityTracking: () => { similarityHistory.length = 0; },
     event: (evt: OpenAIValidateEvent) => {
+      // Helper to format validation target nicely
+      const formatTarget = (target?: string, mode?: string) => {
+        switch (target) {
+          case "chunk": return "CHUNK (structure only)";
+          case "partial_build": return "PARTIAL BUILD";
+          case "subassembly": return "SUBASSEMBLY COMPLETE";
+          case "final_model": return "FINAL MODEL";
+          default: return mode ? `mode=${mode}` : "unknown";
+        }
+      };
+      
       switch (evt.type) {
         case "round_start":
           console.log(`    📍 Validation round ${evt.round} starting...`);
@@ -237,14 +298,42 @@ function createProgressLogger(verbose: boolean) {
           }
           break;
         case "tool_calls":
-          console.log(`    🔧 Tool calls: ${evt.calls.map(c => c.name).join(", ")}`);
+          for (const c of evt.calls) {
+            const target = formatTarget(c.validation_target, c.mode);
+            const steps = c.step_range ? ` [steps ${c.step_range.from || "?"}-${c.step_range.to || "?"}]` : "";
+            console.log(`    🔧 Validating: ${target}${steps}`);
+          }
           break;
         case "tool_results":
           for (const r of evt.results) {
+            const targetKey = r.validation_target || "unknown";
+            const target = formatTarget(r.validation_target);
+            
+            // Track similarity if render was compared
+            let trend = "";
+            if (r.render_compared && r.similarity_score !== undefined) {
+              trend = getTrend(r.similarity_score, targetKey);
+              similarityHistory.push({ 
+                round: evt.round, 
+                score: r.similarity_score, 
+                target: targetKey 
+              });
+            }
+            
+            const renderInfo = r.render_compared 
+              ? ` (similarity: ${r.similarity_score}%${trend})` 
+              : " (structure only, no render)";
+            
+            // Add piece count info if available
+            const pieceInfo = r.pieces_total !== undefined
+              ? ` [+${r.pieces_in_chunk || 0} pieces, ${r.pieces_total} total]`
+              : "";
+            
             if (r.ok) {
-              console.log(`    ✓ Validation passed${r.similarity_score ? ` (similarity: ${r.similarity_score}%)` : ""}`);
+              console.log(`    ✓ ${target}: PASSED${renderInfo}${pieceInfo}`);
             } else {
-              console.log(`    ✗ Validation failed: ${r.error}`);
+              console.log(`    ✗ ${target}: FAILED${renderInfo}${pieceInfo}`);
+              console.log(`      Error: ${r.error}`);
               if (r.issues && verbose) {
                 for (const issue of r.issues.slice(0, 3)) {
                   console.log(`      - ${issue.type}: ${issue.message}`);
@@ -254,10 +343,35 @@ function createProgressLogger(verbose: boolean) {
           }
           break;
         case "visual_feedback_sent":
-          console.log(`    🖼️  Visual feedback sent (${evt.image_count} image(s), trigger: ${evt.trigger})`);
+          const triggerLabel = evt.trigger === "final_validation" 
+            ? "📸 FINAL MODEL rendered" 
+            : "📸 SUBASSEMBLY rendered";
+          console.log(`    🖼️  ${triggerLabel} - sending ${evt.image_count} image(s) to GPT for visual review`);
+          
+          // Copy images from debug folder to pipeline output
+          if (evt.image_paths && evt.image_paths.length > 0) {
+            for (const imgPath of evt.image_paths) {
+              if (fs.existsSync(imgPath)) {
+                const basename = path.basename(imgPath);
+                const destPath = path.join(validationImagesDir, basename);
+                try {
+                  fs.copyFileSync(imgPath, destPath);
+                  if (verbose) {
+                    console.log(`      💾 Saved: ${path.relative(runDir, destPath)}`);
+                  }
+                } catch (e) {
+                  console.warn(`      ⚠️  Failed to copy image: ${e instanceof Error ? e.message : "unknown error"}`);
+                }
+              }
+            }
+          }
           break;
         case "round_done":
           console.log(`    📍 Round ${evt.round} complete`);
+          // Show similarity summary after each round if we have data
+          if (similarityHistory.length >= 2) {
+            console.log(getSummary());
+          }
           break;
       }
     }
@@ -269,51 +383,55 @@ function createProgressLogger(verbose: boolean) {
 // ============================================================================
 
 async function runPipeline(args: CliArgs) {
-  const log = createProgressLogger(args.verbose);
   const startTime = performance.now();
   
   // Validate inputs
-  log.section("Input Validation");
+  console.log(`\n${"=".repeat(60)}`);
+  console.log(`  Input Validation`);
+  console.log("=".repeat(60));
   
   if (!fs.existsSync(args.imagePath)) {
-    log.error(`Image not found: ${args.imagePath}`);
+    console.error(`  ❌ Image not found: ${args.imagePath}`);
     process.exit(1);
   }
-  log.info(`Reference image: ${args.imagePath}`);
+  console.log(`  Reference image: ${args.imagePath}`);
   
   // Load inventory
   let inventory: InventoryItem[];
   if (args.inventoryPath) {
     if (!fs.existsSync(args.inventoryPath)) {
-      log.error(`Inventory file not found: ${args.inventoryPath}`);
+      console.error(`  ❌ Inventory file not found: ${args.inventoryPath}`);
       process.exit(1);
     }
     const raw = fs.readFileSync(args.inventoryPath, "utf8");
     const parsed = JSON.parse(raw);
     // Support both direct array and { inventory: [...] } format
     inventory = Array.isArray(parsed) ? parsed : (parsed.inventory || []);
-    log.info(`Loaded inventory from: ${args.inventoryPath} (${inventory.length} items)`);
+    console.log(`  Loaded inventory from: ${args.inventoryPath} (${inventory.length} items)`);
   } else {
     const db = readDb();
     inventory = db.inventory || [];
-    log.info(`Using database inventory (${inventory.length} items)`);
+    console.log(`  Using database inventory (${inventory.length} items)`);
   }
   
   if (inventory.length === 0) {
-    log.error("Inventory is empty!");
+    console.error("  ❌ Inventory is empty!");
     process.exit(1);
   }
   
   // Get/generate prompt
   const prompt = args.prompt || path.basename(args.imagePath, path.extname(args.imagePath)).replace(/[-_]/g, " ");
-  log.info(`Build prompt: "${prompt}"`);
+  console.log(`  Build prompt: "${prompt}"`);
   
   // Setup output directory
   fs.mkdirSync(args.outputDir, { recursive: true });
   const runId = `run_${Date.now()}`;
   const runDir = path.join(args.outputDir, runId);
   fs.mkdirSync(runDir, { recursive: true });
-  log.info(`Output directory: ${runDir}`);
+  console.log(`  Output directory: ${runDir}`);
+  
+  // Now create logger with runDir
+  const log = createProgressLogger(args.verbose, runDir);
   
   // Copy reference image to output
   const refImageDest = path.join(runDir, "00_reference.png");
@@ -324,32 +442,21 @@ async function runPipeline(args: CliArgs) {
   log.info(`Render steps: ${args.renderSteps ? "enabled" : "disabled"}`);
   
   // =========================================================================
-  // Phase 1: Extract Title
+  // Phase 1: Generate Blueprint from Image
   // =========================================================================
-  log.section("Phase 1: Extract Title");
-  log.step("Extracting title from prompt...");
-  
-  const titleStart = performance.now();
-  const title = await extractTitleFromPrompt({ userPrompt: prompt });
-  log.success(`Title: "${title}" (${formatDuration(performance.now() - titleStart)})`);
-  
-  // =========================================================================
-  // Phase 2: Generate Blueprint
-  // =========================================================================
-  log.section("Phase 2: Generate Blueprint");
-  log.step("Generating build blueprint...");
+  log.section("Phase 1: Generate Blueprint from Image");
+  log.step("Generating build blueprint from image...");
   
   const blueprintStart = performance.now();
   const { blueprint, model: blueprintModel } = await generateBlueprintForIdea({
-    title,
-    userPrompt: prompt,
     inventory,
     constraintsText: "Build something interesting with the available parts.",
-    previewImagePath: args.imagePath
+    referenceImagePath: args.imagePath
   });
   
   log.success(`Blueprint generated (${formatDuration(performance.now() - blueprintStart)})`);
   log.info(`Model: ${blueprintModel}`);
+  log.info(`Blueprint overview: "${blueprint.structure_plan.overview.slice(0, 100)}..."`);
   log.info(`Subassemblies: ${blueprint.structure_plan.subassemblies.map(s => s.name).join(", ")}`);
   log.info(`Total steps: ${blueprint.step_outline.length}`);
   
@@ -372,9 +479,16 @@ async function runPipeline(args: CliArgs) {
   log.section("Phase 3: Generate LDraw Chunks");
   
   const totalSteps = blueprint.step_outline.length;
-  const chunkSize = 3; // Steps per chunk
+  // Chunk size: aim for 25-50 pieces per chunk
+  // With max 5 parts/step, need 5-10 steps/chunk
+  // Use 8 steps/chunk as a good balance (allows ~40 pieces/chunk)
+  const chunkSize = 8; // Steps per chunk
   const chunks: string[] = [];
   let assembledMpd = "";
+  
+  // Calculate total number of chunks upfront
+  const totalChunks = Math.ceil(totalSteps / chunkSize);
+  log.info(`Total chunks to generate: ${totalChunks} (${totalSteps} steps, ${chunkSize} steps/chunk, target ~${chunkSize * 5} pieces/chunk)`);
   
   // Track which subassemblies we've completed
   const completedSubassemblies = new Set<string>();
@@ -402,6 +516,9 @@ async function runPipeline(args: CliArgs) {
     
     log.step(`Generating chunk ${chunkIndex} (steps ${stepFrom}-${stepTo})${isSubassemblyBoundary ? " [subassembly boundary]" : ""}${isFinalChunk ? " [FINAL]" : ""}`);
     
+    // Reset similarity tracking for each chunk
+    log.resetSimilarityTracking();
+    
     const chunkStart = performance.now();
     
     try {
@@ -415,18 +532,27 @@ async function runPipeline(args: CliArgs) {
         assembledMpdSoFar: assembledMpd ? `0 FILE model.ldr\n${assembledMpd}\n0 NOFILE` : undefined,
         useValidationToolLoop: args.useToolLoop,
         onEvent: log.event,
-        referenceImagePath: args.imagePath,
+        // NOTE: Do NOT send image for chunk generation - blueprint already has the plan
+        // Only use image for visual validation feedback if enabled
+        referenceImagePath: args.useToolLoop ? args.imagePath : undefined,
         minSimilarity: 50,
         currentSubassembly,
         visualFeedbackMode: args.visualFeedbackMode,
         isSubassemblyBoundary: isSubassemblyBoundary || false,
-        isFinalChunk
+        isFinalChunk,
+        currentChunkNumber: chunkIndex,
+        totalChunks
       });
       
       chunks.push(chunkBody);
       assembledMpd = assembledMpd ? `${assembledMpd}\n${chunkBody}` : chunkBody;
       
       log.success(`Chunk ${chunkIndex} complete (${formatDuration(performance.now() - chunkStart)})`);
+      // Show final similarity summary for this chunk
+      const similaritySummary = log.getSimilaritySummary();
+      if (similaritySummary) {
+        console.log(similaritySummary);
+      }
       log.debug(`Model: ${chunkModel}, chunk size: ${chunkBody.length} chars`);
       
       // Save chunk
@@ -453,6 +579,12 @@ async function runPipeline(args: CliArgs) {
       
     } catch (err) {
       log.error(`Chunk ${chunkIndex} failed: ${err instanceof Error ? err.message : String(err)}`);
+      
+      // Show final similarity summary for this chunk (even on failure)
+      const similaritySummary = log.getSimilaritySummary();
+      if (similaritySummary) {
+        console.log(`\n    📊 SIMILARITY TRACKING FOR FAILED CHUNK:${similaritySummary}`);
+      }
       
       // Save partial progress
       if (assembledMpd) {

@@ -11,6 +11,7 @@ import {
 import { validateLDrawMpdOrThrow, validateLDrawPartialMpdOrThrow } from "@/lib/ldrawValidate";
 import { generateInstructionsPdfFromMpd, generateThumbnailPngFromMpd, writeIdeaMpdToDisk } from "@/lib/lpub3d";
 import { writeGeneratedThumbPng } from "@/lib/generatedAssets";
+import { TokenTracker, calculateCost, formatUsageEntry } from "@/lib/tokenUsage";
 import { config } from "dotenv";
 
 // Load .env.local explicitly (Next.js API routes auto-load it, but background workers don't)
@@ -296,55 +297,84 @@ async function runWorker() {
         if (!idea2) throw new Error("Idea missing during execution");
         if (j2.status === "cancelled" || j2.cancelRequestedAt) throw new Error("__CANCELLED__");
 
-        // Micro preview (blocking) — used as a vision input for the blueprint stage.
+        // Reference image - user uploads their own image showing what they want to build.
+        // This is the key visual input for blueprint generation.
         j2.stage = "preview";
         j2.updatedAt = now();
-        let previewImagePath: string | undefined;
+        let referenceImagePath: string | undefined;
 
-        // Reuse existing preview thumbnail if available (avoid re-calling OpenAI / re-rendering).
-        const existingThumbUrl = typeof idea2.preview_thumbnail === "string" ? idea2.preview_thumbnail : "";
-        if (idea2.previewStatus === "done" && existingThumbUrl.startsWith("/")) {
-          const candidatePath = path.join(process.cwd(), "public", existingThumbUrl);
+        // Check for user-uploaded reference image first
+        const referenceUrl = typeof (idea2 as any).reference_image === "string" ? (idea2 as any).reference_image : "";
+        if (referenceUrl.startsWith("/")) {
+          const candidatePath = path.join(process.cwd(), "public", referenceUrl);
           if (fs.existsSync(candidatePath)) {
-            previewImagePath = candidatePath;
-            pushLog(j2, { type: "openai_round_done", message: "Reusing existing preview thumbnail" });
+            referenceImagePath = candidatePath;
+            pushLog(j2, { type: "openai_round_done", message: "Using uploaded reference image" });
+          }
+        }
+        
+        // Fall back to legacy preview_thumbnail for backward compatibility
+        if (!referenceImagePath) {
+          const existingThumbUrl = typeof idea2.preview_thumbnail === "string" ? idea2.preview_thumbnail : "";
+          if (existingThumbUrl.startsWith("/")) {
+            const candidatePath = path.join(process.cwd(), "public", existingThumbUrl);
+            if (fs.existsSync(candidatePath)) {
+              referenceImagePath = candidatePath;
+              pushLog(j2, { type: "openai_round_done", message: "Using existing thumbnail as reference (legacy)" });
+            }
           }
         }
 
-        if (!previewImagePath) {
-          pushLog(j2, { type: "openai_round_start", message: "Generating preview (image)…" });
-        }
-
-        if (!previewImagePath) {
-          throw new Error("Preview image not found. Previews must be generated before LDraw generation.");
+        if (!referenceImagePath) {
+          throw new Error("Reference image not found. Please upload a reference image showing what you want to build.");
         }
         s2.updatedAt = now();
         writeDb(db2);
         if (isJobCancelled(jobId)) throw new Error("__CANCELLED__");
 
-        // Blueprint / plan stage (uses preview image as vision input)
+        // Blueprint / plan stage (uses reference image as vision input)
         j2.stage = "plan";
         j2.updatedAt = now();
-        pushLog(j2, { type: "openai_round_start", message: "Generating blueprint plan (vision)..." });
+        pushLog(j2, { type: "openai_round_start", message: "Generating blueprint plan from reference image..." });
         writeDb(db2);
+
+        // Token usage tracker for this job - tracks all API calls (blueprint + chunks)
+        const tokenTracker = new TokenTracker();
+        let currentChunkIdx = 0;
 
         const blueprintStartedAtMs = Date.now();
         const invForStep2Raw = s2.inventoryMode === "full" ? db2.inventory : filterInventoryBasicParts(db2.inventory);
         const invForStep2 =
           s2.inventoryMode === "basic" && s2.colorMode === "bucketed" ? maybeBucketInventoryColors(invForStep2Raw) : invForStep2Raw;
 
-        const { blueprint, model: blueprintModel } = await generateBlueprintForIdea({
+        const { blueprint, model: blueprintModel, usage: blueprintUsage } = await generateBlueprintForIdea({
           title: idea2.title,
           userPrompt: s2.preferences || "A fun LEGO build",
           inventory: invForStep2,
           constraintsText: constraintsToText(s2),
-          previewImagePath
+          referenceImagePath
         });
         const blueprintDurationMs = Date.now() - blueprintStartedAtMs;
-        pushLog(j2, {
-          type: "openai_round_done",
-          message: `Blueprint generated (model=${blueprintModel}, ${Math.round(blueprintDurationMs / 1000)}s)`
-        });
+        
+        // Track blueprint generation token usage
+        if (blueprintUsage && blueprintModel) {
+          const entry = tokenTracker.record({
+            operation: "blueprint",
+            model: blueprintModel,
+            usage: blueprintUsage,
+            duration_ms: blueprintDurationMs
+          });
+          pushLog(j2, {
+            type: "openai_round_done",
+            message: `Blueprint generated (model=${blueprintModel}, ${Math.round(blueprintDurationMs / 1000)}s, ${blueprintUsage.total_tokens.toLocaleString()} tokens, $${entry.cost_usd.toFixed(4)})`,
+            data: { usage: blueprintUsage, cost_usd: entry.cost_usd }
+          });
+        } else {
+          pushLog(j2, {
+            type: "openai_round_done",
+            message: `Blueprint generated (model=${blueprintModel}, ${Math.round(blueprintDurationMs / 1000)}s)`
+          });
+        }
 
         idea2.ldrawArtifacts = {
           ...(idea2.ldrawArtifacts || {}),
@@ -391,7 +421,28 @@ async function runWorker() {
           } else if (evt.type === "api_retry") {
             pushLog(j, { type: "openai_round_done", message: `OpenAI retry (round ${evt.round}, attempt ${evt.attempt}): ${evt.message}` });
           } else if (evt.type === "api_response") {
-            pushLog(j, { type: "openai_round_done", message: `OpenAI response (round ${evt.round}): status=${evt.status ?? "?"} model=${evt.model ?? "?"}`, data: evt });
+            // Track token usage
+            if (evt.usage && evt.model) {
+              const entry = tokenTracker.record({
+                operation: `chunk_${currentChunkIdx + 1}_round_${evt.round}`,
+                model: evt.model,
+                usage: {
+                  input_tokens: evt.usage.input_tokens || 0,
+                  output_tokens: evt.usage.output_tokens || 0,
+                  reasoning_tokens: evt.usage.reasoning_tokens,
+                  total_tokens: evt.usage.total_tokens || 0
+                }
+              });
+              const costStr = `$${entry.cost_usd.toFixed(4)}`;
+              const tokensStr = `${(entry.usage.input_tokens + entry.usage.output_tokens).toLocaleString()} tokens`;
+              pushLog(j, { 
+                type: "openai_round_done", 
+                message: `OpenAI response (round ${evt.round}): ${tokensStr}, cost: ${costStr}`,
+                data: { ...evt, cost_usd: entry.cost_usd }
+              });
+            } else {
+              pushLog(j, { type: "openai_round_done", message: `OpenAI response (round ${evt.round}): status=${evt.status ?? "?"} model=${evt.model ?? "?"}`, data: evt });
+            }
           }
           if (s) s.updatedAt = j.updatedAt;
           writeDb(dbE);
@@ -408,6 +459,7 @@ async function runWorker() {
         let assembledBody = "";
         for (let chunkIdx = 0; chunkIdx < totalChunks; chunkIdx++) {
             if (isJobCancelled(jobId)) throw new Error("__CANCELLED__");
+            currentChunkIdx = chunkIdx; // Track for token usage logging
             const stepsFrom = chunkIdx * stepsPerBatch + 1;
             const stepsTo = Math.min(stepCount, (chunkIdx + 1) * stepsPerBatch);
             const assembledMpdSoFar = assembledBody ? wrapMpd(assembledBody) : "";
@@ -440,6 +492,36 @@ async function runWorker() {
               }
               if (currentSubassembly) break;
             }
+            
+            // Detect subassembly boundary: does this chunk complete a subassembly?
+            // A subassembly is complete when the NEXT step belongs to a different subassembly
+            let isSubassemblyBoundary = false;
+            if (currentSubassembly && stepsTo < stepCount) {
+              // Look at the next step after this chunk
+              const nextStepInfo = stepOutline.find((st: any) => st.step === stepsTo + 1);
+              if (nextStepInfo?.title) {
+                const nextTitleLower = nextStepInfo.title.toLowerCase();
+                // Check if next step belongs to a DIFFERENT subassembly
+                let nextSubassembly: string | undefined;
+                for (const sub of subassemblies) {
+                  if (nextTitleLower.includes(sub.name.toLowerCase())) {
+                    nextSubassembly = sub.name;
+                    break;
+                  }
+                }
+                // Boundary if next step is different subassembly (or no subassembly)
+                if (nextSubassembly !== currentSubassembly) {
+                  isSubassemblyBoundary = true;
+                  pushLog(j2, { 
+                    type: "openai_round_start", 
+                    message: `Subassembly "${currentSubassembly}" complete - triggering visual feedback` 
+                  });
+                  writeDb(db2);
+                }
+              }
+            }
+            
+            const isFinalChunk = chunkIdx === totalChunks - 1;
 
             const { chunkBody, model: chunkModel } = await generateLDrawMpdChunkForIdea({
               title: idea2.title,
@@ -453,10 +535,13 @@ async function runWorker() {
               useValidationToolLoop: useToolLoop,
               onEvent,
               // Pass reference image for render-based validation (similarity checking)
-              referenceImagePath: previewImagePath,
+              referenceImagePath,
               minSimilarity,
               // Pass current subassembly for targeted validation
-              currentSubassembly
+              currentSubassembly,
+              // Visual feedback triggers: at subassembly boundaries and final chunk
+              isSubassemblyBoundary,
+              isFinalChunk
             });
             model = model || chunkModel;
 
@@ -557,6 +642,27 @@ async function runWorker() {
         j3.updatedAt = s3.updatedAt!;
         j3.finishedAt = j3.updatedAt;
         pushLog(j3, { type: "lpub3d_done", message: "LPub3D assets generated" });
+        
+        // Log token usage summary
+        const usageSummary = tokenTracker.getSummary();
+        if (usageSummary.total_tokens > 0) {
+          pushLog(j3, { 
+            type: "token_usage", 
+            message: `Token usage: ${usageSummary.total_tokens.toLocaleString()} tokens ($${usageSummary.total_cost_usd.toFixed(4)})`,
+            data: {
+              total_input_tokens: usageSummary.total_input_tokens,
+              total_output_tokens: usageSummary.total_output_tokens,
+              total_reasoning_tokens: usageSummary.total_reasoning_tokens,
+              total_tokens: usageSummary.total_tokens,
+              total_cost_usd: usageSummary.total_cost_usd,
+              by_operation: usageSummary.by_operation
+            }
+          });
+          // Also log to console for visibility
+          // eslint-disable-next-line no-console
+          console.log(`[ldrawQueue] Job ${jobId} complete. ${usageSummary.total_tokens.toLocaleString()} tokens, cost: $${usageSummary.total_cost_usd.toFixed(4)}`);
+        }
+        
         pushLog(j3, { type: "done", message: "Job complete" });
         writeDb(db3);
       } catch (e) {

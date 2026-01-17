@@ -89,6 +89,12 @@ export type OpenAIValidateEvent =
         /** Whether render comparison was performed */
         render_compared?: boolean;
         issues?: Array<{ type: string; message: string }>;
+        /** Path to the rendered validation image (for logging/copying) */
+        rendered_image_path?: string;
+        /** Number of pieces added in this chunk */
+        pieces_in_chunk?: number;
+        /** Total pieces accumulated so far */
+        pieces_total?: number;
       }>;
     }
   | { type: "round_done"; round: number }
@@ -96,6 +102,8 @@ export type OpenAIValidateEvent =
       type: "visual_feedback_sent"; 
       round: number; 
       image_count: number;
+      /** Paths to the rendered images being sent */
+      image_paths?: string[];
       /** Describes when visual feedback was triggered */
       trigger: "subassembly_boundary" | "final_validation";
     };
@@ -1060,7 +1068,7 @@ async function callOpenAIJsonWithToolLoop<T>(params: {
     });
     
     // Track rendered images for visual feedback
-    const renderedImages: Array<{ tool_call_id: string; base64: string }> = [];
+    const renderedImages: Array<{ tool_call_id: string; base64: string; savedPath?: string }> = [];
     
     const toolOutputs = toolCalls.map((c) => {
       // Accept both old and new tool names during transition
@@ -1079,12 +1087,37 @@ async function callOpenAIJsonWithToolLoop<T>(params: {
         : chunkBody.trim();
       const assembledMpd = `0 FILE model.ldr\n${assembledBody}\n0 NOFILE`;
       
+      // Count pieces in this chunk and total accumulated
+      const countPiecesInMpd = (mpd: string): number => {
+        const lines = mpd.split("\n");
+        return lines.filter(line => {
+          const trimmed = line.trim();
+          return trimmed.startsWith("1 ") && !trimmed.includes("0 FILE") && !trimmed.includes("0 NOFILE");
+        }).length;
+      };
+      
+      const chunkMpd = `0 FILE model.ldr\n${chunkBody.trim()}\n0 NOFILE`;
+      const piecesInChunk = countPiecesInMpd(chunkMpd);
+      const piecesInTotal = countPiecesInMpd(assembledMpd);
+      
+      // Log piece counts
+      // eslint-disable-next-line no-console
+      console.log(`[Validation Round ${round + 1}] Pieces: +${piecesInChunk} in this chunk, ${piecesInTotal} total accumulated`);
+      logOpenAI("info", `  Piece count: +${piecesInChunk} this chunk, ${piecesInTotal} total`);
+      
+      // SERVER-SIDE: Determine what to validate
+      // For subassembly boundaries, only validate the CURRENT chunk (not accumulated build)
+      // For final validation, validate the complete assembled model
+      const mpdToValidate = params.isSubassemblyBoundary && !params.isFinalValidation
+        ? chunkMpd  // Just the current chunk
+        : assembledMpd;  // Full accumulated build for final validation
+      
       // SERVER-SIDE: Determine what validation to run
       const doRenderComparison = validationLevel === "full_validation" && !!hasReferenceImage;
       const hasBlueprint = params.blueprint && params.blueprint.subassemblies && params.blueprint.subassemblies.length > 0;
       
       const validationInput: RenderValidationInput = {
-        ldraw_mpd: assembledMpd,
+        ldraw_mpd: mpdToValidate,
         mode: "partial", // Always validate the assembled partial MPD
         step_from: params.stepFrom,
         step_to: params.stepTo,
@@ -1102,6 +1135,9 @@ async function callOpenAIJsonWithToolLoop<T>(params: {
       const includeRenderedImage = shouldIncludeVisualFeedback && validationLevel === "full_validation";
       const result = validateRenderForToolLoop(validationInput, includeRenderedImage);
       
+      // Track the image path for copying to pipeline output
+      let progressImagePath: string | undefined;
+      
       // Always save progress image to debug log (even if not sending to GPT)
       if (result.rendered_image_base64) {
         const progressImageId = saveImageArtifact({
@@ -1113,24 +1149,43 @@ async function callOpenAIJsonWithToolLoop<T>(params: {
         });
         if (progressImageId) {
           logOpenAI("info", `  Progress image saved: ${progressImageId} (${validationLevel})`);
+          // Build full path to the saved image
+          const debugDir = getDebugDir();
+          progressImagePath = path.join(debugDir, `${progressImageId}.png`);
         }
       }
       
       // Store rendered image for visual feedback to GPT (if enabled)
       if (result.rendered_image_base64 && includeRenderedImage) {
-        renderedImages.push({ tool_call_id: c.id, base64: result.rendered_image_base64 });
+        // Save image for visual feedback
+        const feedbackImagePath = saveImageArtifact({
+          tag: `visual_feedback_round_${round + 1}`,
+          base64: result.rendered_image_base64,
+          purpose: params.isFinalValidation ? "final_validation_feedback" : "subassembly_feedback",
+          round: round + 1,
+          toolCallId: c.id
+        });
+        
+        renderedImages.push({ 
+          tool_call_id: c.id, 
+          base64: result.rendered_image_base64,
+          savedPath: feedbackImagePath || undefined
+        });
       }
       
-      // Add validation level to result for logging
+      // Add validation level and image path to result for logging
       const resultWithLevel = {
         ...result,
         validation_level: validationLevel,
-        steps_validated: params.stepFrom && params.stepTo ? `${params.stepFrom}-${params.stepTo}` : undefined
+        steps_validated: params.stepFrom && params.stepTo ? `${params.stepFrom}-${params.stepTo}` : undefined,
+        rendered_image_path: progressImagePath,
+        pieces_in_chunk: piecesInChunk,
+        pieces_total: piecesInTotal
       };
       
       // Remove rendered_image_base64 from JSON output (it's sent as input_image instead)
       const { rendered_image_base64, ...resultForJson } = resultWithLevel;
-      return { tool_call_id: c.id, output: JSON.stringify(resultForJson) };
+      return { tool_call_id: c.id, output: JSON.stringify(resultForJson), progressImagePath };
     });
     
     // Log full tool results for debugging
@@ -1180,7 +1235,10 @@ async function callOpenAIJsonWithToolLoop<T>(params: {
             error: (r as any).error,
             similarity_score: (r as any).similarity_score,
             render_compared: validationLevel === "full_validation",
-            issues: (r as any).issues
+            issues: (r as any).issues,
+            rendered_image_path: (r as any).rendered_image_path,
+            pieces_in_chunk: (r as any).pieces_in_chunk,
+            pieces_total: (r as any).pieces_total
           };
         } catch {
           return { 
@@ -1227,12 +1285,35 @@ async function callOpenAIJsonWithToolLoop<T>(params: {
         }
       }
       
-      const messageContent: Array<Record<string, unknown>> = [
-        {
-          type: "input_text",
-          text: "Here is the rendered output from your LDraw code. Compare it visually to the reference image you were given earlier and identify any discrepancies:"
+      const messageContent: Array<Record<string, unknown>> = [];
+      
+      // Build context-aware feedback message
+      const subassemblyName = params.currentSubassembly || "current section";
+      const targetScore = minSimilarity;
+      
+      // Get the similarity score from the validation result
+      let currentScore: number | undefined;
+      try {
+        if (toolOutputs.length > 0) {
+          const result = JSON.parse(toolOutputs[0].output);
+          currentScore = result.similarity_score;
         }
-      ];
+      } catch {
+        // Ignore parse errors
+      }
+      
+      const scoreInfo = currentScore !== undefined 
+        ? `Current similarity: ${currentScore}% (need ${targetScore}% to pass)`
+        : `Target similarity: ${targetScore}%`;
+      
+      const feedbackText = params.isFinalValidation
+        ? `Here is the rendered output of your complete build. ${scoreInfo}.\n\nCompare it visually to the reference image and identify any discrepancies in shape, proportions, and layout.`
+        : `You just built the "${subassemblyName}" subassembly. ${scoreInfo}.\n\nCompare your render to the ${subassemblyName.toUpperCase()} portion of the reference image. Focus on:\n- Shape and overall form\n- Proportions and scale relative to this section\n- Layout and positioning of key features\n- Colors are secondary (shape/layout matter most)\n\nIgnore other parts of the reference image - only validate this subassembly.`;
+      
+      messageContent.push({
+        type: "input_text",
+        text: feedbackText
+      });
       
       // Add each rendered image to the message content
       for (const img of renderedImages) {
@@ -1254,6 +1335,7 @@ async function callOpenAIJsonWithToolLoop<T>(params: {
         type: "visual_feedback_sent",
         round: round + 1,
         image_count: renderedImages.length,
+        image_paths: renderedImages.map(img => img.savedPath).filter((p): p is string => !!p),
         trigger: params.isFinalValidation ? "final_validation" : "subassembly_boundary"
       });
     }
@@ -1297,6 +1379,10 @@ export async function generateLDrawMpdChunkForIdea(params: {
   isSubassemblyBoundary?: boolean;
   /** Whether this is the final chunk (triggers visual feedback in both modes) */
   isFinalChunk?: boolean;
+  /** Current chunk number (1-based) for piece budget calculation */
+  currentChunkNumber?: number;
+  /** Total number of chunks for piece budget calculation */
+  totalChunks?: number;
 }): Promise<{ chunkBody: string; model: string }> {
   const apiKey = process.env.OPENAI_API_KEY;
   const model = process.env.OPENAI_MODEL;
@@ -1317,10 +1403,36 @@ export async function generateLDrawMpdChunkForIdea(params: {
   const blueprintJson = params.blueprint != null ? JSON.stringify(params.blueprint, null, 0) : "";
   const soFar = typeof params.assembledMpdSoFar === "string" ? params.assembledMpdSoFar.trim() : "";
 
+  // Calculate piece budget for this chunk
+  const totalChunks = params.totalChunks || 1;
+  const currentChunk = params.currentChunkNumber || 1;
+  const targetPiecesMin = 25;
+  const targetPiecesMax = 500;
+  
+  // Target 25-50 pieces per chunk (with 5 parts/step max, 8 steps/chunk allows ~40 pieces)
+  const minPiecesThisChunk = 25;
+  const maxPiecesThisChunk = 50;
+  const avgPiecesPerChunk = Math.floor((minPiecesThisChunk + maxPiecesThisChunk) / 2);
+  
+  // Provide guidance that accounts for total budget and current progress
+  const totalBudget = (targetPiecesMin + targetPiecesMax) / 2; // ~262 pieces avg
+  const budgetRemaining = Math.max(0, totalBudget - (avgPiecesPerChunk * (currentChunk - 1)));
+  const chunksRemaining = Math.max(1, totalChunks - currentChunk + 1);
+  const recommendedThisChunk = Math.min(maxPiecesThisChunk, Math.ceil(budgetRemaining / chunksRemaining));
+  
+  const pieceBudgetGuidance = `For this chunk (${currentChunk}/${totalChunks}), aim for ${recommendedThisChunk} pieces (range: ${minPiecesThisChunk}-${maxPiecesThisChunk} acceptable). Total budget: ${Math.floor(targetPiecesMin)}-${Math.floor(targetPiecesMax)} pieces for complete model.`;
+
   const prompt = [
     "You are an expert LEGO MOC designer and LDraw author.",
     "We are generating the final build MPD in CHUNKS to avoid truncation.",
     "You must output ONLY the LDraw BODY for the requested step range (no MPD wrapper).",
+    "",
+    "BUILD CONSTRAINTS:",
+    "- Use between 25 and 500 LEGO pieces total for the COMPLETE model",
+    `- ${pieceBudgetGuidance}`,
+    "- Each step should add NO MORE THAN 5 parts (keep instructions manageable)",
+    "- Focus on capturing the key recognizable features rather than every detail",
+    "- Prioritize structural stability and realistic proportions within the piece budget",
     "",
     "Chunk requirements (do not violate):",
     "- Output BODY ONLY: do NOT include `0 FILE` and do NOT include the final `0 NOFILE`.",
@@ -1428,6 +1540,138 @@ export async function generateLDrawMpdChunkForIdea(params: {
   return { chunkBody: chunkBody.trim() + "\n", model: resp.model };
 }
 
+/**
+ * Analyze an image to extract a title and detailed build description.
+ * This helps the model understand what to build without copyright issues.
+ * 
+ * @param imagePath - Path to the reference image
+ * @returns Title and detailed description of what to build
+ */
+export async function analyzeImageForBuild(params: { 
+  imagePath: string;
+}): Promise<{ title: string; description: string }> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) throw new Error("OPENAI_API_KEY is not set");
+  const model = process.env.OPENAI_MODEL;
+  if (!model) throw new Error("OPENAI_MODEL is not set");
+
+  if (!fs.existsSync(params.imagePath)) {
+    throw new Error(`Image not found: ${params.imagePath}`);
+  }
+
+  const dataUrl = readFileAsDataUrl({ filePath: params.imagePath, mimeType: "image/png" });
+  
+  const prompt = [
+    "Analyze this image and provide:",
+    "1. A short title (2-8 words) describing what you see",
+    "2. A detailed description of the physical features to replicate in LEGO",
+    "",
+    "IMPORTANT:",
+    "- Focus on visual features: colors, shapes, proportions, distinctive elements",
+    "- Avoid copyrighted character names or franchise-specific terms",
+    "- Use generic descriptive terms (e.g., 'person in white robes with blue weapon' instead of specific character names)",
+    "- Describe what you see objectively as if explaining to someone who will build it",
+    "",
+    "Example output format:",
+    '{',
+    '  "title": "Person in White Robes",',
+    '  "description": "A humanoid figure wearing flowing white robes with a tan belt. The figure has blonde hair and holds a glowing blue cylindrical weapon. The robes have black trim details and the legs have tan wrappings. The overall color scheme is white, tan, and blue."',
+    '}'
+  ].join("\n");
+
+  const content = [
+    { type: "input_text", text: prompt },
+    { type: "input_image", image_url: dataUrl }
+  ];
+
+  const schema = {
+    type: "object",
+    additionalProperties: false,
+    required: ["title", "description"],
+    properties: {
+      title: { type: "string", minLength: 3, maxLength: 100 },
+      description: { type: "string", minLength: 50, maxLength: 1000 }
+    }
+  } as const;
+
+  logOpenAI("info", "Image analysis request: extracting title and build description");
+
+  const resp = await callOpenAIJsonInput<{ title: string; description: string }>(
+    { input: [{ role: "user", content }], schemaName: "lego_build_analysis", schema },
+    { reasoningEffort: "medium", maxOutputTokens: 500 }
+  );
+
+  logOpenAI("info", `Image analysis complete: title="${resp.parsed?.title}", descLen=${resp.parsed?.description?.length || 0}`);
+
+  return resp.parsed as { title: string; description: string };
+}
+
+/**
+ * Extract a descriptive title from an image of a LEGO build.
+ * This uses vision to identify what's in the image, without text prompt influence.
+ * 
+ * @deprecated Use analyzeImageForBuild instead for better results
+ * @param imagePath - Path to the reference image
+ * @returns A short, descriptive title (2-8 words) based on what's visible in the image
+ */
+export async function extractTitleFromImage(params: { 
+  imagePath: string;
+}): Promise<string> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return "LEGO Build";
+  const model = process.env.OPENAI_MODEL;
+  if (!model) return "LEGO Build";
+
+  if (!fs.existsSync(params.imagePath)) {
+    throw new Error(`Image not found: ${params.imagePath}`);
+  }
+
+  const dataUrl = readFileAsDataUrl({ filePath: params.imagePath, mimeType: "image/png" });
+  
+  const prompt = [
+    "Look at this image and identify what LEGO model or object is shown.",
+    "Return ONLY a short, descriptive title (2-8 words) that describes what you see.",
+    "Examples:",
+    "- 'Luke Skywalker Minifigure'",
+    "- 'Red Sports Car'",
+    "- 'Medieval Castle'",
+    "- 'Blue Spaceship'",
+    "",
+    "Do NOT include quotes, punctuation, or explanations. Just the title."
+  ].join("\n");
+
+  const content = [
+    { type: "input_text", text: prompt },
+    { type: "input_image", image_url: dataUrl }
+  ];
+
+  try {
+    const resp = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model,
+        input: [{ role: "user", content }],
+        max_output_tokens: 50
+      })
+    });
+
+    if (!resp.ok) {
+      return "LEGO Build";
+    }
+
+    const json = (await resp.json()) as OpenAIResponse;
+    const text = extractTextFromResponses(json);
+    const cleaned = text.trim().replace(/^["']|["']$/g, "");
+    return cleaned || "LEGO Build";
+  } catch {
+    return "LEGO Build";
+  }
+}
+
 export async function extractTitleFromPrompt(params: { userPrompt: string }): Promise<string> {
   // Lightweight reasoning call to extract a short, punchy title from the user's prompt.
   const apiKey = process.env.OPENAI_API_KEY;
@@ -1480,7 +1724,13 @@ export type LDrawBlueprint = {
     overview: string;
     subassemblies: Array<{ name: string; description: string }>;
   };
-  step_outline: Array<{ step: number; title: string; description: string }>;
+  step_outline: Array<{ 
+    step: number; 
+    title: string; 
+    description: string;
+    /** Which subassembly this step belongs to (must match one of structure_plan.subassemblies[].name) */
+    subassembly_name: string;
+  }>;
   notes: string[];
 };
 
@@ -1497,41 +1747,51 @@ export type LDrawBlueprint = {
  * @param params.constraintsText - Optional constraints (difficulty, age, etc.)
  */
 export async function generateBlueprintForIdea(params: {
-  title: string;
-  userPrompt: string;
+  /** Title extracted from image analysis */
+  title?: string;
+  /** Detailed description of what to build (from image analysis) */
+  description?: string;
+  /** @deprecated - Use title + description from analyzeImageForBuild instead */
+  userPrompt?: string;
   inventory: InventoryItem[];
   constraintsText?: string;
-  /** Path to user-uploaded reference image (PNG). This is the primary visual input. */
+  /** Path to user-uploaded reference image (PNG). Used for visual reference. */
   referenceImagePath?: string;
   /** @deprecated Use referenceImagePath instead */
   previewImagePath?: string;
 }): Promise<{ blueprint: LDrawBlueprint; model: string; usage?: TokenUsage }> {
   // Support both old and new parameter names during transition
   const imagePath = params.referenceImagePath || params.previewImagePath;
+  
+  if (!imagePath || !fs.existsSync(imagePath)) {
+    throw new Error("Reference image is required for blueprint generation");
+  }
+  
   const inv = inventoryToCompactJson(params.inventory);
   const constraints = params.constraintsText?.trim() ? params.constraintsText.trim() : "(none)";
 
   const promptText = [
     "You are an expert LEGO MOC designer and instruction planner.",
-    "You will be given a user's build request and a reference image of the intended build.",
-    "Produce a concise blueprint that will be used to generate an LDraw MPD with steps and instructions.",
+    "",
+    "TASK: Look at the reference image and create a blueprint for building it with LEGO.",
     "",
     "Requirements:",
-    "- The blueprint should reflect the reference image's silhouette and major features.",
-    "- Stay faithful to the user's original request (don't add unrelated features).",
-    "- Respect the user constraints (parts range, difficulty, age, build time).",
-    "- Use only parts that reasonably exist in the provided inventory (you can suggest substitutions).",
-    "- Keep outputs deterministic and short (no prose beyond the JSON fields).",
+    "- Build what you see in the image (match colors, shapes, proportions)",
+    "- Use only parts available in the provided inventory",
+    "- Keep it simple and buildable",
     "",
-    `Build title: ${params.title}`,
-    `User's request: ${params.userPrompt}`,
+    "STEP PLANNING:",
+    "- Each step should add NO MORE THAN 5 parts",
+    "- Total piece budget: 25-500 pieces for complete model",
+    "- Steps should be logical construction phases",
+    "- Each step MUST include 'subassembly_name' matching one of your structure_plan.subassemblies[].name",
     "",
-    "User constraints:",
+    "Constraints:",
     constraints,
     "",
-    "Inventory (JSON map of partNum -> color -> qty):",
+    "Available parts (JSON map of partNum -> color -> qty):",
     inv
-  ].join("\n");
+  ].filter(x => x !== "").join("\n");
 
   const hasReferenceImage = imagePath && fs.existsSync(imagePath);
   const content: Array<Record<string, unknown>> = [{ type: "input_text", text: promptText }];
@@ -1541,7 +1801,7 @@ export async function generateBlueprintForIdea(params: {
   }
 
   // Log the blueprint request
-  logOpenAI("info", `Blueprint generation request: title="${params.title}", hasReferenceImage=${hasReferenceImage}, inventorySize=${params.inventory.length}`);
+  logOpenAI("info", `Blueprint generation request: hasDescription=${!!params.description}, inventorySize=${params.inventory.length}`);
   
   // Debug artifact: write the exact prompt + a copy of the reference image (if present) for review.
   let debugInputId: string | null = null;
@@ -1619,11 +1879,16 @@ export async function generateBlueprintForIdea(params: {
         items: {
           type: "object",
           additionalProperties: false,
-          required: ["step", "title", "description"],
+          required: ["step", "title", "description", "subassembly_name"],
           properties: {
             step: { type: "integer", minimum: 1 },
             title: { type: "string", minLength: 1 },
-            description: { type: "string", minLength: 5 }
+            description: { type: "string", minLength: 5 },
+            subassembly_name: { 
+              type: "string", 
+              minLength: 1,
+              description: "Which subassembly this step belongs to (must match one of structure_plan.subassemblies[].name)" 
+            }
           }
         }
       },

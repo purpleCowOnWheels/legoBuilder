@@ -45,12 +45,14 @@ export type BuildIdeaResult = {
   instructions_pdf: string | null; // URL (served from /public)
 };
 
-// Simplified: IdeaCandidate is now just a preview image variant for a given search.
-// All metadata (title, user prompt, constraints) lives on IdeaSearch.
+// IdeaCandidate represents a build idea with a user-uploaded reference image.
+// The reference image is the key visual input that guides blueprint and LDraw generation.
 export type IdeaCandidate = {
-  // Just the title for this variant (e.g., "Space Shuttle 1", "Space Shuttle 2")
+  // Build title
   title: string;
-  // Preview thumbnail (generated directly from user prompt)
+  // User-uploaded reference image (PNG) showing what they want to build
+  reference_image?: string | null;
+  // Legacy: Preview thumbnail (no longer generated, kept for backward compatibility)
   preview_thumbnail?: string | null;
   previewStatus?: "not_started" | "queued" | "running" | "done" | "error";
   previewJobId?: Id;
@@ -143,6 +145,7 @@ export type LDrawJobLogEvent = {
     | "openai_tool_calls"
     | "openai_tool_results"
     | "openai_round_done"
+    | "token_usage"
     | "lpub3d_start"
     | "lpub3d_done"
     | "done"
