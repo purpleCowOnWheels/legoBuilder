@@ -1,8 +1,13 @@
 import { readDb, writeDb } from "@/lib/storage";
 import { newId } from "@/lib/ids";
 import type { IdeaGenerationJob, IdeaJobLogEvent } from "@/lib/models";
-import { generateBuildIdeasStructured, type OpenAIValidateEvent } from "@/lib/openai";
-import { enqueuePreviewJob } from "@/lib/previewQueue";
+import { generatePreviewImagesFromPrompt, extractTitleFromPrompt } from "@/lib/openai";
+import { config } from "dotenv";
+import path from "node:path";
+
+// Load .env.local explicitly (Next.js API routes auto-load it, but background workers don't)
+config({ path: path.join(process.cwd(), ".env.local") });
+import { writeGeneratedThumbPng } from "@/lib/generatedAssets";
 
 const inMemoryQueue: string[] = []; // job ids
 let workerRunning = false;
@@ -103,70 +108,60 @@ async function runWorker() {
       }, 15000);
 
       try {
-        // Re-read latest inventory + params from search (so we persist exact user inputs).
+        // Re-read latest params from search (so we persist exact user inputs).
         const db2 = readDb();
         const s2 = db2.ideaSearches.find((s) => s.id === job.ideaSearchId);
         if (!s2) throw new Error("Idea search missing during execution");
 
+        const count = s2.count ?? 2;
         pushLog(job, {
           type: "openai_round_start",
-          message: "Calling OpenAI to generate ideas…"
+          message: `Generating ${count} preview image(s) directly from user prompt…`
         });
         writeDb(db2);
 
-        const { ideas, model } = await generateBuildIdeasStructured({
-          inventory: db2.inventory,
-          preferences: s2.preferences,
-          targetPartsMin: s2.targetPartsMin,
-          targetPartsMax: s2.targetPartsMax,
-          difficulty: s2.difficulty,
-          age: s2.age,
-          buildTimeMinutes: s2.buildTimeMinutes,
-          count: s2.count ?? 2,
-          // logging callbacks
-          onEvent: (evt: OpenAIValidateEvent) => {
-            const dbE = readDb();
-            const j = dbE.ideaGenerationJobs.find((x) => x.id === jobId);
-            const s = dbE.ideaSearches.find((x) => x.id === (j?.ideaSearchId || ""));
-            if (!j) return;
-            j.updatedAt = now();
-            if (evt.type === "tool_calls") {
-              pushLog(j, { type: "openai_tool_calls", message: `OpenAI requested ${evt.calls.length} validation call(s)`, data: evt.calls });
-            } else if (evt.type === "tool_results") {
-              pushLog(j, { type: "openai_tool_results", message: "Validation tool results received", data: evt.results });
-            } else if (evt.type === "round_start") {
-              pushLog(j, { type: "openai_round_start", message: `OpenAI round ${evt.round} start` });
-            } else if (evt.type === "round_done") {
-              pushLog(j, { type: "openai_round_done", message: `OpenAI round ${evt.round} complete` });
-            } else if (evt.type === "api_retry") {
-              pushLog(j, { type: "openai_round_done", message: `OpenAI retry (round ${evt.round}, attempt ${evt.attempt}): ${evt.message}` });
-            } else if (evt.type === "api_response") {
-              const u = evt.usage;
-              const usageStr = u
-                ? `input=${u.input_tokens ?? "?"} output=${u.output_tokens ?? "?"} reasoning=${u.reasoning_tokens ?? "?"} total=${u.total_tokens ?? "?"}`
-                : "usage=?";
-              pushLog(j, {
-                type: "openai_round_done",
-                message: `OpenAI response (round ${evt.round}): status=${evt.status ?? "?"} model=${evt.model ?? "?"} ${usageStr}`,
-                data: evt
-              });
-            }
-            if (s) s.updatedAt = j.updatedAt;
-            writeDb(dbE);
-          }
-        } as any);
+        // Step 1: Generate N preview images from the user's original prompt
+        const images = await generatePreviewImagesFromPrompt({
+          userPrompt: s2.preferences || "A fun LEGO build",
+          constraints: {
+            targetPartsMin: s2.targetPartsMin,
+            targetPartsMax: s2.targetPartsMax,
+            difficulty: s2.difficulty,
+            age: s2.age,
+            buildTimeMinutes: s2.buildTimeMinutes
+          },
+          count
+        });
+
+        pushLog(job, { type: "openai_round_done", message: `${images.length} preview image(s) generated` });
+
+        // Step 2: Extract a short title (single lightweight call, or use first image's revised_prompt)
+        pushLog(job, { type: "openai_round_start", message: "Extracting title…" });
+        const title = await extractTitleFromPrompt({ userPrompt: s2.preferences || "A fun LEGO build" });
+        pushLog(job, { type: "openai_round_done", message: `Title extracted: "${title}"` });
 
         const db3 = readDb();
         const j3 = db3.ideaGenerationJobs.find((x) => x.id === jobId);
         const s3 = db3.ideaSearches.find((x) => x.id === job.ideaSearchId);
         if (!j3 || !s3) throw new Error("Job/search missing after OpenAI call");
 
-        pushLog(j3, { type: "openai_round_done", message: "OpenAI returned candidate ideas" });
         j3.stage = "done";
         j3.updatedAt = now();
 
-        s3.model = model;
-        s3.ideas = ideas.map((i) => ({ ...i, previewStatus: "not_started", ldrawStatus: "not_started" })) as any;
+        // Step 3: Write thumbnails to disk and create lightweight idea candidates
+        const ideas = images.map((img, idx) => {
+          const baseName = `preview_${s3.id}_${idx + 1}`;
+          const written = writeGeneratedThumbPng({ baseName, pngBase64: img.pngBase64 });
+          return {
+            title: count > 1 ? `${title} (${idx + 1})` : title, // e.g., "Space Shuttle (1)", "Space Shuttle (2)" or just "Space Shuttle" if count=1
+            preview_thumbnail: written.url,
+            previewStatus: "done" as const,
+            ldrawStatus: "not_started" as const
+          };
+        });
+
+        s3.title = title; // Store extracted title on the search itself
+        s3.ideas = ideas as any;
         s3.status = "done";
         s3.updatedAt = now();
         s3.error = undefined;
@@ -179,14 +174,7 @@ async function runWorker() {
 
         writeDb(db3);
 
-        // Kick off preview thumbnails (micro MPD) in the background so the UI can show something quickly.
-        for (let idx = 0; idx < (s3.ideas?.length || 0); idx++) {
-          try {
-            enqueuePreviewJob({ ideaSearchId: s3.id, ideaIndex: idx });
-          } catch {
-            // ignore preview enqueue errors
-          }
-        }
+        // No need to enqueue preview jobs anymore — previews are already generated!
       } catch (e) {
         const dbErr = readDb();
         const jErr = dbErr.ideaGenerationJobs.find((x) => x.id === jobId);

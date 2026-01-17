@@ -20,6 +20,9 @@ export async function POST(req: Request, ctx: { params: { id: string } }) {
 
   try {
     const { job, alreadyRunning } = enqueueLDrawJob({ ideaSearchId: searchId, ideaIndex });
+    if (alreadyRunning && job) {
+      return NextResponse.json({ jobId: job.id, alreadyRunning: true });
+    }
     if (!job) {
       return NextResponse.json({ error: "Job already running" }, { status: 409 });
     }

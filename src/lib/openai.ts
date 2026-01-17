@@ -1,7 +1,18 @@
 import { InventoryItem, type IdeaCandidate as IdeaCandidateModel } from "@/lib/models";
 import { validateLDrawMpdOrThrow } from "@/lib/ldrawValidate";
+import { validateLDrawMpdChunkBodyOrThrow, validateLDrawPartialMpdOrThrow } from "@/lib/ldrawValidate";
+import { validateRenderForToolLoop, type RenderValidationInput, type BlueprintInfo, type ToolLoopValidationResult } from "@/lib/renderValidation";
 import fs from "node:fs";
 import path from "node:path";
+
+/**
+ * Visual feedback mode controls when rendered images are sent back to GPT for visual review.
+ * 
+ * - "subassemblies": Send images at subassembly completion boundaries (default, recommended)
+ * - "final_only": Only send image after final validation
+ * - "none": Never send images (text-based physics validation only)
+ */
+export type VisualFeedbackMode = "subassemblies" | "final_only" | "none";
 
 type OpenAIResponse = {
   id?: string;
@@ -19,6 +30,11 @@ type OpenAIResponse = {
     arguments?: string;
     function?: { name?: string; arguments?: string };
   }>;
+};
+
+type OpenAIImageResponse = {
+  created?: number;
+  data?: Array<{ b64_json?: string; revised_prompt?: string; url?: string }>;
 };
 
 type ToolCall = { id: string; name: string; arguments: unknown };
@@ -50,8 +66,25 @@ export type OpenAIValidateEvent =
         ldraw_last_line?: string;
       }>;
     }
-  | { type: "tool_results"; round: number; results: Array<{ tool_call_id: string; ok: boolean; error?: string }> }
-  | { type: "round_done"; round: number };
+  | { 
+      type: "tool_results"; 
+      round: number; 
+      results: Array<{ 
+        tool_call_id: string; 
+        ok: boolean; 
+        error?: string;
+        similarity_score?: number;
+        issues?: Array<{ type: string; message: string }>;
+      }>;
+    }
+  | { type: "round_done"; round: number }
+  | { 
+      type: "visual_feedback_sent"; 
+      round: number; 
+      image_count: number;
+      /** Describes when visual feedback was triggered */
+      trigger: "subassembly_boundary" | "final_validation";
+    };
 
 async function fetchResponsesJsonWithRetry(params: {
   apiKey: string;
@@ -113,6 +146,48 @@ async function fetchResponsesJsonWithRetry(params: {
     }
   }
   throw new Error(`OpenAI request failed after retries (round ${params.roundForLogging})`);
+}
+
+async function fetchImagesJsonWithRetry(params: { apiKey: string; body: Record<string, unknown> }) {
+  const maxAttempts = 3;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const timeoutMs = 120_000;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+      const res = await fetch("https://api.openai.com/v1/images/generations", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${params.apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(params.body),
+        signal: controller.signal
+      });
+      clearTimeout(timeout);
+
+      const rawText = await res.text();
+      if (!res.ok) {
+        if (res.status >= 500 && attempt < maxAttempts) {
+          const delayMs = attempt === 1 ? 1000 : 3000;
+          await new Promise((r) => setTimeout(r, delayMs));
+          continue;
+        }
+        throw new Error(`OpenAI image error ${res.status}: ${rawText}`);
+      }
+      return JSON.parse(rawText) as OpenAIImageResponse;
+    } catch (e) {
+      const isAbort = e instanceof Error && (e.name === "AbortError" || /aborted/i.test(e.message));
+      if ((isAbort || e instanceof Error) && attempt < maxAttempts) {
+        const delayMs = attempt === 1 ? 1000 : 3000;
+        await new Promise((r) => setTimeout(r, delayMs));
+        continue;
+      }
+      throw e;
+    }
+  }
+  throw new Error("OpenAI image request failed after retries");
 }
 
 function normalizeColorKey(colorName: string) {
@@ -348,12 +423,24 @@ async function callOpenAIJson<T>(
   }
 
   const json = await fetchResponsesJsonWithRetry({ apiKey, body, roundForLogging: 1 });
+  if ((json as any)?.status === "incomplete") {
+    const reason = (json as any)?.incomplete_details?.reason || "unknown";
+    const debugId = writeOpenAIDebugArtifact({
+      tag: `${params.schemaName}_incomplete`,
+      prompt: params.prompt,
+      rawResponseJson: json,
+      extractedText: ""
+    });
+    throw new Error(
+      `OpenAI response incomplete (schema=${params.schemaName}, reason=${reason}).${debugId ? ` debugId=${debugId}` : ""}`
+    );
+  }
   const text = extractTextFromResponses(json);
   try {
     return { parsed: parseJsonObjectFromText(text) as T, model, rawResponseJson: json, extractedText: text };
   } catch {
     const debugId = writeOpenAIDebugArtifact({
-      tag: "ideas_json_parse",
+      tag: `${params.schemaName}_json_parse`,
       prompt: params.prompt,
       rawResponseJson: json,
       extractedText: text
@@ -362,6 +449,78 @@ async function callOpenAIJson<T>(
       `OpenAI returned non-JSON output (expected strict JSON).${debugId ? ` debugId=${debugId}` : ""} Raw:\n${text.slice(0, 2000)}`
     );
   }
+}
+
+async function callOpenAIJsonInput<T>(
+  params: { input: unknown; schemaName: string; schema: unknown },
+  opts?: { reasoningEffort?: string; maxOutputTokens?: number }
+) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  const model = process.env.OPENAI_MODEL;
+
+  if (!apiKey) {
+    throw new Error("OPENAI_API_KEY is not set");
+  }
+  if (!model) {
+    throw new Error("OPENAI_MODEL is not set");
+  }
+
+  const body: Record<string, unknown> = {
+    model,
+    input: params.input,
+    text: {
+      format: {
+        type: "json_schema",
+        name: params.schemaName,
+        schema: params.schema,
+        strict: true
+      },
+      verbosity: "low"
+    }
+  };
+
+  if (opts?.reasoningEffort) {
+    body.reasoning = { effort: opts.reasoningEffort };
+  }
+  if (typeof opts?.maxOutputTokens === "number" && Number.isFinite(opts.maxOutputTokens) && opts.maxOutputTokens > 0) {
+    body.max_output_tokens = Math.floor(opts.maxOutputTokens);
+  }
+
+  const json = await fetchResponsesJsonWithRetry({ apiKey, body, roundForLogging: 1 });
+  if ((json as any)?.status === "incomplete") {
+    const reason = (json as any)?.incomplete_details?.reason || "unknown";
+    const debugId = writeOpenAIDebugArtifact({
+      tag: `${params.schemaName}_incomplete`,
+      prompt: typeof params.input === "string" ? params.input : "(non-string input)",
+      rawResponseJson: json,
+      extractedText: ""
+    });
+    throw new Error(
+      `OpenAI response incomplete (schema=${params.schemaName}, reason=${reason}).${debugId ? ` debugId=${debugId}` : ""}`
+    );
+  }
+  const text = extractTextFromResponses(json);
+  try {
+    return { parsed: parseJsonObjectFromText(text) as T, model, rawResponseJson: json, extractedText: text };
+  } catch {
+    const debugId = writeOpenAIDebugArtifact({
+      tag: `${params.schemaName}_json_parse`,
+      prompt: typeof params.input === "string" ? params.input : "(non-string input)",
+      rawResponseJson: json,
+      extractedText: text
+    });
+    throw new Error(
+      `OpenAI returned non-JSON output (expected strict JSON).${debugId ? ` debugId=${debugId}` : ""} Raw:\n${text.slice(0, 2000)}`
+    );
+  }
+}
+
+// Exposed for the staged Step 2 pipeline phases (Blueprint/Architecture/Plan chunks).
+export async function callOpenAIJsonSchema<T>(
+  params: { prompt: string; schemaName: string; schema: unknown },
+  opts?: { reasoningEffort?: string; maxOutputTokens?: number }
+) {
+  return await callOpenAIJson<T>(params, opts);
 }
 
 export async function generateDraftGuide(params: { goal: string; inventory: InventoryItem[] }) {
@@ -419,10 +578,20 @@ export type BuildIdea = {
   ldraw_mpd: string;
 };
 
-type IdeaCandidateLite = Pick<IdeaCandidateModel, "title" | "description" | "spec">;
+// DEPRECATED: Ideas are now generated as preview images directly (see generatePreviewImagesFromPrompt).
+// This legacy type/function is kept for reference but no longer called.
+type IdeaCandidateLite = { title: string; description: string; spec: { concept: string; key_features: string[]; color_palette: string[]; step_count_estimate: number } };
 
-type ValidateLDrawToolArgs = { ldraw_mpd: string; expected_parts?: number };
-type ValidateLDrawToolResult = { ok: true } | { ok: false; error: string };
+type ValidateLDrawToolArgs = {
+  ldraw_mpd: string;
+  expected_parts?: number;
+  mode?: "full" | "partial" | "chunk";
+  step_from?: number;
+  step_to?: number;
+};
+type ValidateLDrawToolResult = 
+  | { ok: true; similarity_score?: number }
+  | { ok: false; error: string; similarity_score?: number; issues?: Array<{ type: string; message: string }> };
 
 async function callOpenAIJsonWithToolLoop<T>(params: {
   prompt: string;
@@ -432,25 +601,85 @@ async function callOpenAIJsonWithToolLoop<T>(params: {
   maxOutputTokens?: number;
   maxToolRounds?: number;
   onEvent?: (evt: OpenAIValidateEvent) => void;
+  /** Reference image path for render comparison (enables similarity checking) */
+  referenceImagePath?: string;
+  /** Minimum similarity threshold (0-100). Default: 60 */
+  minSimilarity?: number;
+  /** Blueprint for subassembly validation */
+  blueprint?: BlueprintInfo;
+  /** Current subassembly being built (for targeted validation) */
+  currentSubassembly?: string;
+  /** 
+   * Visual feedback mode: when to send rendered images back to GPT for visual review.
+   * - "subassemblies": At subassembly boundaries (default)
+   * - "final_only": Only on final validation
+   * - "none": Never (text-only physics validation)
+   */
+  visualFeedbackMode?: VisualFeedbackMode;
+  /** Whether this is the final validation (not an intermediate chunk) */
+  isFinalValidation?: boolean;
+  /** Whether this validation is at a subassembly completion boundary */
+  isSubassemblyBoundary?: boolean;
 }) {
   const apiKey = process.env.OPENAI_API_KEY;
   const model = process.env.OPENAI_MODEL;
   if (!apiKey) throw new Error("OPENAI_API_KEY is not set");
   if (!model) throw new Error("OPENAI_MODEL is not set");
 
+  const hasReferenceImage = params.referenceImagePath && fs.existsSync(params.referenceImagePath);
+  const hasBlueprint = params.blueprint && params.blueprint.subassemblies && params.blueprint.subassemblies.length > 0;
+  const minSimilarity = params.minSimilarity ?? 60;
+  const visualFeedbackMode = params.visualFeedbackMode ?? "subassemblies";
+  
+  // Determine if we should include visual feedback (rendered image) for this validation
+  const shouldIncludeVisualFeedback = (() => {
+    if (visualFeedbackMode === "none") return false;
+    if (visualFeedbackMode === "final_only") return params.isFinalValidation === true;
+    // "subassemblies" mode: include at subassembly boundaries OR final validation
+    return params.isSubassemblyBoundary === true || params.isFinalValidation === true;
+  })();
+
+  const descriptionParts = [
+    "Validate LDraw output with comprehensive checks:",
+    "- Structure validation (syntax, FILE/NOFILE, part lines)",
+    "- Continuity checks (alignment, isolated parts, extreme coordinates)"
+  ];
+  
+  if (hasBlueprint) {
+    descriptionParts.push("- Subassembly validation (position, proportions, symmetry based on blueprint)");
+  }
+  if (hasReferenceImage) {
+    descriptionParts.push("- Render comparison (renders MPD and compares to reference image)");
+  }
+  
+  descriptionParts.push("");
+  descriptionParts.push("mode=full validates a complete MPD; mode=partial validates an assembled MPD so far; mode=chunk validates a body-only chunk (no FILE/NOFILE).");
+  
+  if (hasReferenceImage) {
+    descriptionParts.push(`\nReturns ok=true if valid AND similarity >= ${minSimilarity}%; otherwise ok=false with error details.`);
+  }
+  if (hasBlueprint) {
+    descriptionParts.push("\nAlso returns subassembly_positions showing where each subassembly is located in the model (top, bottom, left, right, center, etc.).");
+  }
+  if (shouldIncludeVisualFeedback) {
+    descriptionParts.push("\nIMPORTANT: After this tool runs, you will receive a rendered image of your LDraw output. Compare it visually to the reference image (provided earlier) and fix any visual discrepancies.");
+  }
+
   const tools = [
     {
       type: "function",
       name: "validate_ldraw_mpd",
-      description:
-        "Validate an LDraw MPD string for completeness (not truncated), reasonable step count, and reasonable part placement count. Returns ok=true if valid; otherwise ok=false with an error message.",
+      description: descriptionParts.join("\n"),
       parameters: {
         type: "object",
         additionalProperties: false,
-        required: ["ldraw_mpd"],
+        required: ["ldraw_mpd", "mode"],
         properties: {
           ldraw_mpd: { type: "string" },
-          expected_parts: { type: "integer", minimum: 1 }
+          expected_parts: { type: "integer", minimum: 1 },
+          mode: { type: "string", enum: ["full", "partial", "chunk"] },
+          step_from: { type: "integer", minimum: 1 },
+          step_to: { type: "integer", minimum: 1 }
         }
       }
     }
@@ -559,6 +788,9 @@ async function callOpenAIJsonWithToolLoop<T>(params: {
         };
       })
     });
+    // Track rendered images for visual feedback
+    const renderedImages: Array<{ tool_call_id: string; base64: string }> = [];
+    
     const toolOutputs = toolCalls.map((c) => {
       if (c.name !== "validate_ldraw_mpd") {
         return { tool_call_id: c.id, output: JSON.stringify({ ok: false, error: `Unknown tool: ${c.name}` }) };
@@ -566,17 +798,43 @@ async function callOpenAIJsonWithToolLoop<T>(params: {
       const parsed = parseToolArgs(c.arguments) as any;
       const args: ValidateLDrawToolArgs = {
         ldraw_mpd: typeof parsed.ldraw_mpd === "string" ? parsed.ldraw_mpd : "",
-        expected_parts: typeof parsed.expected_parts === "number" ? parsed.expected_parts : undefined
+        expected_parts: typeof parsed.expected_parts === "number" ? parsed.expected_parts : undefined,
+        mode: parsed.mode === "full" || parsed.mode === "partial" || parsed.mode === "chunk" ? parsed.mode : "full",
+        step_from: typeof parsed.step_from === "number" ? parsed.step_from : undefined,
+        step_to: typeof parsed.step_to === "number" ? parsed.step_to : undefined
       };
 
-      let result: ValidateLDrawToolResult;
-      try {
-        validateLDrawMpdOrThrow({ ldrawMpd: String(args.ldraw_mpd || ""), expectedParts: args.expected_parts });
-        result = { ok: true };
-      } catch (e) {
-        result = { ok: false, error: e instanceof Error ? e.message : "Validation failed" };
+      // Use the unified validation module which includes:
+      // - Structure validation (syntax, parts)
+      // - Continuity checks (alignment, isolation, extreme coords)
+      // - Subassembly validation (if blueprint provided)
+      // - Render comparison (if reference image provided)
+      const validationInput: RenderValidationInput = {
+        ldraw_mpd: args.ldraw_mpd,
+        mode: args.mode || "full",
+        step_from: args.step_from,
+        step_to: args.step_to,
+        reference_image_path: hasReferenceImage ? params.referenceImagePath : undefined,
+        min_similarity: minSimilarity,
+        // Only do render comparison for partial/full modes (chunks are incomplete)
+        do_render_comparison: hasReferenceImage && args.mode !== "chunk",
+        // Pass blueprint for subassembly validation
+        blueprint: hasBlueprint ? params.blueprint : undefined,
+        current_subassembly: params.currentSubassembly
+      };
+
+      // Include rendered image if visual feedback is enabled and this isn't a chunk
+      const includeRenderedImage = shouldIncludeVisualFeedback && args.mode !== "chunk";
+      const result = validateRenderForToolLoop(validationInput, includeRenderedImage);
+      
+      // Store rendered image for visual feedback (if available)
+      if (result.rendered_image_base64) {
+        renderedImages.push({ tool_call_id: c.id, base64: result.rendered_image_base64 });
       }
-      return { tool_call_id: c.id, output: JSON.stringify(result) };
+      
+      // Remove rendered_image_base64 from JSON output (it's sent as input_image instead)
+      const { rendered_image_base64, ...resultForJson } = result;
+      return { tool_call_id: c.id, output: JSON.stringify(resultForJson) };
     });
 
     // Emit summarized tool results for logging/diagnostics.
@@ -586,7 +844,13 @@ async function callOpenAIJsonWithToolLoop<T>(params: {
       results: toolOutputs.map((t) => {
         try {
           const r = JSON.parse(t.output) as ValidateLDrawToolResult;
-          return { tool_call_id: t.tool_call_id, ok: (r as any).ok === true, error: (r as any).error };
+          return { 
+            tool_call_id: t.tool_call_id, 
+            ok: (r as any).ok === true, 
+            error: (r as any).error,
+            similarity_score: (r as any).similarity_score,
+            issues: (r as any).issues
+          };
         } catch {
           return { tool_call_id: t.tool_call_id, ok: false, error: "Invalid tool output JSON" };
         }
@@ -597,183 +861,87 @@ async function callOpenAIJsonWithToolLoop<T>(params: {
 
     // Responses API expects function tool outputs as "function_call_output" items.
     // (The model emits "function_call" items with a call_id; we must respond with call_id + output.)
-    input = toolOutputs.map((t) => ({ type: "function_call_output", call_id: t.tool_call_id, output: t.output }));
+    // 
+    // When visual feedback is enabled, we also include rendered images as input_image items
+    // so GPT can visually compare its output against the reference image in context.
+    const inputItems: Array<Record<string, unknown>> = [];
+    
+    // Add tool outputs
+    for (const t of toolOutputs) {
+      inputItems.push({ type: "function_call_output", call_id: t.tool_call_id, output: t.output });
+    }
+    
+    // Add rendered images for visual feedback (if any)
+    if (renderedImages.length > 0) {
+      // Add explanatory text before images
+      inputItems.push({
+        type: "input_text",
+        text: "Here is the rendered output from your LDraw code. Compare it visually to the reference image you were given earlier and identify any discrepancies:"
+      });
+      
+      // Add each rendered image
+      for (const img of renderedImages) {
+        inputItems.push({
+          type: "input_image",
+          image_url: `data:image/png;base64,${img.base64}`
+        });
+      }
+      
+      // Emit visual feedback event
+      params.onEvent?.({
+        type: "visual_feedback_sent",
+        round: round + 1,
+        image_count: renderedImages.length,
+        trigger: params.isFinalValidation ? "final_validation" : "subassembly_boundary"
+      });
+    }
+    
+    input = inputItems;
   }
 
   throw new Error(`OpenAI tool loop exceeded max rounds (${maxRounds}) without producing a final JSON result.`);
 }
 
-export async function generateBuildIdeasStructured(params: {
-  inventory: InventoryItem[];
-  preferences?: string;
-  targetPartsMin?: number;
-  targetPartsMax?: number;
-  difficulty?: "easy" | "medium" | "hard";
-  age?: number;
-  buildTimeMinutes?: number;
-  count?: number; // defaults to 2
-  onEvent?: (evt: OpenAIValidateEvent) => void;
-}): Promise<{ ideas: IdeaCandidateModel[]; model: string }> {
-  const inv = inventoryToCompactJson(params.inventory);
-  const preferenceLine = params.preferences?.trim() ? params.preferences.trim() : "(none)";
-  const reasoningEffort = process.env.REASONING_LEVEL;
-  if (!reasoningEffort) {
-    throw new Error("REASONING_LEVEL is not set");
-  }
-  const count = typeof params.count === "number" && Number.isFinite(params.count) ? Math.floor(params.count) : 2;
-  const ideaCount = Math.max(1, Math.min(5, count));
-  const constraints = [
-    params.targetPartsMin || params.targetPartsMax
-      ? `Target parts range: ${params.targetPartsMin ?? "?"}–${params.targetPartsMax ?? "?"}`
-      : "Target parts range: (not specified)",
-    params.difficulty ? `Difficulty: ${params.difficulty}` : "Difficulty: (not specified)",
-    params.age ? `Age: ${params.age}+` : "Age: (not specified)"
-    ,
-    params.buildTimeMinutes ? `Build time target: ${params.buildTimeMinutes} minutes` : "Build time target: (not specified)"
-  ].join("\n");
-
-  const promptParts: string[] = [
-    "You are an expert LEGO MOC designer.",
-    "Given a user's LEGO parts inventory, propose build ideas that are realistic with the available parts and the user's optional constraints.",
-    "",
-    `Return exactly ${ideaCount} ideas.`,
-    "Each idea must include:",
-    "- title: short, catchy (string)",
-    "- description: 1–2 short sentences (string). Do NOT list parts, do NOT include bullet points, and do NOT mention the user's inventory explicitly.",
-    "- estimated_time_minutes: integer rough build time estimate (minutes). Aim for the user's build time target if provided.",
-    "- spec: a compact build spec object to drive later instruction generation (concept + key_features + color_palette + step_count_estimate).",
-    "",
-    "Make ideas diverse (different concepts).",
-    "",
-    `User preferences: ${preferenceLine}`,
-    "",
-    "User constraints:",
-    constraints,
-    "",
-    "Inventory (JSON map of partNum -> color -> qty):",
-    inv
-  ];
-
-  const prompt = promptParts.join("\n");
-
-  const schema = {
-    type: "object",
-    additionalProperties: false,
-    required: ["ideas"],
-    properties: {
-      ideas: {
-        type: "array",
-        minItems: 1,
-        maxItems: ideaCount,
-        items: {
-          type: "object",
-          additionalProperties: false,
-          required: ["title", "description", "estimated_time_minutes", "spec"],
-          properties: {
-            title: { type: "string", minLength: 1, maxLength: 120 },
-            description: { type: "string", minLength: 1, maxLength: 300 },
-            estimated_time_minutes: { type: "integer", minimum: 1, maximum: 1440 },
-            spec: {
-              type: "object",
-              additionalProperties: false,
-              // NOTE: OpenAI strict schema requires required[] to include every key in properties.
-              required: ["concept", "key_features", "color_palette", "step_count_estimate"],
-              properties: {
-                concept: { type: "string", minLength: 1, maxLength: 120 },
-                key_features: { type: "array", items: { type: "string", minLength: 1, maxLength: 80 }, minItems: 1, maxItems: 8 },
-                color_palette: { type: "array", items: { type: "string", minLength: 1, maxLength: 40 }, minItems: 1, maxItems: 6 },
-                step_count_estimate: { type: "integer", minimum: 4, maximum: 60 }
-              }
-            }
-          }
-        }
-      }
-    }
-  } as const;
-
-  function validateIdeasPayload(payload: unknown): IdeaCandidateModel[] {
-    if (typeof payload !== "object" || payload === null) throw new Error("OpenAI returned non-object JSON");
-    const ideas = (payload as { ideas?: unknown }).ideas;
-    if (!Array.isArray(ideas) || ideas.length === 0) throw new Error("OpenAI returned JSON without a non-empty ideas array");
-
-    const normalized: IdeaCandidateModel[] = [];
-    for (const raw of ideas) {
-      if (typeof raw !== "object" || raw === null) throw new Error("OpenAI returned an invalid idea entry");
-      const idea = raw as any;
-      if (!idea.title || typeof idea.title !== "string") throw new Error("Idea missing title");
-      if (!idea.description || typeof idea.description !== "string") throw new Error("Idea missing description");
-      if (typeof idea.estimated_time_minutes !== "number" || !Number.isFinite(idea.estimated_time_minutes))
-        throw new Error("Idea missing estimated_time_minutes");
-      const spec = idea.spec;
-      if (typeof spec !== "object" || spec == null) throw new Error("Idea missing spec");
-      if (typeof spec.concept !== "string" || !spec.concept.trim()) throw new Error("Idea spec missing concept");
-      if (!Array.isArray(spec.key_features) || spec.key_features.length === 0) throw new Error("Idea spec missing key_features");
-      if (!Array.isArray(spec.color_palette) || spec.color_palette.length === 0) throw new Error("Idea spec missing color_palette");
-      if (typeof spec.step_count_estimate !== "number" || !Number.isFinite(spec.step_count_estimate))
-        throw new Error("Idea spec missing step_count_estimate");
-      normalized.push({
-        title: String(idea.title).trim(),
-        description: String(idea.description).trim(),
-        estimated_time_minutes: Math.max(1, Math.min(1440, Math.floor(Number(idea.estimated_time_minutes)))),
-        spec: {
-          concept: String(spec.concept).trim(),
-          key_features: (spec.key_features as unknown[]).map((x) => String(x)).filter((s) => s.trim().length > 0).slice(0, 8),
-          color_palette: (spec.color_palette as unknown[]).map((x) => String(x)).filter((s) => s.trim().length > 0).slice(0, 6),
-          step_count_estimate: Math.max(4, Math.min(60, Math.floor(Number(spec.step_count_estimate))))
-        }
-      });
-    }
-    return normalized.slice(0, ideaCount);
-  }
-
-  // LDraw MPD is verbose; give the model enough output budget to avoid truncation.
-  const maxOutputTokensRaw = process.env.OPENAI_MAX_OUTPUT_TOKENS;
-  if (!maxOutputTokensRaw) {
-    throw new Error("OPENAI_MAX_OUTPUT_TOKENS is not set");
-  }
-  const maxOutputTokens = Number(maxOutputTokensRaw);
-  if (!Number.isFinite(maxOutputTokens) || maxOutputTokens <= 0) {
-    throw new Error("OPENAI_MAX_OUTPUT_TOKENS must be a positive number");
-  }
-
-  const { parsed, model, rawResponseJson, extractedText } = await callOpenAIJson<{ ideas: IdeaCandidateModel[] }>(
-    { prompt, schemaName: "lego_build_ideas", schema },
-    { reasoningEffort, maxOutputTokens }
-  );
-
-  try {
-    return { ideas: validateIdeasPayload(parsed), model };
-  } catch (ve) {
-    const debugId = writeOpenAIDebugArtifact({
-      tag: "ideas_validation",
-      prompt,
-      rawResponseJson,
-      extractedText,
-      note: ve instanceof Error ? ve.message : "Validation failed"
-    });
-    throw new Error(
-      `OpenAI ideas validation failed (schema-enforced).${debugId ? ` debugId=${debugId}` : ""} ${ve instanceof Error ? ve.message : ""}`.trim()
-    );
-  }
-}
 
 // NOTE: Thumbnail and instruction generation now uses LPub3D (server-side) from the LDraw MPD output.
 
-export async function generateLDrawMpdForIdea(params: {
+export async function generateLDrawMpdChunkForIdea(params: {
+  title: string; // Build title
+  userPrompt: string; // Original user request
   inventory: InventoryItem[];
-  preferences?: string;
   constraintsText?: string;
-  idea: IdeaCandidateLite;
+  blueprint?: unknown;
+  // Chunk range is inclusive and refers to blueprint step numbers (1-based).
+  stepFrom: number;
+  stepTo: number;
+  // The MPD built so far (assembled on server). Used as context and can be validated by tool loop.
+  assembledMpdSoFar?: string;
   useValidationToolLoop?: boolean;
   onEvent?: (evt: OpenAIValidateEvent) => void;
-}): Promise<{ ldraw_mpd: string; model: string }> {
+  /** Reference image path for render-based validation (enables similarity checking) */
+  referenceImagePath?: string;
+  /** Minimum similarity threshold (0-100). Default: 60 */
+  minSimilarity?: number;
+  /** Current subassembly being built (for targeted validation) */
+  currentSubassembly?: string;
+  /** 
+   * Visual feedback mode: when to send rendered images back to GPT for visual review.
+   * - "subassemblies": At subassembly boundaries (default)
+   * - "final_only": Only on final validation
+   * - "none": Never (text-only physics validation)
+   */
+  visualFeedbackMode?: VisualFeedbackMode;
+  /** Whether this chunk completes a subassembly (triggers visual feedback in "subassemblies" mode) */
+  isSubassemblyBoundary?: boolean;
+  /** Whether this is the final chunk (triggers visual feedback in both modes) */
+  isFinalChunk?: boolean;
+}): Promise<{ chunkBody: string; model: string }> {
   const apiKey = process.env.OPENAI_API_KEY;
   const model = process.env.OPENAI_MODEL;
   if (!apiKey) throw new Error("OPENAI_API_KEY is not set");
   if (!model) throw new Error("OPENAI_MODEL is not set");
 
   const inv = inventoryToCompactJson(params.inventory);
-  const preferenceLine = params.preferences?.trim() ? params.preferences.trim() : "(none)";
   const reasoningEffort = process.env.REASONING_LEVEL;
   if (!reasoningEffort) throw new Error("REASONING_LEVEL is not set");
 
@@ -782,35 +950,48 @@ export async function generateLDrawMpdForIdea(params: {
   const maxOutputTokens = Number(maxOutputTokensRaw);
   if (!Number.isFinite(maxOutputTokens) || maxOutputTokens <= 0) throw new Error("OPENAI_MAX_OUTPUT_TOKENS must be a positive number");
 
-  const specJson = JSON.stringify(params.idea.spec);
+  const stepFrom = Math.max(1, Math.floor(Number(params.stepFrom)));
+  const stepTo = Math.max(stepFrom, Math.floor(Number(params.stepTo)));
+  const blueprintJson = params.blueprint != null ? JSON.stringify(params.blueprint, null, 0) : "";
+  const soFar = typeof params.assembledMpdSoFar === "string" ? params.assembledMpdSoFar.trim() : "";
 
   const prompt = [
     "You are an expert LEGO MOC designer and LDraw author.",
-    "Given a user's inventory and a selected idea spec, generate a complete, valid LDraw MPD file for the FULL finished build.",
+    "We are generating the final build MPD in CHUNKS to avoid truncation.",
+    "You must output ONLY the LDraw BODY for the requested step range (no MPD wrapper).",
     "",
-    "MPD requirements (do not violate):",
-    "- Start the main model with: 0 FILE model.ldr",
-    "- Use '0 STEP' between steps (aim for at least 8 steps unless the model is very small).",
-    "- Every part you add should be a type-1 placement line (starts with '1').",
-    "- Do NOT truncate the MPD. The last non-empty line MUST be: 0 NOFILE",
-    "- Keep geometry plausible and stable. Use common parts; do not invent part numbers.",
-    "- Keep the MPD concise enough to fit in the response (if needed, reduce complexity/part count).",
+    "Chunk requirements (do not violate):",
+    "- Output BODY ONLY: do NOT include `0 FILE` and do NOT include the final `0 NOFILE`.",
+    "- If this chunk spans multiple blueprint steps (stepFrom < stepTo), use `0 STEP` to separate them.",
+    "- If this chunk is only a single step (stepFrom === stepTo), you may omit `0 STEP` or include it at the end.",
+    "- Every part placement must be a type-1 line (starts with '1').",
+    "- Never truncate mid-line. Keep the chunk small enough to fit output budget.",
     "",
     params.useValidationToolLoop
       ? [
           "CRITICAL VALIDATION REQUIREMENT:",
-          "- You MUST call the tool validate_ldraw_mpd on your candidate MPD before returning JSON.",
-          "- If validation returns ok=false, fix and re-validate until ok=true.",
-          "- Only then return the final JSON.",
+          "- You MUST call the tool validate_ldraw_mpd on BOTH:",
+          "  (A) your candidate chunk body with mode=chunk and step_from/step_to set, and",
+          "  (B) the assembled MPD so far (including this chunk) with mode=partial, wrapped as a complete MPD (0 FILE ... 0 NOFILE).",
+          "- If validation returns ok=false, fix the output and re-validate until ok=true.",
+          "- Only then return the final JSON for this chunk.",
           ""
         ].join("\n")
       : "",
-    `Selected idea title: ${params.idea.title}`,
-    `Selected idea description: ${params.idea.description}`,
-    `Selected idea spec (JSON): ${specJson}`,
+    `Build title: ${params.title}`,
+    `User's original request: ${params.userPrompt}`,
     "",
-    `User preferences: ${preferenceLine}`,
+    blueprintJson ? "Blueprint (JSON):" : "",
+    blueprintJson ? blueprintJson : "",
+    blueprintJson ? "" : "",
+    `Build title: ${params.title}`,
+    `User's original request: ${params.userPrompt}`,
     params.constraintsText ? `\nConstraints:\n${params.constraintsText}` : "",
+    "",
+    `Requested step range: ${stepFrom}–${stepTo} (inclusive)`,
+    "",
+    soFar ? "Assembled MPD so far (wrapped, for reference):" : "",
+    soFar ? soFar : "",
     "",
     "Inventory (JSON map of partNum -> color -> qty):",
     inv
@@ -821,92 +1002,381 @@ export async function generateLDrawMpdForIdea(params: {
   const schema = {
     type: "object",
     additionalProperties: false,
-    required: ["ldraw_mpd"],
+    required: ["chunk_body"],
     properties: {
-      ldraw_mpd: { type: "string", minLength: 50 }
+      chunk_body: { type: "string", minLength: 10 }
     }
   } as const;
 
   const useToolLoop = params.useValidationToolLoop === true;
-
+  
+  // Convert blueprint to BlueprintInfo format for validation
+  const blueprintForValidation: BlueprintInfo | undefined = params.blueprint ? {
+    subassemblies: (params.blueprint as any).structure_plan?.subassemblies || [],
+    step_outline: (params.blueprint as any).step_outline || []
+  } : undefined;
+  
   const resp = useToolLoop
-    ? await callOpenAIJsonWithToolLoop<{ ldraw_mpd: string }>({
+    ? await callOpenAIJsonWithToolLoop<{ chunk_body: string }>({
         prompt,
-        schemaName: "lego_ldraw_mpd",
+        schemaName: "lego_ldraw_mpd_chunk",
         schema,
         reasoningEffort,
         maxOutputTokens,
         maxToolRounds: 2,
-        onEvent: params.onEvent
+        onEvent: params.onEvent,
+        referenceImagePath: params.referenceImagePath,
+        minSimilarity: params.minSimilarity,
+        blueprint: blueprintForValidation,
+        currentSubassembly: params.currentSubassembly,
+        // Visual feedback settings
+        visualFeedbackMode: params.visualFeedbackMode ?? "subassemblies",
+        isSubassemblyBoundary: params.isSubassemblyBoundary,
+        isFinalValidation: params.isFinalChunk
       })
-    : await callOpenAIJson<{ ldraw_mpd: string }>(
-        { prompt, schemaName: "lego_ldraw_mpd", schema },
+    : await callOpenAIJson<{ chunk_body: string }>(
+        { prompt, schemaName: "lego_ldraw_mpd_chunk", schema },
         { reasoningEffort, maxOutputTokens }
       );
 
-  const mpd = resp.parsed?.ldraw_mpd;
-  if (typeof mpd !== "string" || mpd.trim().length < 50) {
-    throw new Error("OpenAI returned invalid ldraw_mpd");
+  const chunkBody = resp.parsed?.chunk_body;
+  if (typeof chunkBody !== "string" || chunkBody.trim().length < 10) {
+    throw new Error("OpenAI returned invalid chunk_body");
   }
-  // Always enforce server-side validation too (tool loop can be disabled).
-  validateLDrawMpdOrThrow({ ldrawMpd: mpd });
 
-  return { ldraw_mpd: mpd, model: resp.model };
+  // Server-side validation:
+  validateLDrawMpdChunkBodyOrThrow({ chunkBody, stepFrom, stepTo });
+  // Also validate assembled MPD so far (including this chunk) as a partial MPD.
+  const assembledParts = [soFar, chunkBody].filter(Boolean).join("\n").trim();
+  const assembledCandidate = ["0 FILE model.ldr", assembledParts, "0 NOFILE"].join("\n");
+  validateLDrawPartialMpdOrThrow(assembledCandidate);
+
+  return { chunkBody: chunkBody.trim() + "\n", model: resp.model };
 }
 
-export async function generatePreviewMpdForIdea(params: {
-  inventory: InventoryItem[];
-  idea: IdeaCandidateLite;
-}): Promise<{ ldraw_mpd: string; model: string }> {
-  const reasoningEffort = process.env.PREVIEW_REASONING_LEVEL || process.env.REASONING_LEVEL;
-  if (!reasoningEffort) throw new Error("REASONING_LEVEL is not set (or set PREVIEW_REASONING_LEVEL)");
+// Preview MPD generation has been removed: previews are always image-only (via generatePreviewImagePngForIdea).
 
-  const maxOutputTokensRaw = process.env.PREVIEW_MAX_OUTPUT_TOKENS || process.env.OPENAI_MAX_OUTPUT_TOKENS;
-  if (!maxOutputTokensRaw) throw new Error("OPENAI_MAX_OUTPUT_TOKENS is not set (or set PREVIEW_MAX_OUTPUT_TOKENS)");
-  const maxOutputTokensEnv = Number(maxOutputTokensRaw);
-  if (!Number.isFinite(maxOutputTokensEnv) || maxOutputTokensEnv <= 0) {
-    throw new Error("OPENAI_MAX_OUTPUT_TOKENS (or PREVIEW_MAX_OUTPUT_TOKENS) must be a positive number");
+export async function generatePreviewImagesFromPrompt(params: {
+  userPrompt: string; // original user preferences/request
+  constraints: {
+    targetPartsMin?: number;
+    targetPartsMax?: number;
+    difficulty?: "easy" | "medium" | "hard";
+    age?: number;
+    buildTimeMinutes?: number;
+  };
+  count: number; // how many variations to generate
+}): Promise<Array<{ pngBase64: string; model: string; revisedPrompt?: string }>> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) throw new Error("OPENAI_API_KEY is not set");
+  const model = process.env.OPENAI_IMAGE_MODEL;
+  if (!model) throw new Error("OPENAI_IMAGE_MODEL is not set");
+
+  const constraintLines = [];
+  if (params.constraints.targetPartsMin || params.constraints.targetPartsMax) {
+    constraintLines.push(`Target parts range: ${params.constraints.targetPartsMin ?? "?"}–${params.constraints.targetPartsMax ?? "?"}`);
   }
-  // Preview should be small by instruction, not by token cap (reasoning can otherwise consume the entire budget).
-  const maxOutputTokens = Math.floor(maxOutputTokensEnv);
+  if (params.constraints.difficulty) constraintLines.push(`Difficulty: ${params.constraints.difficulty}`);
+  if (params.constraints.age) constraintLines.push(`Age: ${params.constraints.age}+`);
+  if (params.constraints.buildTimeMinutes) constraintLines.push(`Build time: ~${params.constraints.buildTimeMinutes} minutes`);
 
-  const inv = inventoryToCompactJson(params.inventory);
-  const specJson = JSON.stringify(params.idea.spec);
+  const basePrompt = [
+    "Create a clean, high-quality studio image of a LEGO build concept.",
+    "It should look like a real LEGO model built from standard bricks (LEGO style), photographed on a plain white background.",
+    "Single subject centered, no text, no watermark, no extra objects, no hands, no packaging.",
+    "",
+    `User request: ${params.userPrompt}`,
+    ...(constraintLines.length > 0 ? ["", ...constraintLines] : [])
+  ].join("\n");
+
+  // Generate N images (OpenAI Images API doesn't batch, so we call sequentially or in parallel)
+  const results = [];
+  for (let i = 0; i < params.count; i++) {
+    const resp = await fetchImagesJsonWithRetry({
+      apiKey,
+      body: {
+        model,
+        prompt: basePrompt,
+        size: "1024x1024",
+        response_format: "b64_json"
+      }
+    });
+
+    const first = resp.data?.[0];
+    const b64 = first?.b64_json;
+    if (typeof b64 !== "string" || b64.trim().length < 100) {
+      throw new Error(`OpenAI returned invalid image ${i + 1}/${params.count} (missing b64_json)`);
+    }
+    results.push({ pngBase64: b64, model, revisedPrompt: first?.revised_prompt });
+  }
+
+  return results;
+}
+
+export async function extractTitleFromPrompt(params: { userPrompt: string }): Promise<string> {
+  // Lightweight reasoning call to extract a short, punchy title from the user's prompt.
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return "LEGO Build"; // fallback offline
+  const model = process.env.OPENAI_MODEL;
+  if (!model) return "LEGO Build";
 
   const prompt = [
-    "You are an expert LEGO MOC designer and LDraw author.",
-    "Generate a MICRO preview LDraw MPD that represents the idea at a very small scale for a thumbnail render.",
+    "Extract a short, punchy title (2-5 words max) for a LEGO build concept based on the user's request below.",
+    "Return ONLY the title, no explanation, no quotes, no extra text.",
     "",
-    "Constraints:",
-    "- Keep it tiny: <= 8 steps, <= ~35 part placements.",
-    "- Must be a complete MPD with 0 FILE model.ldr and final 0 NOFILE.",
-    "- Include 0 STEP directives and plausible geometry.",
+    `User request: ${params.userPrompt}`
+  ].join("\n");
+
+  try {
+    const resp = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model,
+        input: prompt,
+        max_output_tokens: 50 // very short response
+      })
+    });
+
+    if (!resp.ok) {
+      return "LEGO Build"; // fallback on error
+    }
+
+    const json = (await resp.json()) as OpenAIResponse;
+    const text = extractTextFromResponses(json);
+    const cleaned = text.trim().replace(/^["']|["']$/g, ""); // strip quotes if present
+    return cleaned || "LEGO Build";
+  } catch {
+    return "LEGO Build";
+  }
+}
+
+// Legacy: now deprecated (ideas are generated as preview images directly)
+export async function generatePreviewImagePngForIdea(params: {
+  idea: IdeaCandidateLite;
+}): Promise<{ pngBase64: string; model: string; revisedPrompt?: string }> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) throw new Error("OPENAI_API_KEY is not set");
+  const model = process.env.OPENAI_IMAGE_MODEL;
+  if (!model) throw new Error("OPENAI_IMAGE_MODEL is not set");
+
+  const specJson = JSON.stringify(params.idea.spec);
+  const prompt = [
+    "Create a clean, high-quality studio image of a LEGO build concept.",
+    "It should look like a real LEGO model built from standard bricks (LEGO style), photographed on a plain white background.",
+    "Single subject centered, no text, no watermark, no extra objects, no hands, no packaging.",
     "",
-    `Selected idea title: ${params.idea.title}`,
-    `Selected idea description: ${params.idea.description}`,
-    `Selected idea spec (JSON): ${specJson}`,
+    `Title: ${params.idea.title}`,
+    `Description: ${params.idea.description}`,
+    `Spec (JSON): ${specJson}`
+  ].join("\n");
+
+  const resp = await fetchImagesJsonWithRetry({
+    apiKey,
+    body: {
+      model,
+      prompt,
+      size: "1024x1024",
+      response_format: "b64_json"
+    }
+  });
+
+  const first = resp.data?.[0];
+  const b64 = first?.b64_json;
+  if (typeof b64 !== "string" || b64.trim().length < 100) {
+    throw new Error("OpenAI returned invalid image (missing b64_json)");
+  }
+  return { pngBase64: b64, model, revisedPrompt: first?.revised_prompt };
+}
+
+function readFileAsDataUrl(params: { filePath: string; mimeType: string }) {
+  const buf = fs.readFileSync(params.filePath);
+  const b64 = buf.toString("base64");
+  return `data:${params.mimeType};base64,${b64}`;
+}
+
+export type LDrawBlueprint = {
+  structure_plan: {
+    overview: string;
+    subassemblies: Array<{ name: string; description: string }>;
+  };
+  step_outline: Array<{ step: number; title: string; description: string }>;
+  notes: string[];
+};
+
+export async function generateBlueprintForIdea(params: {
+  title: string; // Extracted title for this build
+  userPrompt: string; // Original user request/preferences
+  inventory: InventoryItem[];
+  constraintsText?: string;
+  previewImagePath?: string; // PNG path on disk (will be sent as input_image if present)
+}): Promise<{ blueprint: LDrawBlueprint; model: string }> {
+  const inv = inventoryToCompactJson(params.inventory);
+  const constraints = params.constraintsText?.trim() ? params.constraintsText.trim() : "(none)";
+
+  const promptText = [
+    "You are an expert LEGO MOC designer and instruction planner.",
+    "You will be given a user's build request and a preview image of the intended build.",
+    "Produce a concise blueprint that will be used to generate an LDraw MPD with steps and instructions.",
+    "",
+    "Requirements:",
+    "- The blueprint should reflect the preview image's silhouette and major features.",
+    "- Stay faithful to the user's original request (don't add unrelated features).",
+    "- Respect the user constraints (parts range, difficulty, age, build time).",
+    "- Use only parts that reasonably exist in the provided inventory (you can suggest substitutions).",
+    "- Keep outputs deterministic and short (no prose beyond the JSON fields).",
+    "",
+    `Build title: ${params.title}`,
+    `User's request: ${params.userPrompt}`,
+    "",
+    "User constraints:",
+    constraints,
     "",
     "Inventory (JSON map of partNum -> color -> qty):",
     inv
   ].join("\n");
 
+  const content: Array<Record<string, unknown>> = [{ type: "input_text", text: promptText }];
+  if (params.previewImagePath && fs.existsSync(params.previewImagePath)) {
+    const dataUrl = readFileAsDataUrl({ filePath: params.previewImagePath, mimeType: "image/png" });
+    content.push({ type: "input_image", image_url: dataUrl });
+  }
+
+  // Debug artifact: write the exact prompt + a copy of the preview image (if present) for review.
+  let debugInputId: string | null = null;
+  if (isDebugEnabled()) {
+    try {
+      const dir = path.join(process.cwd(), "data", "openai-debug");
+      fs.mkdirSync(dir, { recursive: true });
+      const id = `blueprint_input_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+      debugInputId = id;
+      let copiedImageRelPath: string | null = null;
+      if (params.previewImagePath && fs.existsSync(params.previewImagePath)) {
+        const outImg = path.join(dir, `${id}.png`);
+        fs.copyFileSync(params.previewImagePath, outImg);
+        copiedImageRelPath = path.relative(process.cwd(), outImg);
+      }
+      const outJson = path.join(dir, `${id}.json`);
+      const payload = {
+        id,
+        tag: "blueprint_input",
+        at: new Date().toISOString(),
+        note: "Blueprint vision call input (prompt + preview image copy).",
+        promptText,
+        previewImageOriginalPath: params.previewImagePath || null,
+        previewImageCopiedPath: copiedImageRelPath,
+        // Include the exact message array we send (without duplicating the full prompt text and
+        // without embedding the data-url image to keep file size sane)
+        requestShape: {
+          role: "user",
+          content: [
+            { type: "input_text", text: "(see promptText field)" },
+            params.previewImagePath && fs.existsSync(params.previewImagePath)
+              ? { type: "input_image", image_url: "(data-url omitted; see copied PNG path)" }
+              : null
+          ].filter(Boolean)
+        }
+      };
+      fs.writeFileSync(outJson, JSON.stringify(payload, null, 2), "utf8");
+      // eslint-disable-next-line no-console
+      console.error(`[openai-debug] wrote ${outJson}`);
+    } catch {
+      // ignore debug artifact failures
+    }
+  }
+
   const schema = {
     type: "object",
     additionalProperties: false,
-    required: ["ldraw_mpd"],
+    required: ["structure_plan", "step_outline", "notes"],
     properties: {
-      ldraw_mpd: { type: "string", minLength: 50 }
+      structure_plan: {
+        type: "object",
+        additionalProperties: false,
+        required: ["overview", "subassemblies"],
+        properties: {
+          overview: { type: "string", minLength: 10 },
+          subassemblies: {
+            type: "array",
+            minItems: 1,
+            items: {
+              type: "object",
+              additionalProperties: false,
+              required: ["name", "description"],
+              properties: {
+                name: { type: "string", minLength: 1 },
+                description: { type: "string", minLength: 5 }
+              }
+            }
+          }
+        }
+      },
+      step_outline: {
+        type: "array",
+        minItems: 3,
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["step", "title", "description"],
+          properties: {
+            step: { type: "integer", minimum: 1 },
+            title: { type: "string", minLength: 1 },
+            description: { type: "string", minLength: 5 }
+          }
+        }
+      },
+      notes: { type: "array", items: { type: "string" } }
     }
   } as const;
 
-  const resp = await callOpenAIJson<{ ldraw_mpd: string }>(
-    { prompt, schemaName: "lego_preview_mpd", schema },
-    { reasoningEffort, maxOutputTokens }
-  );
+  const maxOutputTokensRaw = process.env.OPENAI_MAX_OUTPUT_TOKENS;
+  if (!maxOutputTokensRaw) throw new Error("OPENAI_MAX_OUTPUT_TOKENS is not set");
+  const maxOutputTokens = Number(maxOutputTokensRaw);
+  if (!Number.isFinite(maxOutputTokens) || maxOutputTokens <= 0) {
+    throw new Error("OPENAI_MAX_OUTPUT_TOKENS must be a positive number");
+  }
 
-  const mpd = resp.parsed?.ldraw_mpd;
-  if (typeof mpd !== "string" || mpd.trim().length < 50) throw new Error("OpenAI returned invalid preview ldraw_mpd");
-  return { ldraw_mpd: mpd, model: resp.model };
+  const baseReasoning = (process.env.REASONING_LEVEL || "medium").toLowerCase();
+  // Blueprint must be at least medium effort (per product requirement).
+  const reasoningEffort = baseReasoning === "high" ? "high" : "medium";
+
+  const startedAtMs = Date.now();
+  const resp = await callOpenAIJsonInput<LDrawBlueprint>(
+    { input: [{ role: "user", content }], schemaName: "lego_ldraw_blueprint", schema },
+    { reasoningEffort, maxOutputTokens: Math.floor(maxOutputTokens) }
+  );
+  const durationMs = Date.now() - startedAtMs;
+
+  if (isDebugEnabled()) {
+    try {
+      const dir = path.join(process.cwd(), "data", "openai-debug");
+      fs.mkdirSync(dir, { recursive: true });
+      const id = `blueprint_response_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+      const outJson = path.join(dir, `${id}.json`);
+      const raw = resp.rawResponseJson as any;
+      const payload = {
+        id,
+        tag: "blueprint_response",
+        at: new Date().toISOString(),
+        debugInputId,
+        durationMs,
+        model: resp.model,
+        responseId: raw?.id ?? null,
+        status: raw?.status ?? null,
+        usage: raw?.usage ?? null
+      };
+      fs.writeFileSync(outJson, JSON.stringify(payload, null, 2), "utf8");
+      // eslint-disable-next-line no-console
+      console.error(`[openai-debug] wrote ${outJson}`);
+    } catch {
+      // ignore debug artifact failures
+    }
+  }
+
+  return { blueprint: resp.parsed as LDrawBlueprint, model: resp.model };
 }
 
 

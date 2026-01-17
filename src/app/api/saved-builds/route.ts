@@ -35,7 +35,7 @@ export async function POST(req: Request) {
     id: newId("saved"),
     createdAt: new Date().toISOString(),
     title: idea.title,
-    description: idea.description,
+    // For saved builds, we only keep the title and assets (no description/spec needed)
     ldraw_mpd: idea.ldraw_mpd,
     thumbnail: idea.thumbnail ?? null,
     instructions_pdf: (idea as any).instructions_pdf ?? null,

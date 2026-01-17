@@ -6,20 +6,17 @@ import { countLDrawSteps } from "@/lib/ldraw";
 
 type Idea = {
   title: string;
-  description: string;
-  estimated_time_minutes: number;
-  spec: { concept: string; key_features: string[]; color_palette: string[]; step_count_estimate: number };
+  preview_thumbnail?: string | null;
   previewStatus?: "not_started" | "queued" | "running" | "done" | "error";
   previewJobId?: string;
   previewError?: string;
-  preview_mpd?: string;
-  preview_thumbnail?: string | null;
-  ldrawStatus?: "not_started" | "queued" | "running" | "done" | "error";
+  ldrawStatus?: "not_started" | "queued" | "running" | "done" | "error" | "cancelled";
   ldrawJobId?: string;
   ldrawError?: string;
+  ldrawArtifacts?: any;
   ldraw_mpd?: string;
-  thumbnail: string | null;
-  instructions_pdf: string | null;
+  thumbnail?: string | null;
+  instructions_pdf?: string | null;
 };
 
 type SavedBuild = {
@@ -31,13 +28,16 @@ type SavedBuild = {
 type IdeaSearch = {
   id: string;
   createdAt: string;
-  preferences?: string;
+  title?: string; // Extracted title (once available)
+  preferences?: string; // Original user prompt
   targetPartsMin?: number;
   targetPartsMax?: number;
   difficulty?: "easy" | "medium" | "hard";
   age?: number;
   buildTimeMinutes?: number;
   count?: number;
+  inventoryMode?: "basic" | "full";
+  colorMode?: "exact" | "bucketed";
   model?: string;
   status?: "queued" | "running" | "done" | "error";
   updatedAt?: string;
@@ -53,16 +53,23 @@ export default function IdeasPage() {
   const [difficulty, setDifficulty] = useState<"" | "easy" | "medium" | "hard">("");
   const [age, setAge] = useState<string>("");
   const [buildTimeMinutes, setBuildTimeMinutes] = useState<string>("");
+  const [inventoryMode, setInventoryMode] = useState<"basic" | "full">("basic");
+  const [colorMode, setColorMode] = useState<"exact" | "bucketed">("exact");
+  const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [model, setModel] = useState<string>("");
+  const [debugOpenAi, setDebugOpenAi] = useState(false);
   const [history, setHistory] = useState<IdeaSearch[]>([]);
   const [historyErr, setHistoryErr] = useState<string | null>(null);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [activeSearchId, setActiveSearchId] = useState<string | null>(null);
   const [favoriteMap, setFavoriteMap] = useState<Record<string, string>>({});
+  const [ldrawSubmittingIdx, setLdrawSubmittingIdx] = useState<number | null>(null);
+  const [partialPdfSubmittingIdx, setPartialPdfSubmittingIdx] = useState<number | null>(null);
+  const [ldrawJobs, setLdrawJobs] = useState<any[]>([]);
   const [activeStatus, setActiveStatus] = useState<{
     status: "queued" | "running" | "done" | "error";
     updatedAt?: string;
@@ -104,14 +111,52 @@ export default function IdeasPage() {
     return { message: elapsed ? `${msg} (${elapsed})` : msg };
   }, [activeStatus, nowTick]);
 
+  const ldrawJobByIdeaIndex = useMemo(() => {
+    const next: Record<number, any> = {};
+    for (const j of ldrawJobs || []) {
+      if (typeof j?.ideaIndex !== "number") continue;
+      const idx = j.ideaIndex;
+      const prev = next[idx];
+      if (!prev) {
+        next[idx] = j;
+        continue;
+      }
+
+      const score = (x: any) => {
+        const ts =
+          (typeof x?.startedAt === "string" && Date.parse(x.startedAt)) ||
+          (typeof x?.createdAt === "string" && Date.parse(x.createdAt)) ||
+          (typeof x?.updatedAt === "string" && Date.parse(x.updatedAt)) ||
+          0;
+        return Number.isFinite(ts) ? ts : 0;
+      };
+
+      // Keep the most recent job per ideaIndex (prevents stale failed jobs from overriding new runs).
+      if (score(j) >= score(prev)) next[idx] = j;
+    }
+    return next;
+  }, [ldrawJobs]);
+
+  function lastMeaningfulJobMessage(job: any) {
+    const logs: Array<{ type?: string; message?: string }> = Array.isArray(job?.logs) ? job.logs : [];
+    for (let i = logs.length - 1; i >= 0; i--) {
+      const evt = logs[i];
+      if (!evt) continue;
+      if (evt.type === "heartbeat") continue;
+      if (typeof evt.message === "string" && evt.message.trim().length > 0) return evt.message.trim();
+    }
+    return "";
+  }
+
   async function loadHistory() {
     setLoadingHistory(true);
     setHistoryErr(null);
     try {
       const res = await fetch("/api/ideas", { cache: "no-store" });
-      const json = (await res.json()) as { history?: IdeaSearch[]; error?: string };
+      const json = (await res.json()) as { history?: IdeaSearch[]; error?: string; debugOpenAi?: boolean };
       if (!res.ok) throw new Error(json.error || "Failed to load history");
       setHistory(json.history || []);
+      setDebugOpenAi(Boolean(json.debugOpenAi));
     } catch (e) {
       setHistoryErr(e instanceof Error ? e.message : "Unknown error");
     } finally {
@@ -141,20 +186,68 @@ export default function IdeasPage() {
   }, []);
 
   useEffect(() => {
+    try {
+      const v = window.localStorage.getItem("inventoryMode");
+      if (v === "basic" || v === "full") setInventoryMode(v);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("inventoryMode", inventoryMode);
+    } catch {
+      // ignore
+    }
+  }, [inventoryMode]);
+
+  useEffect(() => {
+    try {
+      const v = window.localStorage.getItem("colorMode");
+      if (v === "exact" || v === "bucketed") setColorMode(v);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("colorMode", colorMode);
+    } catch {
+      // ignore
+    }
+  }, [colorMode]);
+
+  useEffect(() => {
     if (!activeSearchId) return;
     let cancelled = false;
     async function poll() {
       try {
         const res = await fetch(`/api/ideas/${activeSearchId}`, { cache: "no-store" });
-        const json = (await res.json().catch(() => ({}))) as { search?: IdeaSearch; ideationJob?: any; ldrawJobs?: any[] };
+        const json = (await res.json().catch(() => ({}))) as {
+          search?: IdeaSearch;
+          ideationJob?: any;
+          ldrawJobs?: any[];
+          previewJobs?: any[];
+          debugOpenAi?: boolean;
+        };
         if (!res.ok) return;
         const s = json.search;
         if (!s || cancelled) return;
         setActiveStatus({ status: s.status || "done", updatedAt: s.updatedAt, error: s.error, job: json.ideationJob || null });
+        setDebugOpenAi(Boolean(json.debugOpenAi));
+        if (s.inventoryMode === "basic" || s.inventoryMode === "full") {
+          setInventoryMode(s.inventoryMode);
+        }
+        if (s.colorMode === "exact" || s.colorMode === "bucketed") {
+          setColorMode(s.colorMode);
+        }
         if (s.ideas && s.ideas.length > 0) {
           setIdeas(s.ideas);
           setModel(s.model || "");
         }
+        if (Array.isArray(json.ldrawJobs)) setLdrawJobs(json.ldrawJobs);
       } catch {
         // ignore polling errors
       }
@@ -177,28 +270,53 @@ export default function IdeasPage() {
       const parsedAge = age.trim() ? Number(age) : undefined;
       const parsedBuildTime = buildTimeMinutes.trim() ? Number(buildTimeMinutes) : undefined;
 
-      const res = await fetch("/api/ideas", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          preferences: preferences.trim() || undefined,
-          targetPartsMin: typeof min === "number" && Number.isFinite(min) && min > 0 ? Math.floor(min) : undefined,
-          targetPartsMax: typeof max === "number" && Number.isFinite(max) && max > 0 ? Math.floor(max) : undefined,
-          difficulty: difficulty || undefined,
-          age: typeof parsedAge === "number" && Number.isFinite(parsedAge) && parsedAge > 0 ? Math.floor(parsedAge) : undefined,
-          buildTimeMinutes:
-            typeof parsedBuildTime === "number" && Number.isFinite(parsedBuildTime) && parsedBuildTime > 0
-              ? Math.floor(parsedBuildTime)
-              : undefined,
-          count: 2
-        })
-      });
+      // If image is uploaded, use FormData; otherwise use JSON
+      let res: Response;
+      if (uploadedImage) {
+        const formData = new FormData();
+        formData.append("image", uploadedImage);
+        formData.append("preferences", preferences.trim() || "");
+        if (typeof min === "number" && Number.isFinite(min) && min > 0) formData.append("targetPartsMin", String(Math.floor(min)));
+        if (typeof max === "number" && Number.isFinite(max) && max > 0) formData.append("targetPartsMax", String(Math.floor(max)));
+        if (difficulty) formData.append("difficulty", difficulty);
+        if (typeof parsedAge === "number" && Number.isFinite(parsedAge) && parsedAge > 0) formData.append("age", String(Math.floor(parsedAge)));
+        if (typeof parsedBuildTime === "number" && Number.isFinite(parsedBuildTime) && parsedBuildTime > 0) formData.append("buildTimeMinutes", String(Math.floor(parsedBuildTime)));
+        formData.append("count", "1"); // Only 1 idea when image is uploaded
+        formData.append("inventoryMode", inventoryMode);
+        formData.append("colorMode", colorMode);
+
+        res = await fetch("/api/ideas", {
+          method: "POST",
+          body: formData
+        });
+      } else {
+        res = await fetch("/api/ideas", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            preferences: preferences.trim() || undefined,
+            targetPartsMin: typeof min === "number" && Number.isFinite(min) && min > 0 ? Math.floor(min) : undefined,
+            targetPartsMax: typeof max === "number" && Number.isFinite(max) && max > 0 ? Math.floor(max) : undefined,
+            difficulty: difficulty || undefined,
+            age: typeof parsedAge === "number" && Number.isFinite(parsedAge) && parsedAge > 0 ? Math.floor(parsedAge) : undefined,
+            buildTimeMinutes:
+              typeof parsedBuildTime === "number" && Number.isFinite(parsedBuildTime) && parsedBuildTime > 0
+                ? Math.floor(parsedBuildTime)
+                : undefined,
+            count: 2,
+            inventoryMode,
+            colorMode
+          })
+        });
+      }
+
       const json = (await res.json()) as { searchId?: string; jobId?: string; error?: string };
       if (!res.ok) throw new Error(json.error || "Failed to generate ideas");
       setActiveSearchId(json.searchId || null);
       setIdeas([]);
       setModel("");
       setActiveStatus({ status: "queued" });
+      setUploadedImage(null); // Clear uploaded image after submission
       await loadHistory();
       await loadFavorites();
     } catch (e) {
@@ -227,8 +345,102 @@ export default function IdeasPage() {
     await loadFavorites();
   }
 
+  async function startInstructions(ideaIndex: number) {
+    if (!activeSearchId) return;
+    if (ldrawSubmittingIdx === ideaIndex) return;
+    setLdrawSubmittingIdx(ideaIndex);
+    try {
+      const res = await fetch(`/api/ideas/${activeSearchId}/ldraw`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ideaIndex })
+      });
+      const json = (await res.json().catch(() => ({}))) as { jobId?: string; alreadyRunning?: boolean; error?: string };
+      if (!res.ok) throw new Error(json.error || "Failed to start LDraw job");
+
+      // optimistic UI: show queued immediately
+      setIdeas((prev) =>
+        prev.map((it, i) =>
+          i === ideaIndex
+            ? {
+                ...it,
+                ldrawStatus: it.ldrawStatus === "done" ? "done" : "queued",
+                ldrawJobId: json.jobId || it.ldrawJobId,
+                ldrawError: undefined
+              }
+            : it
+        )
+      );
+
+      // Fetch fresh status immediately (don't wait for the 15s poll tick)
+      const res2 = await fetch(`/api/ideas/${activeSearchId}`, { cache: "no-store" });
+      const json2 = (await res2.json().catch(() => ({}))) as { search?: IdeaSearch; ldrawJobs?: any[] };
+      if (res2.ok && json2.search?.ideas) setIdeas(json2.search.ideas);
+      if (res2.ok && Array.isArray(json2.ldrawJobs)) setLdrawJobs(json2.ldrawJobs);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Failed to start LDraw job";
+      setIdeas((prev) => prev.map((it, i) => (i === ideaIndex ? { ...it, ldrawStatus: "error", ldrawError: msg } : it)));
+    } finally {
+      setLdrawSubmittingIdx(null);
+    }
+  }
+
+  async function cancelInstructions(ideaIndex: number) {
+    if (!activeSearchId) return;
+    try {
+      await fetch(`/api/ideas/${activeSearchId}/ldraw/cancel`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ideaIndex })
+      });
+    } finally {
+      // Optimistic UX: mark cancelled immediately and re-enable Generate.
+      setIdeas((prev) => prev.map((it, i) => (i === ideaIndex ? { ...it, ldrawStatus: "cancelled", ldrawError: "Cancelled by user" } : it)));
+    }
+  }
+
+  function downloadBlueprint(ideaIndex: number) {
+    if (!activeSearchId) return;
+    window.location.href = `/api/ideas/${activeSearchId}/blueprint?ideaIndex=${ideaIndex}`;
+  }
+
+  async function downloadInstructions(ideaIndex: number, idea: Idea) {
+    if (!activeSearchId) return;
+    const running = idea.ldrawStatus === "queued" || idea.ldrawStatus === "running";
+    const hasPartialMpd = Boolean((idea as any)?.ldrawArtifacts?.partial_mpd);
+
+    // If we're running and have a partial MPD, generate a partial PDF on demand first.
+    if (running && hasPartialMpd) {
+      if (partialPdfSubmittingIdx === ideaIndex) return;
+      setPartialPdfSubmittingIdx(ideaIndex);
+      try {
+        const res = await fetch(`/api/ideas/${activeSearchId}/ldraw/partial-pdf`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ideaIndex })
+        });
+        const json = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
+        if (!res.ok) throw new Error(json.error || "Failed to generate partial PDF");
+
+        // Refresh persisted URLs/state.
+        const res2 = await fetch(`/api/ideas/${activeSearchId}`, { cache: "no-store" });
+        const json2 = (await res2.json().catch(() => ({}))) as { search?: IdeaSearch; ldrawJobs?: any[] };
+        if (res2.ok && json2.search?.ideas) setIdeas(json2.search.ideas);
+        if (res2.ok && Array.isArray(json2.ldrawJobs)) setLdrawJobs(json2.ldrawJobs);
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error(e);
+      } finally {
+        setPartialPdfSubmittingIdx(null);
+      }
+    }
+
+    // Always download via API so filename can include partial/final.
+    window.location.href = `/api/ideas/${activeSearchId}/instructions?ideaIndex=${ideaIndex}`;
+  }
+
   return (
-    <main className="space-y-6">
+    <div className="space-y-6">
       <div className="card p-6">
         <h1 className="text-xl font-semibold">Build ideas</h1>
         <p className="mt-1 text-sm text-black/70">
@@ -297,6 +509,23 @@ export default function IdeasPage() {
               </div>
             </div>
           </div>
+
+          <div className="mb-4">
+            <label className="text-xs font-medium text-black/70">Upload image (optional)</label>
+            <p className="mt-1 text-xs text-black/50">Skip preview generation by uploading an image of your desired build</p>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setUploadedImage(e.target.files?.[0] || null)}
+              className="mt-2 w-full text-sm"
+            />
+            {uploadedImage && (
+              <p className="mt-1 text-xs text-green-700">
+                Selected: {uploadedImage.name} ({Math.round(uploadedImage.size / 1024)} KB)
+              </p>
+            )}
+          </div>
+
           <div className="flex items-center gap-3">
             <Button onClick={generate} disabled={loading}>
               {loading ? "Generating..." : "Generate ideas"}
@@ -364,19 +593,22 @@ export default function IdeasPage() {
                       setDifficulty(h.difficulty || "");
                       setAge(h.age ? String(h.age) : "");
                       setBuildTimeMinutes(h.buildTimeMinutes != null ? String(h.buildTimeMinutes) : "");
+                      if (h.inventoryMode === "basic" || h.inventoryMode === "full") {
+                        setInventoryMode(h.inventoryMode);
+                      }
+                      if (h.colorMode === "exact" || h.colorMode === "bucketed") {
+                        setColorMode(h.colorMode);
+                      }
                       const nextIdeas = (h.ideas || []).map((i) => ({
                         title: i.title,
-                        description: i.description,
-                        estimated_time_minutes: (i as any).estimated_time_minutes ?? 0,
-                        spec: i.spec,
+                        preview_thumbnail: (i as any).preview_thumbnail ?? null,
                         previewStatus: (i as any).previewStatus,
                         previewJobId: (i as any).previewJobId,
                         previewError: (i as any).previewError,
-                        preview_mpd: (i as any).preview_mpd,
-                        preview_thumbnail: (i as any).preview_thumbnail ?? null,
                         ldrawStatus: i.ldrawStatus,
                         ldrawJobId: i.ldrawJobId,
                         ldrawError: i.ldrawError,
+                        ldrawArtifacts: (i as any).ldrawArtifacts,
                         ldraw_mpd: i.ldraw_mpd,
                         thumbnail: i.thumbnail ?? null,
                         instructions_pdf: i.instructions_pdf ?? null
@@ -429,7 +661,68 @@ export default function IdeasPage() {
       </div>
 
       <div className="card p-6">
-        <h2 className="text-sm font-semibold">Results</h2>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold">Results</h2>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 text-xs text-black/70">
+              <span>Inventory</span>
+              <div className="inline-flex overflow-hidden rounded-lg border border-black/10 bg-white/70">
+                <button
+                  type="button"
+                  className={[
+                    "px-2 py-1 text-xs",
+                    inventoryMode === "basic" ? "bg-black/10 text-black" : "text-black/60 hover:text-black"
+                  ].join(" ")}
+                  onClick={() => setInventoryMode("basic")}
+                >
+                  basic parts
+                </button>
+                <button
+                  type="button"
+                  className={[
+                    "px-2 py-1 text-xs",
+                    inventoryMode === "full" ? "bg-black/10 text-black" : "text-black/60 hover:text-black"
+                  ].join(" ")}
+                  onClick={() => setInventoryMode("full")}
+                >
+                  full inventory
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 text-xs text-black/70">
+              <span>Colors</span>
+              <div className="inline-flex overflow-hidden rounded-lg border border-black/10 bg-white/70">
+                <button
+                  type="button"
+                  className={[
+                    "px-2 py-1 text-xs",
+                    colorMode === "exact" ? "bg-black/10 text-black" : "text-black/60 hover:text-black",
+                    inventoryMode !== "basic" ? "opacity-40" : ""
+                  ].join(" ")}
+                  onClick={() => setColorMode("exact")}
+                  disabled={inventoryMode !== "basic"}
+                  title={inventoryMode !== "basic" ? "Color bucketing only applies to basic parts mode" : ""}
+                >
+                  exact
+                </button>
+                <button
+                  type="button"
+                  className={[
+                    "px-2 py-1 text-xs",
+                    colorMode === "bucketed" ? "bg-black/10 text-black" : "text-black/60 hover:text-black",
+                    inventoryMode !== "basic" ? "opacity-40" : ""
+                  ].join(" ")}
+                  onClick={() => setColorMode("bucketed")}
+                  disabled={inventoryMode !== "basic"}
+                  title={inventoryMode !== "basic" ? "Color bucketing only applies to basic parts mode" : ""}
+                >
+                  bucketed
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {activeStatus && (activeStatus.status === "queued" || activeStatus.status === "running") && (
           <div className="mt-3 rounded-xl border border-black/10 bg-white/50 px-3 py-3 text-black/80">
@@ -457,20 +750,51 @@ export default function IdeasPage() {
                   <img
                     src={idea.thumbnail}
                     alt={idea.title}
-                    className="h-40 w-full rounded-xl object-cover"
+                    className="h-40 w-full rounded-xl bg-white object-contain"
                   />
                 ) : idea.preview_thumbnail ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={idea.preview_thumbnail}
-                    alt={`${idea.title} (preview)`}
-                    className="h-40 w-full rounded-xl object-cover"
-                  />
+                  debugOpenAi && idx !== 0 ? (
+                    <div className="flex h-40 w-full items-center justify-center overflow-hidden rounded-xl border border-dashed border-black/20 bg-white text-xs text-black/50">
+                      Preview hidden in debug mode
+                    </div>
+                  ) : (
+                    <img
+                      src={idea.preview_thumbnail}
+                      alt={`${idea.title} (preview)`}
+                      className="h-40 w-full rounded-xl bg-white object-contain"
+                    />
+                  )
                 ) : (
-                  <div className="flex h-40 w-full items-center justify-center rounded-xl border border-dashed border-black/20 text-xs text-black/50">
-                    {idea.previewStatus === "queued" || idea.previewStatus === "running" ? "Generating preview…" : "Thumbnail not available"}
+                  <div className="relative flex h-40 w-full items-center justify-center overflow-hidden rounded-xl border border-dashed border-black/20 text-xs text-black/50">
+                    {idea.previewStatus === "queued" || idea.previewStatus === "running" ? (
+                      <>
+                        <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-black/5 via-black/10 to-black/5" />
+                        <div className="relative flex items-center gap-2 text-black/60">
+                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-black/20 border-t-black/70" />
+                          <span>Generating preview…</span>
+                        </div>
+                      </>
+                    ) : (
+                      <span>
+                        {idea.previewStatus === "error"
+                          ? `Preview failed: ${idea.previewError || "Unknown error"}`
+                          : "Thumbnail not available"}
+                      </span>
+                    )}
                   </div>
                 )}
+                {(idea.ldrawStatus === "queued" || idea.ldrawStatus === "running") && (idea as any)?.ldrawArtifacts?.partial_thumbnail ? (
+                  <div className="mt-3">
+                    <div className="text-[11px] font-medium text-black/60">Build so far</div>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={(idea as any).ldrawArtifacts.partial_thumbnail}
+                      alt={`${idea.title} (partial)`}
+                      className="mt-1 h-40 w-full rounded-xl bg-white object-contain"
+                    />
+                  </div>
+                ) : null}
                 <div className="mt-3">
                   <div className="flex items-start justify-between gap-3">
                     <h3 className="text-base font-semibold">{idea.title}</h3>
@@ -487,17 +811,7 @@ export default function IdeasPage() {
                       {activeSearchId && favoriteMap[`${activeSearchId}:${idx}`] ? "♥" : "♡"}
                     </button>
                   </div>
-                  <p className="mt-2 text-sm text-black/75">
-                    {idea.description.split(".")[0]}
-                    {idea.description.includes(".") ? "." : ""}
-                  </p>
                   <div className="mt-2 flex flex-wrap gap-2">
-                    {typeof idea.estimated_time_minutes === "number" && idea.estimated_time_minutes > 0 && (
-                      <span className="rounded-full bg-black/5 px-2 py-1 text-xs">~{idea.estimated_time_minutes} min</span>
-                    )}
-                    {idea.spec?.step_count_estimate ? (
-                      <span className="rounded-full bg-black/5 px-2 py-1 text-xs">~{idea.spec.step_count_estimate} steps</span>
-                    ) : null}
                     {idea.ldrawStatus === "done" && idea.ldraw_mpd && (
                       <span className="rounded-full bg-black/5 px-2 py-1 text-xs">{countLDrawSteps(idea.ldraw_mpd)} steps</span>
                     )}
@@ -508,9 +822,35 @@ export default function IdeasPage() {
                         ? "LDraw queued…"
                         : idea.ldrawStatus === "running"
                           ? "Generating LDraw…"
+                          : idea.ldrawStatus === "cancelled"
+                            ? `Cancelled: ${idea.ldrawError || "Cancelled by user"}`
                           : idea.ldrawStatus === "error"
                             ? `LDraw failed: ${idea.ldrawError || "Unknown error"}`
                             : "LDraw not generated"}
+                      {(idea.ldrawStatus === "queued" || idea.ldrawStatus === "running") && ldrawJobByIdeaIndex[idx] ? (
+                        <div className="mt-1 text-[11px] text-black/60">
+                          <div className="flex items-center gap-2">
+                            <span className="h-3 w-3 animate-spin rounded-full border-2 border-black/15 border-t-black/60" />
+                            <span className="font-medium">Stage:</span>
+                            <span>{String(ldrawJobByIdeaIndex[idx].stage || "working")}</span>
+                            {ldrawJobByIdeaIndex[idx].startedAt ? (
+                              <span className="text-black/40">({formatElapsed(ldrawJobByIdeaIndex[idx].startedAt)})</span>
+                            ) : null}
+                          </div>
+                          {ldrawJobByIdeaIndex[idx]?.progress?.total ? (
+                            <div className="mt-1 text-[11px] text-black/60">
+                              <span className="font-medium">Progress:</span>{" "}
+                              <span>
+                                {String(ldrawJobByIdeaIndex[idx].progress.label || "working")}{" "}
+                                ({String(ldrawJobByIdeaIndex[idx].progress.current ?? "?")}/{String(ldrawJobByIdeaIndex[idx].progress.total)})
+                              </span>
+                            </div>
+                          ) : null}
+                          {lastMeaningfulJobMessage(ldrawJobByIdeaIndex[idx]) ? (
+                            <div className="mt-1">{lastMeaningfulJobMessage(ldrawJobByIdeaIndex[idx])}</div>
+                          ) : null}
+                        </div>
+                      ) : null}
                     </div>
                   )}
                   {idea.ldrawStatus === "done" && idea.ldraw_mpd && (
@@ -519,51 +859,49 @@ export default function IdeasPage() {
                     </div>
                   )}
                   <div className="mt-3">
-                    <div className="flex flex-wrap gap-2">
-                      {idea.ldrawStatus !== "done" ? (
+                    <div className="grid gap-2">
+                      <div>
+                        {idea.ldrawStatus !== "done" ? (
+                          <Button
+                            onClick={() => void startInstructions(idx)}
+                            disabled={
+                              !activeSearchId ||
+                              ldrawSubmittingIdx === idx ||
+                              idea.ldrawStatus === "running" ||
+                              idea.ldrawStatus === "queued"
+                            }
+                          >
+                            {ldrawSubmittingIdx === idx || idea.ldrawStatus === "running" || idea.ldrawStatus === "queued"
+                              ? "Generating…"
+                              : "Generate Instructions"}
+                          </Button>
+                        ) : null}
+                        {(idea.ldrawStatus === "queued" || idea.ldrawStatus === "running") && (
+                          <Button variant="secondary" onClick={() => void cancelInstructions(idx)} disabled={!activeSearchId}>
+                            Cancel
+                          </Button>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-2">
                         <Button
-                          onClick={async () => {
-                            if (!activeSearchId) return;
-                            await fetch(`/api/ideas/${activeSearchId}/ldraw`, {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ ideaIndex: idx })
-                            }).catch(() => {});
-                          }}
-                          disabled={!activeSearchId || idea.ldrawStatus === "running" || idea.ldrawStatus === "queued"}
+                          variant="secondary"
+                          onClick={() => downloadBlueprint(idx)}
+                          disabled={!activeSearchId || !(idea as any)?.ldrawArtifacts?.structure_plan}
                         >
-                          {idea.ldrawStatus === "running" || idea.ldrawStatus === "queued" ? "Generating…" : "Generate LDraw"}
+                          Download blueprint
                         </Button>
-                      ) : null}
-                      <Button
-                        variant="secondary"
-                        onClick={() => {
-                          if (!idea.ldraw_mpd) return;
-                          const blob = new Blob([idea.ldraw_mpd], { type: "text/plain" });
-                          const url = URL.createObjectURL(blob);
-                          const a = document.createElement("a");
-                          a.href = url;
-                          a.download = `${idea.title.replaceAll(" ", "_")}.mpd`;
-                          a.click();
-                          URL.revokeObjectURL(url);
-                        }}
-                        disabled={!idea.ldraw_mpd}
-                      >
-                        Download LDraw
-                      </Button>
-                      {idea.instructions_pdf ? (
-                        <a
-                          href={idea.instructions_pdf}
-                          className="inline-flex items-center justify-center rounded-xl bg-ink-950 px-4 py-2 text-sm font-medium text-white"
-                          download
+                        <Button
+                          variant="secondary"
+                          onClick={() => void downloadInstructions(idx, idea)}
+                          disabled={
+                            !activeSearchId ||
+                            partialPdfSubmittingIdx === idx ||
+                            (!idea.instructions_pdf && !(idea as any)?.ldrawArtifacts?.partial_instructions_pdf && !(idea as any)?.ldrawArtifacts?.partial_mpd)
+                          }
                         >
-                          Download PDF
-                        </a>
-                      ) : (
-                        <Button variant="secondary" disabled>
-                          PDF not available
+                          {partialPdfSubmittingIdx === idx ? "Preparing…" : "Download Instructions"}
                         </Button>
-                      )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -572,7 +910,7 @@ export default function IdeasPage() {
           </div>
         )}
       </div>
-    </main>
+    </div>
   );
 }
 

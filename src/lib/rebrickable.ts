@@ -19,6 +19,22 @@ type RebrickableSetSearchResponse = {
   next: string | null;
 };
 
+type RebrickableColorListResponse = {
+  results: Array<{
+    id: number;
+    name: string;
+    external_ids?: { [k: string]: unknown };
+  }>;
+  next: string | null;
+};
+
+type RebrickablePartDetailsResponse = {
+  part_num: string;
+  name: string;
+  part_cat_id?: number;
+  external_ids?: { [k: string]: unknown };
+};
+
 export type SetSearchResult = {
   setNum: string;
   name: string;
@@ -105,6 +121,58 @@ export async function getPartsForSet(setNum: string): Promise<SetPart[]> {
     { partNum: "3003", partName: "Brick 2 x 2", colorName: "Blue", quantity: 14 },
     { partNum: "3023", partName: "Plate 1 x 2", colorName: "Black", quantity: 30 }
   ];
+}
+
+function getApiKeyOrThrow() {
+  const apiKey = process.env.REBRICKABLE_API_KEY;
+  if (!apiKey) throw new Error("REBRICKABLE_API_KEY is not set");
+  return apiKey;
+}
+
+async function fetchRebrickableJson<T>(url: string, apiKey: string): Promise<T> {
+  const res = await fetch(url, {
+    headers: { Authorization: `key ${apiKey}` },
+    cache: "no-store"
+  });
+  if (!res.ok) throw new Error(`Rebrickable error ${res.status}: ${await res.text()}`);
+  return (await res.json()) as T;
+}
+
+export async function getAllRebrickableColors(): Promise<Array<{ name: string; ldrawColorId: number | null }>> {
+  const apiKey = getApiKeyOrThrow();
+  let url: string | null = "https://rebrickable.com/api/v3/lego/colors/?page_size=100";
+  const out: Array<{ name: string; ldrawColorId: number | null }> = [];
+  while (url) {
+    const currentUrl: string = url;
+    const json: RebrickableColorListResponse = await fetchRebrickableJson(currentUrl, apiKey);
+    for (const c of json.results) {
+      const ext = (c.external_ids || {}) as any;
+      // Rebrickable typically exposes LDraw color id under external_ids.LDraw
+      const ldraw = ext?.LDraw;
+      const ldrawColorId =
+        typeof ldraw === "number"
+          ? ldraw
+          : typeof ldraw === "string" && /^\d+$/.test(ldraw)
+            ? Number(ldraw)
+            : null;
+      out.push({ name: c.name, ldrawColorId });
+    }
+    url = json.next;
+  }
+  return out;
+}
+
+export async function getPartLDrawFile(partNum: string): Promise<{ ldrawFile: string | null; partCatId?: number; name?: string }> {
+  const apiKey = getApiKeyOrThrow();
+  const url = `https://rebrickable.com/api/v3/lego/parts/${encodeURIComponent(partNum)}/`;
+  const json = await fetchRebrickableJson<RebrickablePartDetailsResponse>(url, apiKey);
+  const ext = (json.external_ids || {}) as any;
+  const ldraw = ext?.LDraw;
+  const candidates: string[] =
+    Array.isArray(ldraw) ? ldraw.map((x) => String(x)) : typeof ldraw === "string" ? [ldraw] : [];
+  // Prefer .dat
+  const dat = candidates.find((x) => /\.dat$/i.test(x)) || candidates[0] || null;
+  return { ldrawFile: dat, partCatId: json.part_cat_id, name: json.name };
 }
 
 

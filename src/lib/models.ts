@@ -36,49 +36,40 @@ export type BuildGuide = {
   model?: string;
 };
 
+// DEPRECATED: BuildIdeaResult is legacy (from old structured ideas approach).
+// Saved builds now just store title + assets (no description/spec).
 export type BuildIdeaResult = {
   title: string;
-  description: string;
-  number_of_parts: number;
-  difficulty: "easy" | "medium" | "hard";
-  estimated_time_minutes: number;
-  // Full build in LDraw MPD format (use 0 STEP directives).
   ldraw_mpd: string;
   thumbnail: string | null; // URL (served from /public)
   instructions_pdf: string | null; // URL (served from /public)
 };
 
-export type IdeaCandidateSpec = {
-  // Compact “build spec” used to drive LDraw generation later.
-  // Keep this short and deterministic.
-  concept: string;
-  key_features: string[];
-  color_palette: string[];
-  step_count_estimate: number;
-};
-
+// Simplified: IdeaCandidate is now just a preview image variant for a given search.
+// All metadata (title, user prompt, constraints) lives on IdeaSearch.
 export type IdeaCandidate = {
+  // Just the title for this variant (e.g., "Space Shuttle 1", "Space Shuttle 2")
   title: string;
-  description: string; // short (1–2 sentences)
-  estimated_time_minutes: number; // rough estimate for build time
-  spec: IdeaCandidateSpec;
-  // Auto-generated quick preview (micro MPD + thumbnail)
+  // Preview thumbnail (generated directly from user prompt)
+  preview_thumbnail?: string | null;
   previewStatus?: "not_started" | "queued" | "running" | "done" | "error";
   previewJobId?: Id;
   previewError?: string;
-  preview_mpd?: string;
-  preview_thumbnail?: string | null;
-  // Filled in after "Generate LDraw" is run for this idea
-  ldrawStatus?: "not_started" | "queued" | "running" | "done" | "error";
+  // Filled in after "Generate Instructions" is clicked
+  ldrawStatus?: "not_started" | "queued" | "running" | "done" | "error" | "cancelled";
   ldrawJobId?: Id;
   ldrawError?: string;
   ldrawStage?: string;
   ldrawProgress?: { current?: number; total?: number; label?: string };
   ldrawArtifacts?: {
-    part_palette?: unknown;
     structure_plan?: unknown;
     step_outline?: unknown;
     chunks?: Array<{ index: number; stepsFrom?: number; stepsTo?: number; charLen?: number }>;
+    partial_mpd?: string;
+    partial_thumbnail?: string | null;
+    partial_instructions_pdf?: string | null;
+    partial_pdf_updated_at?: string;
+    partial_updated_at?: string;
   };
   ldraw_mpd?: string;
   thumbnail?: string | null;
@@ -88,20 +79,26 @@ export type IdeaCandidate = {
 export type IdeaSearch = {
   id: Id;
   createdAt: string;
-  preferences?: string;
-  // New (range); leave undefined for "Any"
+  preferences?: string; // Original user prompt/request
+  // Extracted title (once available, after preview generation)
+  title?: string;
+  // Constraints/filters from the user
   targetPartsMin?: number;
   targetPartsMax?: number;
   difficulty?: "easy" | "medium" | "hard";
   age?: number;
   buildTimeMinutes?: number;
-  count?: number; // number of ideas requested (defaults to 2)
+  count?: number; // number of preview variants to generate (defaults to 2)
+  // Inventory mode for instruction generation: basic parts only (core bricks/plates/tiles) or full inventory.
+  inventoryMode?: "basic" | "full";
+  // Optional: bucket color names to a smaller palette (reduces prompt size). Only applied when inventoryMode=basic.
+  colorMode?: "exact" | "bucketed";
   model?: string;
   status?: "queued" | "running" | "done" | "error";
   jobId?: Id;
   updatedAt?: string;
   error?: string;
-  ideas: IdeaCandidate[]; // defaults to 2
+  ideas: IdeaCandidate[]; // Preview image variants (e.g., 2 different angles/interpretations)
 };
 
 export type IdeaJobLogEvent = {
@@ -158,16 +155,21 @@ export type LDrawGenerationJob = {
   id: Id;
   ideaSearchId: Id;
   ideaIndex: number;
-  status: "queued" | "running" | "done" | "error";
+  status: "queued" | "running" | "done" | "error" | "cancelled";
   stage:
     | "palette"
+    | "preview"
+    | "preview_thumbnail"
     | "plan"
     | "outline"
-    | "mpd_chunking"
+    | "mpd"
     | "validate"
-    | "thumbnail"
+    | "final_thumbnail"
     | "pdf"
     | "done";
+  progress?: { current?: number; total?: number; label?: string };
+  cancelRequestedAt?: string;
+  cancelledAt?: string;
   maxRounds?: number;
   createdAt: string;
   updatedAt: string;
@@ -188,6 +190,8 @@ export type PreviewGenerationJob = {
   id: Id;
   ideaSearchId: Id;
   ideaIndex: number;
+  // Captures the preview mode used for this job (helps debug)
+  reasoningEffort?: "low" | "medium" | "high" | "image";
   status: "queued" | "running" | "done" | "error";
   stage: "openai" | "thumbnail" | "done";
   createdAt: string;
@@ -202,7 +206,7 @@ export type SavedBuild = {
   id: Id;
   createdAt: string;
   title: string;
-  description: string;
+  // description removed: saved builds only need title + assets
   ldraw_mpd: string;
   thumbnail: string | null;
   instructions_pdf: string | null;

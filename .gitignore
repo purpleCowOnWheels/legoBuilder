@@ -1,13 +1,49 @@
+# Next.js build output
 .next
+
+# Dependencies
 node_modules
-.DS_Store
+
+# Environment variables
 .env.local
 env.local
-data/db.json
-public/generated-thumbs
-public/generated-instructions
-data/ldraw
-data/openai-debug
+
+# System files
+.DS_Store
+
+# Logs
 log.out
+*.log
 
+# Database
+data/db.json
 
+# Generated assets
+public/generated-thumbs
+public/generated-thumbs/**/*.png
+public/generated-instructions
+public/generated-instructions/**/*.pdf
+
+# LDraw files (generated MPDs)
+data/ldraw
+data/ldraw/**/*.mpd
+
+# OpenAI debug artifacts
+data/openai-debug
+data/openai-debug/**/*.json
+data/openai-debug/**/*.png
+
+# MCP validation logs
+data/mcp-logs
+data/mcp-logs/**
+
+# Pipeline tests
+data/pipeline-tests
+
+# Cache
+data/cache
+data/cache/**
+
+# Temporary files
+.tmp-*
+*.tmp

@@ -9,7 +9,7 @@ export async function GET(_: Request, ctx: { params: { id: string } }) {
   const ideationJob = search.jobId ? db.ideaGenerationJobs.find((j) => j.id === search.jobId) : null;
   const ldrawJobs = db.ldrawGenerationJobs.filter((j) => j.ideaSearchId === id);
   const previewJobs = db.previewGenerationJobs.filter((j) => j.ideaSearchId === id);
-  return NextResponse.json({ search, ideationJob, previewJobs, ldrawJobs });
+  return NextResponse.json({ search, ideationJob, previewJobs, ldrawJobs, debugOpenAi: process.env.DEBUG_OPENAI === "1" });
 }
 
 export async function DELETE(_: Request, ctx: { params: { id: string } }) {

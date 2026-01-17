@@ -85,7 +85,7 @@ export function generateThumbnailPngFromMpd(params: { mpdPath: string; baseName:
   return { url: `/generated-thumbs/${path.basename(outPath)}`, outPath };
 }
 
-export function generateInstructionsPdfFromMpd(params: { mpdPath: string; baseName: string }) {
+export function generateInstructionsPdfFromMpd(params: { mpdPath: string; baseName: string; timeoutMs?: number }) {
   const bin = assertLPub3DAvailable();
   const outDir = path.join(process.cwd(), "public", "generated-instructions");
   ensureDir(outDir);
@@ -94,11 +94,25 @@ export function generateInstructionsPdfFromMpd(params: { mpdPath: string; baseNa
   const outPath = path.join(outDir, `${base}.pdf`);
 
   const args = ["--process-export", "--export-option", "pdf", "--output-file", outPath, "--liblego", params.mpdPath];
-  const res = spawnSync(bin, args, { encoding: "utf8" });
-  if (res.error) throw res.error;
-  if (res.status !== 0) {
+  const timeoutMs = params.timeoutMs || 120000; // 2 minutes default
+  const res = spawnSync(bin, args, { encoding: "utf8", timeout: timeoutMs });
+  
+  if (res.error) {
+    if ((res.error as any).code === "ETIMEDOUT") {
+      throw new Error(`LPub3D PDF export timed out after ${timeoutMs}ms. The model may be too complex or LPub3D may have hung.`);
+    }
+    throw res.error;
+  }
+  
+  if (res.status !== 0 && res.status !== null) {
     throw new Error(`LPub3D PDF export failed (code ${res.status}). ${res.stderr || res.stdout || ""}`.trim());
   }
+  
+  // If status is null, it was killed by timeout
+  if (res.status === null) {
+    throw new Error(`LPub3D PDF export did not complete. ${res.signal ? `Killed by signal: ${res.signal}` : "Process did not exit."}`);
+  }
+  
   assertNoLPub3DWarnings([res.stdout, res.stderr].filter(Boolean).join("\n"), "pdf export");
   if (!fs.existsSync(outPath)) {
     throw new Error("LPub3D PDF export succeeded but output PDF was not created.");
