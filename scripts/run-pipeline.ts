@@ -643,10 +643,20 @@ Common valid offsets:
 4. Compare to reference image region, refine if needed
 5. Call finalize_build when done
 
-## PARTS
+## COMMON PARTS
 
 Bricks: 3001=2x4, 3003=2x2, 3004=1x2, 3005=1x1
-Plates: 3020=2x4, 3022=2x2, 3023=1x2, 3024=1x1, 3031=4x4`;
+Plates: 3020=2x4, 3022=2x2, 3023=1x2, 3024=1x1, 3031=4x4
+
+## COLORS (use these - NOT transparent colors)
+
+SOLID COLORS (use these):
+- 0=Black, 1=Blue, 2=Green, 4=Red, 6=Brown
+- 7=Light Gray, 8=Dark Gray, 14=Yellow, 15=White
+- 70=Reddish Brown, 71=Light Bluish Gray, 72=Dark Bluish Gray
+
+DO NOT USE transparent colors (33-47, 57, 67, etc.) unless specifically needed.
+Color 67 is Trans-Clear, NOT white. Use 15 for white.`;
 }
 
 async function buildSubassembly(params: {
