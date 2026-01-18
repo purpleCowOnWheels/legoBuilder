@@ -907,24 +907,31 @@ GOAL: Build a LEGO representation of the reference image.
 
 DESCRIPTION: ${params.subassembly.description}
 
-Compare BOTH views of your render to the reference. Ask yourself:
-1. Does my build REPRESENT the same thing? (It won't match pixel-for-pixel)
-2. Are the PROPORTIONS right? (height vs width, spacing)
-3. Is the ORIENTATION correct? (front facing same direction)
-4. Did I build the right QUANTITY? (e.g., "2 legs" = BOTH legs)
+Your goal is to make the FRONT VIEW match the reference.
+The BACK VIEW is for checking rotations and identifying what needs revision.
+
+CHECK THE FRONT VIEW:
+1. Does it REPRESENT the same thing as the reference?
+2. Are PROPORTIONS right? (height vs width, spacing)
+3. Is ORIENTATION correct? (front facing same direction)
+4. Did you build the right QUANTITY? (e.g., "2 legs" = BOTH legs)
+
+CHECK THE BACK VIEW:
+- Use it to spot parts that are rotated wrong or misaligned
+- Helps identify what to revise if front view looks off
 
 PROGRESS CHECK: Compare to your last render.
-- Better (closer to reference)? → Keep building
-- Same? → Continue, may need more pieces
-- Worse (further from reference)? → Revise recent additions` },
-            { type: "input_text", text: "YOUR RENDER (FRONT VIEW):" }
+- Better? → Keep building
+- Same? → Continue, may need more pieces  
+- Worse? → Revise recent additions` },
+            { type: "input_text", text: "FRONT VIEW (should match reference):" }
           ];
           
           if (frontDataUrl) {
             content.push({ type: "input_image", image_url: frontDataUrl });
           }
           
-          content.push({ type: "input_text", text: "YOUR RENDER (BACK VIEW):" });
+          content.push({ type: "input_text", text: "BACK VIEW (for checking rotations/alignment):" });
           
           if (backDataUrl) {
             content.push({ type: "input_image", image_url: backDataUrl });
@@ -988,25 +995,26 @@ PROGRESS CHECK: Compare to your last render.
 
 DESCRIPTION: ${params.subassembly.description}
 
-Compare BOTH views of your final LEGO build to the reference. Remember: it won't match pixel-for-pixel, but it should REPRESENT the same thing.
+The FRONT VIEW should look like a LEGO representation of the reference.
+The BACK VIEW helps verify nothing is misaligned or rotated wrong.
 
-CHECK:
-1. Does your build look like the same subject? (legs look like legs, head looks like head)
+CHECK THE FRONT VIEW against the reference:
+1. Does it look like the same subject? (legs look like legs, etc.)
 2. Are PROPORTIONS similar? (relative sizes and spacing)
 3. Is ORIENTATION correct? (front faces same direction)
 4. Did you build correct QUANTITY? (e.g., "2 legs" = BOTH present)
 5. Is description COMPLETE? (all specified elements included)
 
-If your build is a reasonable LEGO representation of the reference: respond "CONFIRMED"
-If not: describe what's missing or wrong and fix it.` },
-            { type: "input_text", text: "YOUR FINAL RENDER (FRONT VIEW):" }
+If the FRONT VIEW is a reasonable LEGO representation of the reference: respond "CONFIRMED"
+If not: describe what's wrong and fix it.` },
+            { type: "input_text", text: "FRONT VIEW (should match reference):" }
           ];
           
           if (frontDataUrl) {
             content.push({ type: "input_image", image_url: frontDataUrl });
           }
           
-          content.push({ type: "input_text", text: "YOUR FINAL RENDER (BACK VIEW):" });
+          content.push({ type: "input_text", text: "BACK VIEW (check for misalignment):" });
           
           if (backDataUrl) {
             content.push({ type: "input_image", image_url: backDataUrl });
