@@ -820,18 +820,69 @@ If any of these are wrong, fix before finalizing.` },
         const pngPath = path.join(saDir, "final.png");
         
         fs.writeFileSync(mpdPath, ldraw, "utf8");
-        render(mpdPath, pngPath);
+        const rendered = render(mpdPath, pngPath);
         
-        console.log(`    ✓ ${parts.length} pieces, ${validationRounds} validation rounds`);
-        
-        return {
-          name: params.subassembly.name,
-          description: params.subassembly.description,
-          parts: finalParts,
-          ldraw,
-          pieceCount: parts.length,
-          validationRounds
-        };
+        if (rendered) {
+          const renderDataUrl = readFileAsDataUrl(pngPath);
+          
+          // Final confirmation: show render + reference image
+          messages.push({
+            type: "function_call_output",
+            call_id: call.id,
+            output: "Final render generated. Please confirm it matches before completing."
+          });
+          
+          messages.push({
+            role: "user",
+            content: [
+              { type: "input_text", text: `FINAL CONFIRMATION for "${params.subassembly.name}"
+
+SUB-ASSEMBLY DESCRIPTION: ${params.subassembly.description}
+IMAGE REGION: ${params.subassembly.imageRegion}
+
+Below is your final render. Compare it to:
+1. The DESCRIPTION above - does it include everything specified?
+2. The ${params.subassembly.imageRegion.toUpperCase()} region of the reference image - does it match that part?
+
+If BOTH match: respond "CONFIRMED" and nothing else.
+If either doesn't match: describe what's wrong and continue building.` },
+              { type: "input_text", text: "YOUR FINAL RENDER:" },
+              { type: "input_image", image_url: renderDataUrl },
+              { type: "input_text", text: "REFERENCE IMAGE (compare to " + params.subassembly.imageRegion + "):" },
+              { type: "input_image", image_url: imageDataUrl }
+            ]
+          });
+          
+          // Get confirmation response
+          const confirmResponse = await callOpenAI(messages, BUILD_TOOLS, "auto");
+          
+          if (confirmResponse.output_text?.toUpperCase().includes("CONFIRMED")) {
+            console.log(`    ✓ ${parts.length} pieces, ${validationRounds} validation rounds`);
+            
+            return {
+              name: params.subassembly.name,
+              description: params.subassembly.description,
+              parts: finalParts,
+              ldraw,
+              pieceCount: parts.length,
+              validationRounds
+            };
+          } else {
+            // Not confirmed - continue iterating
+            console.log(`    [${String(callNum).padStart(3, "0")}] finalize rejected, continuing...`);
+            messages.push({
+              role: "assistant",
+              content: confirmResponse.output_text || "Continuing to refine..."
+            });
+            // Don't return - let the loop continue
+          }
+        } else {
+          messages.push({
+            type: "function_call_output",
+            call_id: call.id,
+            output: JSON.stringify({ success: false, error: "Render failed" })
+          });
+        }
       }
     }
   }
