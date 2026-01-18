@@ -787,22 +787,20 @@ async function buildSubassembly(params: {
           messages.push({
             role: "user",
             content: [
-              { type: "input_text", text: `Preview of ${params.subassembly.name} (${parts.length} parts).
+              { type: "input_text", text: `Preview of "${params.subassembly.name}" (${parts.length} parts).
 
-CHECK YOUR BUILD:
+SUB-ASSEMBLY DESCRIPTION: ${params.subassembly.description}
+IMAGE REGION: ${params.subassembly.imageRegion}
 
-1. QUANTITY: Re-read the description. Did you build ALL items?
-   - "2 legs" = BOTH legs, not just 1
-   - "2 arms" = BOTH arms, not just 1
+Compare this render to the ${params.subassembly.imageRegion.toUpperCase()} region of the input image.
 
-2. ORIENTATION: Does your build face the same direction as in the reference?
-   - If legs point DOWN in the reference, they should point DOWN here
-   - If arms extend FORWARD, they should extend FORWARD here
+CHECK:
+1. MATCHES DESCRIPTION? Does it include everything specified above?
+2. QUANTITY correct? (e.g., "2 legs" = BOTH legs built)
+3. ORIENTATION correct? Does it face the same direction as in the input?
+4. SHAPE similar? Does the overall form match that region of the input?
 
-3. SHAPE: Compare to the ${params.subassembly.imageRegion.toUpperCase()} region.
-   Does the overall shape match?
-
-If any of these are wrong, fix it before finalizing.` },
+If any of these are wrong, fix before finalizing.` },
               { type: "input_image", image_url: renderDataUrl }
             ]
           });
