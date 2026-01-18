@@ -393,7 +393,7 @@ const BUILD_TOOLS = [
   {
     type: "function",
     name: "validate_build",
-    description: `Check stud connections. Call BEFORE preview_build. Returns "VALID" or errors with fix suggestions.`,
+    description: `Check stud connections. Call after EVERY part addition. Fast text-only check. Returns "VALID" or errors.`,
     parameters: {
       type: "object",
       additionalProperties: false,
@@ -404,7 +404,7 @@ const BUILD_TOOLS = [
   {
     type: "function",
     name: "preview_build",
-    description: `Render current build. Call AFTER validate_build passes. Returns image.`,
+    description: `Render current build as image. Call every 3-5 parts to visually verify progress against reference.`,
     parameters: {
       type: "object",
       additionalProperties: false,
@@ -643,15 +643,14 @@ Common valid offsets:
 
 ## WORKFLOW
 
-1. Add a few parts (3-5 max), then call validate_build
+1. Add parts and call validate_build after EVERY addition
 2. If errors: fix using suggestions, validate again
-3. Once valid: call preview_build to see the render
-4. Compare to reference image - does shape/orientation/quantity match?
-5. Repeat steps 1-4 until complete
-6. Call finalize_build when fully satisfied
+3. Every 3-5 parts (or when making significant changes): call preview_build
+4. Compare render to reference - check shape, orientation, quantity
+5. Repeat until complete, then call finalize_build
 
-IMPORTANT: Preview frequently! Don't add more than 5 parts without previewing.
-Visual feedback helps catch issues early.
+VALIDATE after every part addition (fast, text-only).
+PREVIEW every 3-5 parts to visually check progress.
 
 ## COMMON PARTS
 
