@@ -26,6 +26,7 @@ import dotenv from "dotenv";
 import sharp from "sharp";
 import { readDb } from "@/lib/storage";
 import type { InventoryItem } from "@/lib/models";
+import { compareImages } from "@/lib/imageSimilarity";
 
 dotenv.config({ path: path.join(process.cwd(), ".env.local") });
 
@@ -73,6 +74,7 @@ interface SubassemblyResult {
   ldraw: string;
   pieceCount: number;
   validationRounds: number;
+  similarityScore?: number;  // 0-100, comparison to cropped reference
 }
 
 interface PipelineResult {
@@ -941,7 +943,16 @@ If ANY are wrong: describe what's wrong and rebuild/fix it.` },
           const confirmResponse = await callOpenAI({ messages, tools: BUILD_TOOLS });
           
           if (confirmResponse.output_text?.toUpperCase().includes("CONFIRMED")) {
-            console.log(`    ✓ ${parts.length} pieces, ${validationRounds} validation rounds`);
+            // Calculate similarity score vs cropped reference
+            let similarityScore: number | undefined;
+            try {
+              const similarity = compareImages(pngPath, params.croppedImagePath);
+              similarityScore = similarity.overall;
+              console.log(`    ✓ ${parts.length} pieces, ${validationRounds} validation rounds, similarity: ${similarityScore}%`);
+            } catch (err) {
+              console.log(`    ✓ ${parts.length} pieces, ${validationRounds} validation rounds`);
+              console.log(`    (similarity check failed: ${err})`);
+            }
             
             return {
               name: params.subassembly.name,
@@ -949,7 +960,8 @@ If ANY are wrong: describe what's wrong and rebuild/fix it.` },
               parts: finalParts,
               ldraw,
               pieceCount: parts.length,
-              validationRounds
+              validationRounds,
+              similarityScore
             };
           } else {
             // Not confirmed - continue iterating
@@ -1254,7 +1266,8 @@ async function runPipeline(params: {
       subassemblies: subassemblyResults.map(sa => ({
         name: sa.name,
         pieces: sa.pieceCount,
-        validationRounds: sa.validationRounds
+        validationRounds: sa.validationRounds,
+        similarityScore: sa.similarityScore
       })),
       finalAssembly: finalAssembly ? {
         pieces: finalAssembly.pieceCount,
