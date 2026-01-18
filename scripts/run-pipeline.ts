@@ -554,12 +554,10 @@ Identify 2-5 major sub-assemblies (e.g., legs, torso, head, accessories).
 For each, describe WHERE in the image it appears and estimate pieces needed.
 Keep total between 25-200 pieces.
 
-IMPORTANT - COUNT CORRECTLY:
-- If there are TWO legs, name it "Legs" (plural) and describe "both left and right legs"
-- If there are TWO arms, name it "Arms" (plural) and describe "both arms"
-- If there are TWO wings, name it "Wings" (plural)
-- Count wheels, eyes, antennae, etc. and use plural names when >1
-- Each sub-assembly should build ALL instances (e.g., "Legs" builds BOTH legs together)`
+IMPORTANT - SPECIFY QUANTITIES:
+In the description for each sub-assembly, explicitly state HOW MANY of each element to build.
+Examples: "2 legs (left and right)", "4 wheels", "1 head", "2 arms", "6 windows"
+Count what you see in the reference image and include the number in the description.`
       },
       {
         role: "user",
@@ -613,17 +611,11 @@ DESCRIPTION: ${subassembly.description}
 IMAGE REGION: ${subassembly.imageRegion}
 TARGET: ~${subassembly.estimatedPieces} pieces
 
-## IMPORTANT: COUNT MATTERS
+## IMPORTANT: BUILD THE CORRECT QUANTITY
 
-Build the CORRECT NUMBER of each element:
-- "Legs" = TWO legs (left and right)
-- "Arms" = TWO arms (left and right)
-- "Wings" = TWO wings (left and right)
-- "Eyes" = TWO eyes
-- "Wheels" = typically FOUR wheels
-
-Look at the reference image and count how many of each part is visible.
-If the name is plural ("legs", "arms"), build ALL of them, not just one.
+The description specifies HOW MANY of each element to build.
+Build exactly that number - not just one when multiple are needed.
+Check the reference image to verify the count is correct.
 
 ## CONNECTION SYSTEM
 
