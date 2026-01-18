@@ -2114,57 +2114,142 @@ export async function assembleFinalProduct(params: {
   const totalPieces = params.subassemblyResults.reduce((sum, sa) => sum + sa.actual_pieces, 0);
   console.log(`  → Total pieces: ${totalPieces}`);
 
-  // Combine all subassembly MPDs
+  // Combine all subassembly MPDs into a multi-part file
   const combinedMpd = params.subassemblyResults.map(sa => {
     return `0 FILE ${sa.subassembly_name}.ldr\n${sa.ldraw_mpd}\n0 NOFILE`;
   }).join('\n\n') + '\n\n0 FILE main.ldr\n' + 
     params.subassemblyResults.map((sa, i) => {
-      // Stack subassemblies vertically with 20-unit spacing
+      // Stack subassemblies vertically with 20-unit spacing (GPT will refine this)
       return `1 16 0 ${-i * 20} 0 1 0 0 0 1 0 0 0 1 ${sa.subassembly_name}.ldr`;
     }).join('\n');
 
   if (logPrefix) {
     fs.mkdirSync(path.dirname(logPrefix), { recursive: true });
-    fs.writeFileSync(`${logPrefix}_combined.mpd`, combinedMpd, "utf8");
-    console.log(`  → Combined MPD: ${logPrefix}_combined.mpd`);
+    fs.writeFileSync(`${logPrefix}_input_combined.mpd`, combinedMpd, "utf8");
+    console.log(`  → Initial combined MPD: ${logPrefix}_input_combined.mpd`);
   }
 
-  // Now ask GPT to review and refine the final assembly with proper positioning
-  console.log(`  → Requesting GPT to refine assembly positions...`);
-  
-  const validationResults: Array<{ round: number; similarity?: number; error?: string }> = [];
-  
-  // Use tool loop for final validation
+  // Build a blueprint for the final assembly refinement
+  const finalBlueprint: LDrawBlueprint = {
+    structure_plan: {
+      overview: params.structurePlan.overview,
+      subassemblies: params.subassemblyResults.map(sa => ({
+        name: sa.subassembly_name,
+        description: `Already built (${sa.actual_pieces} pieces)`
+      }))
+    },
+    step_outline: [
+      {
+        step: 1,
+        title: "Position all subassemblies",
+        description: "Arrange subassemblies to match reference image proportions and layout",
+        subassembly_name: "Final Assembly"
+      }
+    ],
+    notes: ["Refine positioning based on visual feedback"]
+  };
+
   const promptText = [
-    "You are assembling the final LEGO model.",
+    "You are positioning the final LEGO model assembly.",
     "",
     `Overview: ${params.structurePlan.overview}`,
     "",
     "The following subassemblies have been built:",
     ...params.subassemblyResults.map(sa => `- ${sa.subassembly_name} (${sa.actual_pieces} pieces)`),
     "",
-    "TASK: Review the combined MPD and adjust positioning to match the reference image.",
-    "Use proper coordinates to position each subassembly correctly relative to each other.",
+    "TASK: Adjust the coordinates in main.ldr to position each subassembly correctly.",
+    "Match the reference image's proportions, spacing, and overall layout.",
     "",
-    "Current combined MPD:",
+    "Current combined MPD (you can only modify the coordinates in main.ldr):",
     combinedMpd
   ].join('\n');
 
-  // This would ideally use the tool loop, but for now let's just validate the combined result
-  // TODO: Implement final assembly refinement with GPT
+  if (logPrefix) {
+    fs.writeFileSync(`${logPrefix}_input_prompt.txt`, promptText, "utf8");
+    fs.copyFileSync(params.referenceImagePath, `${logPrefix}_reference.png`);
+    console.log(`  → Input prompt: ${logPrefix}_input_prompt.txt`);
+    console.log(`  → Reference image: ${logPrefix}_reference.png`);
+  }
+
+  console.log(`  → Requesting GPT to refine assembly positions...`);
+  
+  const validationResults: Array<{ 
+    round: number; 
+    similarity?: number; 
+    error?: string;
+    rendered_image_path?: string;
+  }> = [];
+  
+  // Use tool loop for final validation and refinement
+  const result = await generateLDrawMpdChunkForIdea({
+    title: "Final Assembly",
+    userPrompt: promptText,
+    blueprint: finalBlueprint,
+    stepFrom: 1,
+    stepTo: 1,
+    inventory: params.inventory,
+    referenceImagePath: params.referenceImagePath,
+    assembledMpdSoFar: combinedMpd,
+    visualFeedbackMode: "final_only",
+    isSubassemblyBoundary: false,
+    isFinalChunk: true,
+    currentChunkNumber: 1,
+    totalChunks: 1,
+    useValidationToolLoop: true,
+    onEvent: (event) => {
+      if (event.type === "round_start") {
+        console.log(`  → Validation round ${event.round} starting...`);
+      } else if (event.type === "tool_results") {
+        event.results.forEach((r: any) => {
+          const roundNum = validationResults.length + 1;
+          const entry: { round: number; similarity?: number; error?: string; rendered_image_path?: string } = {
+            round: roundNum
+          };
+          
+          if (r.similarity_score !== undefined) {
+            entry.similarity = r.similarity_score;
+            console.log(`  → Similarity: ${(r.similarity_score * 100).toFixed(1)}% ${r.ok ? "✓" : "✗"}`);
+          }
+          if (r.error) {
+            entry.error = r.error;
+            console.log(`  → Error: ${r.error}`);
+          }
+          if (r.rendered_image_path) {
+            entry.rendered_image_path = r.rendered_image_path;
+            
+            // Copy rendered image to log directory
+            if (logPrefix && fs.existsSync(r.rendered_image_path)) {
+              const destPath = `${logPrefix}_round${roundNum}.png`;
+              fs.copyFileSync(r.rendered_image_path, destPath);
+              console.log(`  → Rendered image: ${destPath}`);
+            }
+          }
+          
+          validationResults.push(entry);
+        });
+      }
+    }
+  });
+
+  const finalSimilarity = validationResults.reverse().find(r => r.similarity !== undefined)?.similarity;
 
   console.log(`[PHASE 3] ✓ Final assembly complete`);
-  console.log(`  → Total validation rounds: ${validationResults.length}`);
+  console.log(`  → Validation rounds: ${validationResults.length}`);
+  if (finalSimilarity !== undefined) {
+    console.log(`  → Final similarity: ${(finalSimilarity * 100).toFixed(1)}%`);
+  }
 
   if (logPrefix) {
-    fs.writeFileSync(`${logPrefix}_final.mpd`, combinedMpd, "utf8");
-    console.log(`  → Final MPD: ${logPrefix}_final.mpd`);
+    fs.writeFileSync(`${logPrefix}_output.mpd`, result.chunkBody, "utf8");
+    fs.writeFileSync(`${logPrefix}_validation.json`, JSON.stringify(validationResults, null, 2), "utf8");
+    console.log(`  → Final MPD: ${logPrefix}_output.mpd`);
+    console.log(`  → Validation log: ${logPrefix}_validation.json`);
   }
 
   return {
-    finalMpd: combinedMpd,
+    finalMpd: result.chunkBody,
     validationRounds: validationResults.length,
-    finalSimilarity: undefined
+    finalSimilarity
   };
 }
 

@@ -114,11 +114,26 @@ async function main() {
       const safeName = sa.name.replace(/[^a-z0-9]/gi, '_');
       console.log(`  ${i + 1}. ${sa.name}`);
       console.log(`     Plan: ${logDir}/02a_subassembly_plan_${safeName}_output.json`);
-      console.log(`     Build: ${logDir}/02b_subassembly_build_${safeName}_ldraw.mpd`);
+    });
+    
+    console.log(`\nSubassembly builds (Phase 2b):`);
+    result.subassemblyResults.forEach((sa, i) => {
+      const safeName = sa.subassembly_name.replace(/[^a-z0-9]/gi, '_');
+      console.log(`  ${i + 1}. ${sa.subassembly_name}`);
+      console.log(`     LDraw: ${logDir}/02b_subassembly_build_${safeName}_ldraw.mpd`);
       console.log(`     Validation: ${logDir}/02b_subassembly_build_${safeName}_validation.json`);
     });
-    console.log(`\nFinal assembly: ${result.finalMpd ? logDir + "/03_final_assembly_final.mpd" : "skipped (debug mode)"}`);
-    console.log(`Summary: ${summaryPath}`);
+    
+    if (result.finalMpd) {
+      console.log(`\nFinal assembly (Phase 3):`);
+      console.log(`  Input: ${logDir}/03_final_assembly_input_combined.mpd`);
+      console.log(`  Output: ${logDir}/03_final_assembly_output.mpd`);
+      console.log(`  Validation: ${logDir}/03_final_assembly_validation.json`);
+    } else {
+      console.log(`\nFinal assembly: skipped (debug mode)`);
+    }
+    
+    console.log(`\nSummary: ${summaryPath}`);
     
     if (!args.fullMode) {
       console.log("\n💡 To run full pipeline with all subassemblies + final assembly:");
