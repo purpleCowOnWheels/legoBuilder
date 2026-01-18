@@ -1,0 +1,42 @@
+{
+  "subassembly_name": "Display Base (optional)",
+  "image_location_description": "Bottom of image; not shown, but a small black/DBG base under the feet for stability.",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Start core plates",
+      "description": "Place 2x Plate 2x2 (3022) Black in a 2x4 rectangle."
+    },
+    {
+      "step": 2,
+      "title": "Add front corners",
+      "description": "Attach 2x Plate Corner 2x2 (2780) Black at the front left/right."
+    },
+    {
+      "step": 3,
+      "title": "Square the rear",
+      "description": "Attach 1x Plate Corner 2x2 (2780) Black centered at the rear."
+    },
+    {
+      "step": 4,
+      "title": "Fill edges + stiffen",
+      "description": "Add 4x Plate 1x2 (3040b) Black to fill gaps; add 1x Plate 1x4 (3633) Black under center."
+    },
+    {
+      "step": 5,
+      "title": "Foot pads (DBG)",
+      "description": "On top, place 2x Tile 2x2 (2458) Dark Bluish Gray where feet will stand."
+    },
+    {
+      "step": 6,
+      "title": "Tile the perimeter",
+      "description": "Add 5x Tile 1x2 (2412b) Black around edges, leaving foot studs open."
+    },
+    {
+      "step": 7,
+      "title": "Finish top tiling",
+      "description": "Add 2x Tile 1x2 (2412b) Black + 1x Tile 1x2 (30089b) Black to close gaps."
+    }
+  ],
+  "estimated_pieces": 20
+}

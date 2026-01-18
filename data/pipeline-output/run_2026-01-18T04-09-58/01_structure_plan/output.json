@@ -1,0 +1,41 @@
+{
+  "overview": "Build a small sci‑fi ground drone / rover: a chunky armored body on the left with a short connector arm leading to a small cylindrical “sensor pod” assembly on the right, matching the reference silhouette.",
+  "subassemblies": [
+    {
+      "name": "Main body block (armored hull)",
+      "description": "A compact rectangular brick-built hull with a studded top surface (to match the large stepped block). Keep it mostly light/dark bluish gray, with layered plates to create the slight height change/step seen on top.",
+      "image_location": "Left side; the largest gray block with many studs on top."
+    },
+    {
+      "name": "Rear/side extension (mounting ledge)",
+      "description": "A smaller rectangular protrusion that bridges the hull to the articulated/sensor section. Build as a 1–2 stud wide ledge that sits slightly lower than the hull top, creating the ‘step’ profile.",
+      "image_location": "Just right of the main body; the smaller gray block attached to it."
+    },
+    {
+      "name": "Connector arm (articulated linkage)",
+      "description": "A short chain of 1x1 round elements and small plates to create a segmented arm. Use alternating round plates/tiles and 1x1 round bricks to echo the bead-like spacing in the reference.",
+      "image_location": "Middle-right; the line of small round gray pieces between the extension block and the black cylinders."
+    },
+    {
+      "name": "Twin cylinders (equipment/tanks)",
+      "description": "Two black 1x1 round bricks as paired ‘tanks’ or ‘thrusters’ mounted along the connector arm. Cap/space them with round plates to match the stacked look.",
+      "image_location": "Right of center; the two black vertical cylinders."
+    },
+    {
+      "name": "Sensor head / camera pod",
+      "description": "A small black head unit with a side-facing round detail (use a 1x1 brick with stud on the side or similar) to read as a camera/sensor. Attach to the end of the arm and add a small top plate for the compact blocky finish.",
+      "image_location": "Far right end; the black block with a circular side detail."
+    },
+    {
+      "name": "Underside skids / feet (optional but buildable)",
+      "description": "Add low-profile plates/tiles under the main body to stabilize it and give it a ‘hover skid’ or ‘crawler’ stance without changing the top silhouette.",
+      "image_location": "Under the left body block (not prominent in the reference but supports display stability)."
+    }
+  ],
+  "estimated_total_pieces": 65,
+  "notes": [
+    "Color-match the reference primarily with light/dark bluish gray for the hull and black for the cylinders/head; small gray round parts form the arm segments.",
+    "Keep the arm connection simple (stud-to-stud) so it stays sturdy; treat it as a rigid segmented boom rather than fully poseable.",
+    "If you want extra interest while staying on-model, add 1–2 small colored ‘status lights’ (trans-yellow/trans-red) on the hull sides without changing the overall shape."
+  ]
+}

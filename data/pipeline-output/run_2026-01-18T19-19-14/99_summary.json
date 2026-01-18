@@ -1,0 +1,48 @@
+{
+  "timestamp": "2026-01-18T19-19-14",
+  "mode": "debug",
+  "blueprint": {
+    "overview": "Reference shows a single LEGO-style minifigure character in a white outfit holding 1 blue energy sword. Plan below breaks it into 5 major sub-assemblies you can build as a small brick-built display figure (not a true minifig), staying within 25–200 pieces total.",
+    "subassemblies": [
+      {
+        "name": "Boots + legs base",
+        "description": "WHERE: Bottom of the image (both feet/legs). Build 2 legs (left and right) and 2 blocky boots. Use 2 boots (each boot = 3 pieces) and 2 legs (each leg = 5 pieces) for a simple chunky stance.",
+        "imageRegion": "bottom third, centered",
+        "estimatedPieces": 16
+      },
+      {
+        "name": "Torso + belt/robe block",
+        "description": "WHERE: Middle of the image (white torso with brown belt). Build 1 torso block, 1 belt band, and 1 lower robe/hip section. Suggested elements to include: 1 torso core, 1 front chest plate, 1 back plate, 1 belt stripe, and 1 hip/robe lip (so: 5 distinct elements).",
+        "imageRegion": "center of image",
+        "estimatedPieces": 18
+      },
+      {
+        "name": "Arms + hands (sword grip pose)",
+        "description": "WHERE: Upper-middle, in front of torso holding the sword. Build 2 arms (left and right) and 2 hands. Pose should be a two-handed grip: 2 upper arms, 2 forearms, 2 hands (6 elements total).",
+        "imageRegion": "upper-middle, slightly right of center (in front of torso)",
+        "estimatedPieces": 14
+      },
+      {
+        "name": "Head + hair",
+        "description": "WHERE: Top-left/upper area (face and blond hair). Build 1 head (with 1 face front) and 1 hair cap. Use 1 neck connector under the head (so: 3 elements total: 1 head, 1 hair, 1 neck).",
+        "imageRegion": "top third, slightly left of center",
+        "estimatedPieces": 10
+      },
+      {
+        "name": "Energy sword (hilt + blue blade)",
+        "description": "WHERE: Right side of image, angled up. Build 1 sword consisting of 1 hilt and 1 blade. Hilt as a small cylinder stack: 3 elements (pommel, grip, emitter) plus 1 long blue blade element (total 4 elements).",
+        "imageRegion": "right side, extending from hands to top-right corner",
+        "estimatedPieces": 8
+      }
+    ],
+    "totalEstimatedPieces": 66
+  },
+  "subassemblies": [
+    {
+      "name": "Boots + legs base",
+      "pieces": 16,
+      "validationRounds": 2
+    }
+  ],
+  "finalAssembly": null
+}

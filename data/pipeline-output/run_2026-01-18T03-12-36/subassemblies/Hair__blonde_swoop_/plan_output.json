@@ -1,0 +1,32 @@
+{
+  "subassembly_name": "Hair (blonde swoop)",
+  "image_location_description": "Top of the model head; rounded light-blonde hair mass with slight forehead overhang.",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Base footprint",
+      "description": "Place 1x 3022 Tan; add 2x 3023 Tan to extend to a 2x4 plate."
+    },
+    {
+      "step": 2,
+      "title": "Top cap plate",
+      "description": "Attach 1x 3037 Yellow (2x4) plate on top, aligned with the base."
+    },
+    {
+      "step": 3,
+      "title": "Crown ridges",
+      "description": "Add 2x 3004 BrightLightYellow (1x2) bricks centered, front-to-back."
+    },
+    {
+      "step": 4,
+      "title": "Shaggy edge slopes",
+      "description": "Add 4x 3040b Tan slopes on the 4 edges, sloping down/out."
+    },
+    {
+      "step": 5,
+      "title": "Forehead swoop",
+      "description": "Add 2x 3023 Yellow (1x2) plates at front, offset 1 stud to overhang."
+    }
+  ],
+  "estimated_pieces": 12
+}

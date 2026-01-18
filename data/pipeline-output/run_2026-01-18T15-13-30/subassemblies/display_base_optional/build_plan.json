@@ -1,0 +1,32 @@
+{
+  "subassembly_name": "Display base (optional)",
+  "image_location_description": "Bottom under the character’s feet",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Base layer (6x6)",
+      "description": "Place 3x DBG 2x6 plates side-by-side to form a 6x6 footprint."
+    },
+    {
+      "step": 2,
+      "title": "Reinforce base",
+      "description": "Stack 3x DBG 2x6 plates on top, rotated 90° to lock seams."
+    },
+    {
+      "step": 3,
+      "title": "Tile front + sides",
+      "description": "Add 2 side 1x4 tiles; front gets 1x 2x2 tile + 2x 1x2 grille tiles."
+    },
+    {
+      "step": 4,
+      "title": "Finish back + foot studs",
+      "description": "Tile back with 1x 1x4 tile + 1x 1x2 grille; add 2 jumper plates for feet."
+    },
+    {
+      "step": 5,
+      "title": "Rear markers",
+      "description": "Add 2x DBG round 1x1 plates behind the jumpers as subtle base detail."
+    }
+  ],
+  "estimated_pieces": 17
+}

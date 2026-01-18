@@ -1,0 +1,37 @@
+{
+  "subassembly_name": "Base / Body Block",
+  "image_location_description": "Left side: big light/dark bluish gray rectangular block with many studs on top",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Base plates (4x6)",
+      "description": "Place 2x Plate 2x6 (3795) Dark Bluish Gray side-by-side to make 4x6."
+    },
+    {
+      "step": 2,
+      "title": "Middle layer start",
+      "description": "Add 2x Brick 2x4 (3001) Dark Bluish Gray on one 4x4 end (side-by-side)."
+    },
+    {
+      "step": 3,
+      "title": "Middle layer finish",
+      "description": "Add 1x Brick 2x4 (3001) Dark Bluish Gray rotated to fill the remaining 4x2 end."
+    },
+    {
+      "step": 4,
+      "title": "Upper layer main",
+      "description": "Stack 2x Brick 2x4 (3001) Light Bluish Gray over the 4x4 end (same layout)."
+    },
+    {
+      "step": 5,
+      "title": "Upper layer fill",
+      "description": "Fill the remaining 4x2 end with 4x Brick 1x2 (3004) Light Bluish Gray."
+    },
+    {
+      "step": 6,
+      "title": "Top cap (studs)",
+      "description": "Cap with 2x Plate 2x6 (3795) Light Bluish Gray side-by-side, keep studs up."
+    }
+  ],
+  "estimated_pieces": 13
+}

@@ -1,0 +1,57 @@
+{
+  "subassembly_name": "Torso/chest (white tunic)",
+  "image_location_description": "Center of the figure: white chest/abdomen block with small dark V-neck hints",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Base footprint",
+      "description": "Join 2x white 2x3 plates (3021) side-by-side to make a 4x3 base."
+    },
+    {
+      "step": 2,
+      "title": "Front & back walls",
+      "description": "Add 2x white 1x4 bricks (3010) along front and back edges."
+    },
+    {
+      "step": 3,
+      "title": "Fill middle row",
+      "description": "Add 2x white 1x2 bricks (3004) to fill the center row."
+    },
+    {
+      "step": 4,
+      "title": "Second layer (outer)",
+      "description": "Stack 4x white 1x2 bricks (3004) to start the next layer perimeter."
+    },
+    {
+      "step": 5,
+      "title": "Second layer (fill)",
+      "description": "Fill remaining studs with 4x white 1x1 bricks (3005)."
+    },
+    {
+      "step": 6,
+      "title": "Raised chest step",
+      "description": "Center 1x white 2x3 plate (3021) on top to create a tapered step."
+    },
+    {
+      "step": 7,
+      "title": "Collar + crease hint",
+      "description": "Add 1x white 2x2 tile (2420) + 1x black 1x2 grille tile (2412b) at front."
+    },
+    {
+      "step": 8,
+      "title": "Smooth side tops",
+      "description": "Add 2x white 2x2 tiles (2420) on left/right at the lower top level."
+    },
+    {
+      "step": 9,
+      "title": "Close remaining gaps",
+      "description": "Add 2x white 1x2 tiles (2458) to finish the top surface edges."
+    },
+    {
+      "step": 10,
+      "title": "V-neck point",
+      "description": "Add 1x black 1x1 round tile (98138) just below the collar line."
+    }
+  ],
+  "estimated_pieces": 22
+}

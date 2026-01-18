@@ -1,0 +1,47 @@
+{
+  "subassembly_name": "Hips/waist + belt",
+  "image_location_description": "Mid-lower center, directly above both legs; red/brown belt wraps the waist with a small front buckle/pouch.",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Base plate (2x6)",
+      "description": "Join 1x white 2x4 plate + 1x white 2x2 plate into a 2x6."
+    },
+    {
+      "step": 2,
+      "title": "Waist core bricks",
+      "description": "Stack 3x white 1x2 bricks on the base to make a solid 2x6 block."
+    },
+    {
+      "step": 3,
+      "title": "Top cap layer",
+      "description": "Cap with 1x white 1x4 plate + 1x white 1x2 plate, flush on top."
+    },
+    {
+      "step": 4,
+      "title": "Belt band front/back",
+      "description": "Add 1x dark red 1x4 tile front and 1x dark red 1x4 tile back."
+    },
+    {
+      "step": 5,
+      "title": "Belt wraps the sides",
+      "description": "Add 2x dark red 1x2 tiles (left/right) + 2x reddish brown 1x2 tiles as accents."
+    },
+    {
+      "step": 6,
+      "title": "Front buckle + pouch",
+      "description": "Center 1x flat silver 1x1 tile (buckle); add 1x RB 1x2 jumper + 1x RB 1x1 round tile."
+    },
+    {
+      "step": 7,
+      "title": "Belt rivets (main)",
+      "description": "Add 4x 1x1 round plates (RB) as belt studs on front/back."
+    },
+    {
+      "step": 8,
+      "title": "Side rivets",
+      "description": "Add 2x 1x1 round plates (DBG) as small side belt studs."
+    }
+  ],
+  "estimated_pieces": 22
+}

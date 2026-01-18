@@ -1,0 +1,36 @@
+{
+  "overview": "Build plan for a minifigure-scale Jedi in white robes holding 1 blue lightsaber. Break into 5 sub-assemblies: legs, torso/arms, head, hair, and lightsaber.",
+  "subassemblies": [
+    {
+      "name": "Legs + hips (white pants/boots)",
+      "description": "Bottom of the figure (lower half). Build 2 legs (left and right) and 1 hip/pelvis block. Suggested micro-build: 2 feet blocks + 2 shin blocks + 1 shared hip connector.",
+      "imageRegion": "Lower half of image, from belt down to feet (bottom center).",
+      "estimatedPieces": 8
+    },
+    {
+      "name": "Torso + belt + arms (white robe top)",
+      "description": "Center of the figure. Build 1 torso block, 2 arms (left and right), and 2 hands (left and right). Add 1 belt band around the waist (suggested as a thin plate layer).",
+      "imageRegion": "Middle of image, between legs and head (center).",
+      "estimatedPieces": 14
+    },
+    {
+      "name": "Head (face)",
+      "description": "Top center. Build 1 head block (a small cube/rounded cube) with 1 front 'face tile/plate' to suggest eyes/mouth area.",
+      "imageRegion": "Upper center, just above the torso (face area).",
+      "estimatedPieces": 5
+    },
+    {
+      "name": "Hair (blond, swept)",
+      "description": "Very top of the figure. Build 1 hair mass made from stacked/sloped pieces; aim for a rounded cap. Use 1 main top piece and 3 side/fringe pieces to suggest the layered swoop.",
+      "imageRegion": "Top of image (above the head).",
+      "estimatedPieces": 6
+    },
+    {
+      "name": "Lightsaber (hilt + blue blade)",
+      "description": "Right side accessory held in both hands. Build 1 hilt (cylindrical look) and 1 blade (a straight blue bar). Suggested segmentation: 1 pommel, 1 grip, 1 emitter, and 1 blade section.",
+      "imageRegion": "Right side of image, angled upward from the hands to top-right corner.",
+      "estimatedPieces": 8
+    }
+  ],
+  "totalEstimatedPieces": 41
+}

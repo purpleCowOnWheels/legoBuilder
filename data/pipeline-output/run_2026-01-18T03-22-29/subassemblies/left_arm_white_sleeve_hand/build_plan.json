@@ -1,0 +1,52 @@
+{
+  "subassembly_name": "Left arm (white sleeve) + hand",
+  "image_location_description": "Upper left of torso (viewer’s left), arm angled inward toward saber grip",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Upper arm core",
+      "description": "Sandwich 1x2 W brick between two 1x2 W plates (top/btm)."
+    },
+    {
+      "step": 2,
+      "title": "Shape shoulder & elbow ends",
+      "description": "Add four 1x1 W plates: 2 at shoulder, 2 at inner elbow."
+    },
+    {
+      "step": 3,
+      "title": "Elbow spacer + bend",
+      "description": "Add 1x1 W brick at inner end; attach 2x2 corner W plate to turn inward."
+    },
+    {
+      "step": 4,
+      "title": "Elbow thickness",
+      "description": "Stack two 1x1 W plates on the corner to read as an elbow joint."
+    },
+    {
+      "step": 5,
+      "title": "Forearm bricks",
+      "description": "Extend inward with two 1x2 W bricks in a straight line."
+    },
+    {
+      "step": 6,
+      "title": "Forearm caps",
+      "description": "Add two 1x4 W plates (top and bottom) to box in the forearm."
+    },
+    {
+      "step": 7,
+      "title": "Forearm crease",
+      "description": "Add two 1x1 W plates mid-forearm for articulated look."
+    },
+    {
+      "step": 8,
+      "title": "Wrist offset base",
+      "description": "Add 1x2 W jumper at wrist; add 1x1 W plate under wrist end."
+    },
+    {
+      "step": 9,
+      "title": "Cuff + skin hand",
+      "description": "Add two 1x1 W plates as cuff; attach Tan 1x1 headlight as hand."
+    }
+  ],
+  "estimated_pieces": 22
+}

@@ -1,0 +1,42 @@
+{
+  "subassembly_name": "Display base (optional)",
+  "image_location_description": "Bottom of model under the feet; small rectangular stand for stability (not shown).",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Bottom row 1",
+      "description": "Place 2x 3002 Black bricks (2x3) end-to-end (6x2)."
+    },
+    {
+      "step": 2,
+      "title": "Bottom row 2",
+      "description": "Add 2x 3002 Black bricks behind to complete a 6x4 base."
+    },
+    {
+      "step": 3,
+      "title": "Top plate layer start",
+      "description": "Add 2x 3021 DarkBluishGray plates (2x3) covering the front half."
+    },
+    {
+      "step": 4,
+      "title": "Finish top plate layer",
+      "description": "Add 3021 DBG (2x3), 3022 DBG (2x2), 3023 DBG (1x2) to fill 6x4."
+    },
+    {
+      "step": 5,
+      "title": "Edge tiles (sides)",
+      "description": "Add 2x 2431 LightBluishGray tiles (1x4) along left/right edges."
+    },
+    {
+      "step": 6,
+      "title": "Edge tiles (ends)",
+      "description": "Add 2x 2431 LBG (1x4) on front/back + 2x 3069b LBG (1x2) to close gaps."
+    },
+    {
+      "step": 7,
+      "title": "Foot position jumpers",
+      "description": "Place 2x 3795 DarkBluishGray jumper plates in the center for stance."
+    }
+  ],
+  "estimated_pieces": 17
+}

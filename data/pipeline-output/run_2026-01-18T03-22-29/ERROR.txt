@@ -1,0 +1,9 @@
+Pipeline failed at 2026-01-18T03:43:28.956Z
+
+Error: LDraw chunk contains no part placement lines (type 1)
+    at validateLDrawMpdChunkBodyOrThrow (/Users/dan.costanza/Documents/GitHub/legoBuilder/src/lib/ldrawValidate.ts:81:11)
+    at generateLDrawMpdChunkForIdea (/Users/dan.costanza/Documents/GitHub/legoBuilder/src/lib/openai.ts:1661:3)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async assembleFinalProduct (/Users/dan.costanza/Documents/GitHub/legoBuilder/src/lib/openai.ts:2333:18)
+    at async generateBlueprintMultiPhase (/Users/dan.costanza/Documents/GitHub/legoBuilder/src/lib/openai.ts:2507:20)
+    at async main (/Users/dan.costanza/Documents/GitHub/legoBuilder/scripts/run-multiphase-pipeline.ts:92:20)

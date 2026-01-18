@@ -1,0 +1,63 @@
+{
+  "overview": "Brick-built, slightly chibi minifigure statue of the character in the reference: white outfit with tan/gold leg markings and a blue lightsaber held across the chest. Target ~18–22 studs tall, sturdy and simple, using mostly white and light bluish gray with small tan/dark red accents.",
+  "subassemblies": [
+    {
+      "name": "Display base",
+      "description": "Small pedestal to stabilize the model; mostly dark bluish gray/light bluish gray plates with a simple footprint (about 8x8 or 8x10). Add a couple studs on top to lock the feet in place.",
+      "image_location": "Bottom of the image (under both feet)"
+    },
+    {
+      "name": "Left leg + foot",
+      "description": "Blocky leg built from stacked bricks (white primary). Add tan/gold accent striping on the shin/outer side using tan plates/tiles to suggest the printed markings. Build a large, simple foot (white) that plugs into the base.",
+      "image_location": "Lower left of the figure (viewer’s left leg)"
+    },
+    {
+      "name": "Right leg + foot",
+      "description": "Mirror of the left leg. Keep hips wide enough to support the torso. Repeat tan/gold accent striping for symmetry.",
+      "image_location": "Lower right of the figure (viewer’s right leg)"
+    },
+    {
+      "name": "Hips/waist + belt",
+      "description": "A 4–6 stud wide waist block connecting both legs. Add a dark red/brown belt band wrapping around using dark red and reddish brown plates/tiles; include a small front buckle/pouch suggestion with a 1x1/1x2 detail.",
+      "image_location": "Mid-lower center (just above legs)"
+    },
+    {
+      "name": "Torso/chest (white tunic)",
+      "description": "Main body block in white. Use a few black or dark pieces as tiny “crease”/V-neck hints (sparingly). Slightly taper the torso by stepping plates/tiles to feel minifigure-like.",
+      "image_location": "Center of the figure (white chest/abdomen)"
+    },
+    {
+      "name": "Left arm (white sleeve) + hand",
+      "description": "Simple articulated-looking arm built as a rectangular beam in white, angled inward to meet the saber grip. End with a tan/medium nougat hand block (small) to read as skin tone.",
+      "image_location": "Upper left side of torso (viewer’s left arm crossing inward)"
+    },
+    {
+      "name": "Right arm (white sleeve) + hand",
+      "description": "Mirror of left arm, positioned to hold the lightsaber with both hands. Reinforce the shoulder connection with plates so the arm doesn’t sag.",
+      "image_location": "Upper right side of torso (viewer’s right arm crossing inward)"
+    },
+    {
+      "name": "Neck bracket + head core",
+      "description": "A compact neck/connector stack (light bluish gray/white) that centers the head and resists rotation. Head is a tan/medium nougat block, slightly rounded by stepping plates.",
+      "image_location": "Top center (between torso and head)"
+    },
+    {
+      "name": "Face detailing",
+      "description": "Minimal face: dark tiles/plates for eyes and brows, a small dark line for mouth. Keep it iconic rather than photoreal; use 1x1 elements to place features cleanly on the front of the head.",
+      "image_location": "Front of head (upper center of image)"
+    },
+    {
+      "name": "Hair (blond) cap",
+      "description": "Layered “helmet” of tan/bright light yellow pieces built as a rounded cap over the head, with a slight forward fringe. Use slopes/curved bricks if available; otherwise stepped plates to suggest strands.",
+      "image_location": "Very top of the figure (blond hair)"
+    }
+  ],
+  "estimated_total_pieces": 220,
+  "notes": [
+    "Color blocking: prioritize White for outfit; Light Bluish Gray/Dark Bluish Gray for internal structure and saber hilt; Tan/Bright Light Yellow for hair; Dark Red/Reddish Brown for belt; Trans-light/clear blue substitute for blade using TransClear/TransLightBlue-like parts you have (e.g., TransClear/MediumAzure/Trans pieces) to read as a blue saber.",
+    "Keep the model buildable with your inventory by using standard bricks (3001/3003/3004/3005) for structure and plates (3020/3021/3022/3023/3024) for shaping and accents.",
+    "Stability tip: lock legs to hips with overlapping plates, and run a small internal spine (light bluish gray bricks) from hips up into torso/head.",
+    "Saber: build hilt as a short gray cylinder/stack (round parts if present; otherwise 1x1/1x2 light bluish gray elements) and blade as a thin vertical strip of trans/blue elements; anchor the hilt into both hands for strength.",
+    "Arms should be mechanically supported by the torso (small ledges/plates) since the pose is held across the chest."
+  ]
+}

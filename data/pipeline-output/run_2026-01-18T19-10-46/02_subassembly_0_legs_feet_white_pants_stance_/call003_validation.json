@@ -1,0 +1,12 @@
+{
+  "valid": false,
+  "errors": [
+    "[1] 3004 on 3020: No stud connection at (-2,-1) → Try: (-1,0), (1,0), (-3,0), (-1,-2), (1,-2)",
+    "[2] 3004 on 3020: No stud connection at (2,-1) → Try: (-1,0), (1,0), (-3,0), (-1,-2), (1,-2)",
+    "[9] 3024 on 3004: No stud connection at (1,0) → Try: (0,1), (0,-1)",
+    "[10] 3024 on 3004: No stud connection at (-1,0) → Try: (0,1), (0,-1)",
+    "[13] 3024 on 3023: No stud connection at (1,0) → Try: (0,1), (0,-1)",
+    "[14] 3024 on 3023: No stud connection at (-1,0) → Try: (0,1), (0,-1)"
+  ],
+  "summary": "INVALID (6):\n[1] 3004 on 3020: No stud connection at (-2,-1) → Try: (-1,0), (1,0), (-3,0), (-1,-2), (1,-2)\n[2] 3004 on 3020: No stud connection at (2,-1) → Try: (-1,0), (1,0), (-3,0), (-1,-2), (1,-2)\n[9] 3024 on 3004: No stud connection at (1,0) → Try: (0,1), (0,-1)\n[10] 3024 on 3004: No stud connection at (-1,0) → Try: (0,1), (0,-1)\n[13] 3024 on 3023: No stud connection at (1,0) → Try: (0,1), (0,-1)\n[14] 3024 on 3023: No stud connection at (-1,0) → Try: (0,1), (0,-1)"
+}

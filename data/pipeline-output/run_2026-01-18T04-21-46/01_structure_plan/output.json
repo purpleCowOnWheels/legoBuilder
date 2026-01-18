@@ -1,0 +1,37 @@
+{
+  "overview": "Build a compact sci‑fi rover/drone: a chunky rear cargo module, a short mid-chassis, twin side rollers, and a front sensor/camera pod (matching the reference silhouette: big block → small block → round elements → headlight-style front).",
+  "subassemblies": [
+    {
+      "name": "Rear cargo/engine module (main block)",
+      "description": "Large rectangular brick-built box with a flat studded roof; optionally add a 1-plate-thick “beltline” around it for shape. This is the visual mass and connection point for the rest of the rover.",
+      "image_location": "Left side: the largest light/dark gray block with studs on top."
+    },
+    {
+      "name": "Mid-chassis spacer (neck)",
+      "description": "A smaller rectangular block that steps down from the rear module to the front section; keep it 2 studs wide and 2–4 studs long so the front details sit lower/forward.",
+      "image_location": "Center-left: the smaller gray block attached to the main block."
+    },
+    {
+      "name": "Twin roller/drive units",
+      "description": "Two identical side-mounted roller stacks: black round 1x1 cylinders as “wheels/rollers,” separated/trimmed with light gray round plates/tiles. Mount them symmetrically off the mid-chassis using plates so they read as paired drive pods.",
+      "image_location": "Center-right: the two black cylindrical pieces with light gray round elements between/around them."
+    },
+    {
+      "name": "Front sensor/camera pod",
+      "description": "A compact front end using a headlight brick (or similar SNOT-capable brick) to create a forward-facing ‘lens’/sensor. Add a small top plate/cheese slopes or tiles to taper the nose.",
+      "image_location": "Far right: the black headlight-style brick with a round detail facing outward."
+    },
+    {
+      "name": "Top detailing (optional)",
+      "description": "Greeble the roof of the rear module with small plates/tiles and a 1x1 round or grille to suggest vents; keep it low so the blocky profile remains.",
+      "image_location": "Top of the left main block (studded area)."
+    }
+  ],
+  "estimated_total_pieces": 85,
+  "notes": [
+    "Keep the rover about 6–8 studs long overall: rear module ~4x4 footprint, mid-chassis ~2x2 to 2x4, then the roller/sensor section.",
+    "Use available Light/Dark Bluish Gray bricks/plates for the body, Black round elements for rollers, and a Black headlight brick for the front lens mount.",
+    "Aim for simple, sturdy connections: stack-built boxes for the two body blocks; attach roller units via plates on the sides; front pod attached with a 2-stud-wide plate bridge.",
+    "If you want more interest without complexity: add small side ‘tool arms’ using clips/bars from your inventory, but keep them removable accessories."
+  ]
+}

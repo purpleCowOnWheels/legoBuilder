@@ -1,0 +1,10 @@
+{
+  "valid": false,
+  "errors": [
+    "[4] Invalid attach_to: 4",
+    "[5] 3024 on 3024: No stud connection at (1,-1) → Try: (0,0)",
+    "[6] 3024 on 3024: No stud connection at (-1,1) → Try: (0,0)",
+    "[7] 3024 on 3024: No stud connection at (1,1) → Try: (0,0)"
+  ],
+  "summary": "INVALID (4):\n[4] Invalid attach_to: 4\n[5] 3024 on 3024: No stud connection at (1,-1) → Try: (0,0)\n[6] 3024 on 3024: No stud connection at (-1,1) → Try: (0,0)\n[7] 3024 on 3024: No stud connection at (1,1) → Try: (0,0)"
+}

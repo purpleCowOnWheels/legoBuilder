@@ -1,0 +1,52 @@
+{
+  "overview": "Brick-built “chibi minifigure” Jedi in white outfit holding a blue lightsaber, matching the reference pose and proportions (big head, compact torso, short legs). Built as a small display model using mostly white/light gray with tan/blonde accents and a blue translucent blade.",
+  "subassemblies": [
+    {
+      "name": "Display base (optional)",
+      "description": "Small dark/neutral plate base to stabilize the stance; simple 6x6-ish footprint with studs to lock in feet.",
+      "image_location": "Bottom under the character’s feet"
+    },
+    {
+      "name": "Legs + hips block",
+      "description": "Two blocky legs in white with subtle tan/gold-ish stripe hints using small plates/tiles; connect to a 2–4 stud wide hip section that supports the torso. Keep legs slightly staggered to mimic the walking/ready stance.",
+      "image_location": "Lower half of the figure (bottom third)"
+    },
+    {
+      "name": "Torso (white tunic + belt)",
+      "description": "Main chest/waist core in white. Add a brown/red belt band around the waist (use reddish brown/dark red/red plates/tiles) with a small front ‘pouch’ detail. Slight front shaping using plates/tiles to suggest the robe overlap.",
+      "image_location": "Center of the figure (middle third)"
+    },
+    {
+      "name": "Arms (2x)",
+      "description": "Two articulated-looking brick arms in white, built as simple stacked bricks/plates. Position both arms forward and inward to create the two-handed grip pose.",
+      "image_location": "Left and right sides of the torso, angled toward the center"
+    },
+    {
+      "name": "Hands + saber grip cluster",
+      "description": "Compact cylindrical/stacked light-bluish-gray and trans-clear elements to suggest the metallic hilt. Build a small central ‘grip’ block the arms attach to from both sides so the saber reads as held with two hands.",
+      "image_location": "Center-right of the figure, in front of the torso"
+    },
+    {
+      "name": "Lightsaber blade",
+      "description": "Straight blue/trans-light-blue blade using trans-clear/blue elements (or trans-clear with blue accents). Ensure it reads as a single line; anchor into the hilt securely.",
+      "image_location": "Extending upward from the hands to the top-right corner"
+    },
+    {
+      "name": "Head (face block)",
+      "description": "Large, smooth-ish head using white/tan/light-nougat tones; add simple face features (eyes/brows/mouth) with small dark tiles/plates or printed tiles if available. Keep it slightly taller than the torso for the chibi look.",
+      "image_location": "Top center"
+    },
+    {
+      "name": "Hair (blonde swept style)",
+      "description": "Layered tan/yellow/light-blonde plates/slopes around the top and sides of the head to mimic the swept, slightly shaggy hair. Overhang a bit at the forehead.",
+      "image_location": "Top of the head, framing the face"
+    }
+  ],
+  "estimated_total_pieces": 140,
+  "notes": [
+    "Color matching: prioritize White for outfit, Light Bluish Gray/Dark Bluish Gray for hilt, TransClear + blue parts for the blade, Tan/Yellow for hair, ReddishBrown/DarkRed/Red for belt details.",
+    "Keep the model buildable with simple stacked geometry; the “pose” is mainly achieved by offsetting arms and legs using plates/tiles rather than complex joints.",
+    "If the blade must be more vibrant, mix TransClear segments with DarkAzure/MediumAzure plates near the base as a glow accent.",
+    "Aim for a 4–6 stud wide body; head 6–8 studs wide for the minifig-like proportions."
+  ]
+}

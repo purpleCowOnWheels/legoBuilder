@@ -1,0 +1,57 @@
+{
+  "overview": "Brick-built “Jedi trainee” character inspired by the reference: a compact, chibi-scale figure in a mostly white outfit, blonde hair, and a bright-blue lightsaber held diagonally across the front.",
+  "subassemblies": [
+    {
+      "name": "Base / Feet",
+      "description": "Two blocky feet with a slight toe step (simple 2x3/2x4 footprint) to stabilize the model; mostly white/light bluish gray. Appears at the very bottom of the image as the character’s boots.",
+      "image_location": "Bottom edge (boots/feet)"
+    },
+    {
+      "name": "Legs (white pants with subtle markings)",
+      "description": "Stacked white bricks/plates forming two legs. Add light tan/dark tan accents on the front/sides to suggest the printed leg pattern from the reference. Appears from the boots up to the belt line.",
+      "image_location": "Lower third (legs)"
+    },
+    {
+      "name": "Hips + Belt (brown/red band)",
+      "description": "A 1-brick-tall belt band wrapping the waist using reddish brown/dark red pieces; add a small front “buckle/pouch” lump with a 1x1 or 1x2 detail. Matches the horizontal belt visible between torso and legs.",
+      "image_location": "Center (waistline)"
+    },
+    {
+      "name": "Torso / Tunic (white V-neck wrap)",
+      "description": "Main chest block in white, built as a rectangular core (about 4 studs wide). Use a couple of small dark elements (black/dark bluish gray) to hint at the V-neck overlap lines. This is the largest white mass in the middle of the figure.",
+      "image_location": "Middle (chest/upper body)"
+    },
+    {
+      "name": "Arms (white sleeves)",
+      "description": "Two hinged-looking arms built from 1-stud-wide stacks (white) attached at the torso sides; one arm angled inward to support the two-handed saber grip. These appear on left/right of the torso, with both hands meeting in front.",
+      "image_location": "Mid-left and mid-right, converging front-center"
+    },
+    {
+      "name": "Hands / Saber grip block",
+      "description": "A small gray/silver cylindrical-ish hilt using light/dark bluish gray parts; connect both arms to this subassembly so the saber reads as held with two hands like the reference.",
+      "image_location": "Front-center (in front of torso)"
+    },
+    {
+      "name": "Lightsaber blade (blue/teal beam)",
+      "description": "A straight, translucent blade built from trans-clear elements backed/ended with blue/medium-azure/dark-azure plates to read as a glowing beam. Or use a stacked bar-like blade with bright blue accents if trans parts are limited. It should angle up-right.",
+      "image_location": "From hands toward top-right corner"
+    },
+    {
+      "name": "Head (face block)",
+      "description": "A small light/medium nougat or tan head block (2x2-ish). Add simple face suggestion with tiny dark elements (black) for eyes/brow line if possible; keep it minimal but readable.",
+      "image_location": "Upper middle (above torso)"
+    },
+    {
+      "name": "Hair (blonde swoop)",
+      "description": "A layered “helmet” of tan/bright light yellow/yellow plates/slopes forming a rounded, slightly shaggy top that overhangs the forehead a bit. This is the prominent light-blonde mass on top of the head.",
+      "image_location": "Top of the model (hair)"
+    }
+  ],
+  "estimated_total_pieces": 110,
+  "notes": [
+    "Scale suggestion: ~14–18 bricks tall total for a sturdy desk model (chibi proportions: big head, shorter legs).",
+    "Color blocking: prioritize White for outfit, Tan/BrightLightYellow/Yellow for hair, ReddishBrown/DarkRed for belt, Light/DarkBluishGray for hilt, TransClear + Blue/Azure for blade.",
+    "Connection strategy: use a simple internal spine through legs→hips→torso→head to keep it rigid; arms can be simple stud-to-stud connections that clamp onto the hilt block.",
+    "Keep the saber angle fixed (not articulated) for stability; support it with at least two attachment points (hilt + a small brace near the lower blade if needed)."
+  ]
+}

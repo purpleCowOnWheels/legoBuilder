@@ -1,0 +1,58 @@
+{
+  "overview": "Brick-built, minifig-proportioned character inspired by the reference: a blond-haired hero in an all-white outfit holding a blue lightsaber. Build as a small display figure with simple blocky anatomy and a standout weapon.",
+  "subassemblies": [
+    {
+      "name": "Feet & Lower Legs",
+      "description": "Two chunky white feet with short shins above them; add a hint of tan/gold striping on the lower legs to echo the printed leg detail.",
+      "image_location": "Bottom of the image (both feet on the ground; striping appears on the lower legs above the feet)."
+    },
+    {
+      "name": "Hips / Belt Block",
+      "description": "A 2–3 brick-tall waist section in white with a dark red belt band; include a small front ‘buckle/pouch’ bump using a dark red or reddish-brown element.",
+      "image_location": "Center-lower torso area, just above the legs (the red belt line)."
+    },
+    {
+      "name": "Torso / Robe Chest",
+      "description": "White torso block with a subtle V-shaped ‘wrap’ suggestion using a few dark/gray accents (dark bluish gray/black plates or tiles) while keeping it mostly white and clean.",
+      "image_location": "Center of the figure (white robe body)."
+    },
+    {
+      "name": "Arms (2) with Two-Hand Grip Pose",
+      "description": "Two white arms built as simple stacked slopes/plates; angle them forward so both meet at the hilt. Use small hinges/clips if available; otherwise, build stepped arms that converge at center.",
+      "image_location": "Mid-right of the image where both hands hold the hilt in front of the chest."
+    },
+    {
+      "name": "Lightsaber Hilt",
+      "description": "Cylindrical-looking hilt using light bluish gray/dark bluish gray round/clip/stacked elements; keep it 1–2 studs thick and about 5–7 studs long so it reads as a handle.",
+      "image_location": "In front of the torso, between the arms (silver/gray handle)."
+    },
+    {
+      "name": "Lightsaber Blade",
+      "description": "Trans-light-blue/clear stack approximating a glowing blade (use trans-clear + trans elements you have; cap the tip with a small trans piece). Aim for a long, straight, vertical-ish blade.",
+      "image_location": "Upper-right of the image extending upward (bright blue blade)."
+    },
+    {
+      "name": "Head + Hair Cap",
+      "description": "A compact head block in light tan/medium nougat tones with a simple face suggestion (dark tiles/plates for eyes/brow). Add a blond ‘hair’ mass on top using tan/yellow/bright-light-yellow slopes/curves layered forward.",
+      "image_location": "Top-left of the figure (face) and top (blond hair)."
+    },
+    {
+      "name": "Back/Neck Support (internal)",
+      "description": "Small internal spine of light/dark bluish gray to tie head, torso, and arm assembly together and keep the forward-held saber stable.",
+      "image_location": "Inside the torso/back (not visible in the image)."
+    },
+    {
+      "name": "Display Base (optional)",
+      "description": "Simple dark bluish gray/black plate base to stabilize the stance and prevent tipping from the extended blade and forward arms.",
+      "image_location": "Under the feet (not shown, but implied for stability)."
+    }
+  ],
+  "estimated_total_pieces": 140,
+  "notes": [
+    "Primary color blocking: mostly White for outfit; Dark Red for belt; Tan/Yellow for hair; Light/Dark Bluish Gray for hilt; Trans-clear/trans elements for blade.",
+    "Keep the figure blocky and sturdy: prioritize stud-to-stud connections over fragile side-only detailing.",
+    "If arm posing is hard with available joints, build both arms as a single ‘forearm bridge’ subassembly attached to the torso, with the hilt captured between layered plates.",
+    "Use your abundant white plates/bricks (3004/3005/3024/3023/3710 etc.) for clean robe surfaces; add minimal dark accents to suggest the wrap lines.",
+    "Blade can be a trans-clear core with a few trans-yellow/trans-orange accents avoided; keep it mostly clear/blue-toned to match the reference glow."
+  ]
+}

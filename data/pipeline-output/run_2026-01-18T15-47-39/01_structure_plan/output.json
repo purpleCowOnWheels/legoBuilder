@@ -1,0 +1,52 @@
+{
+  "overview": "Brick-built, display-scale “Jedi in white” character inspired by the reference: a compact figure with white outfit detailing, tan/blond hair silhouette, and a bright blue lightsaber held in front. Build as a simple, sturdy statue with 6–8-stud-wide body and oversized saber for readability.",
+  "subassemblies": [
+    {
+      "name": "Feet + Lower Legs (stance base)",
+      "description": "Two blocky feet and shins in mostly white with a few tan/DBG accents to suggest the boot/crease lines. Designed to stand independently and support the torso. Keep legs slightly apart like the reference pose.",
+      "image_location": "Bottom of the image (both feet and lower legs)."
+    },
+    {
+      "name": "Upper Legs / Hips (belt anchor)",
+      "description": "A compact hip block connecting both legs; integrate a belt line using reddish-brown/red elements across the front. Provide a strong studded top surface for the torso to lock onto.",
+      "image_location": "Lower middle (around the belt/upper thighs)."
+    },
+    {
+      "name": "Torso / Robe Jacket Block",
+      "description": "Main chest and back in white with small dark accents (black/DBG) to hint at the robe opening. Build as a rectangular core with a slightly tapered front using plates/tiles for clean surfaces.",
+      "image_location": "Center of the image (white jacket/torso)."
+    },
+    {
+      "name": "Arms (two forearms crossed-forward)",
+      "description": "Two white arms mounted to the torso sides and angled toward the center to mimic the two-handed grip. Use small hinge/clip-like solutions from available modified parts where possible; otherwise, build stepped plate arms that meet at the hands.",
+      "image_location": "Mid-right and mid-left, converging in front of the chest (hands holding saber)."
+    },
+    {
+      "name": "Hands / Saber Grip Hub",
+      "description": "A compact central connector where both arms meet; build a chunky cylindrical/stacked hilt core in light bluish gray/dark bluish gray with a bit of metallic look via light gray layering. This hub also reinforces arm alignment.",
+      "image_location": "Right-center foreground (the gray hilt between hands)."
+    },
+    {
+      "name": "Lightsaber Blade",
+      "description": "A long, straight blue/cyan-looking blade approximated with trans-clear pieces backed by blue/medium-azure/dark-azure plates/tiles, or a solid blue beam if trans parts are insufficient. Keep it slightly longer than the figure’s torso-to-head height for the heroic look.",
+      "image_location": "Upper right diagonal (glowing blue blade)."
+    },
+    {
+      "name": "Neck + Head Block",
+      "description": "A light skin-toned head approximation using tan/medium nougat/yellowish elements as available, with a simple face suggestion via minimal dark details (optional). Keep it 2–3 studs wide for a minifig-like proportion atop the torso.",
+      "image_location": "Upper center (face)."
+    },
+    {
+      "name": "Hair / Blond Cap",
+      "description": "A rounded, layered hair silhouette in tan/yellow/medium nougat, using curved/angled pieces where possible. Aim for a swept, side-part look by stepping plates and using slopes to soften the top and sides.",
+      "image_location": "Top of the image (blond hair)."
+    }
+  ],
+  "estimated_total_pieces": 180,
+  "notes": [
+    "Color matching: prioritize White for outfit, ReddishBrown/Red for belt, Light/Dark Bluish Gray for saber hilt, and Blue/MediumAzure/DarkAzure + TransClear for the blade effect.",
+    "Keep the figure’s footprint at least 6x6 studs (or add a small plate base) to prevent tipping with the extended saber.",
+    "If arm angling is limited by parts, build arms as stepped brackets/plates and let the saber hub lock them together for strength.",
+    "Use tiles on the front of the torso/legs for a clean ‘robe’ look; small dark accents can suggest the V-neck opening."
+  ]
+}

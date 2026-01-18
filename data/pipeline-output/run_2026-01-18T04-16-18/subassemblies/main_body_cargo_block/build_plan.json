@@ -1,0 +1,22 @@
+{
+  "subassembly_name": "Main body / cargo block",
+  "image_location_description": "Left side; the biggest gray rectangular block with studs on top.",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Start base half",
+      "description": "Place 1x 2x4 brick (3001) in Dark Bluish Gray."
+    },
+    {
+      "step": 2,
+      "title": "Complete 4x4 brick layer",
+      "description": "Add 4x 1x2 bricks (3004) in Dark Bluish Gray to form a 4x4."
+    },
+    {
+      "step": 3,
+      "title": "Add studded top",
+      "description": "Cover top with 4x 1x4 plates (3710) in Light Bluish Gray (makes 4x4 top)."
+    }
+  ],
+  "estimated_pieces": 9
+}

@@ -1,0 +1,36 @@
+{
+  "overview": "Reference shows a single LEGO-style minifigure holding 1 blue lightsaber: blonde hair, tan face, white outfit with belt/strap printing, and both hands on the hilt. Plan below breaks it into 5 sub-assemblies; piece counts are approximate and kept simple so you can build it from common bricks/plates.",
+  "subassemblies": [
+    {
+      "name": "Head + Hair",
+      "description": "Top/center of image. Build 1 head with 2 eyes and 1 mouth (use 1 brick as the head), plus 1 hair mass (blonde) sitting on top (use a small layered cap of plates/tiles). Elements to build: 1 head, 1 hairpiece (built from 4 small plates/tiles stacked/stepped).",
+      "imageRegion": "Upper center (face) and very top (blonde hair)",
+      "estimatedPieces": 5
+    },
+    {
+      "name": "Torso / Robe Chest",
+      "description": "Center of image (white robe torso). Build 1 torso block: 1 central chest piece, 2 shoulder areas, and 1 waist connection. Elements to build: 1 torso core, 2 shoulders (left and right), 1 neck top surface (for head attach), 1 waist layer (for legs attach).",
+      "imageRegion": "Middle center (white clothing with V-neck/straps)",
+      "estimatedPieces": 10
+    },
+    {
+      "name": "Arms + Hands (two-handed grip)",
+      "description": "Front/middle-right of image, in front of torso. Build 2 arms (left and right) bent forward, and 2 hands (left and right) meeting at the saber hilt. Elements to build: 2 arms, 2 hands, plus 2 small connector bits to angle them inward (one per arm).",
+      "imageRegion": "In front of the torso, both forearms angled toward the right side where the saber is held",
+      "estimatedPieces": 10
+    },
+    {
+      "name": "Legs / Lower Robe",
+      "description": "Bottom center of image (white legs with tan/gold markings). Build 2 legs (left and right) and 2 feet (left and right) as a stable base. Elements to build: 2 legs, 2 feet, 1 small hip/upper-leg bridge piece to connect to torso.",
+      "imageRegion": "Lower half of image, from belt line down to feet",
+      "estimatedPieces": 10
+    },
+    {
+      "name": "Lightsaber (hilt + blade)",
+      "description": "Right side of image, extending upward. Build 1 lightsaber: 1 cylindrical hilt and 1 long blue blade. Elements to build: 1 hilt core, 2 small rings/details around the hilt, 1 blade (a 1xN bar/stack).",
+      "imageRegion": "Right side; hilt in hands and blue blade extending to top-right",
+      "estimatedPieces": 8
+    }
+  ],
+  "totalEstimatedPieces": 43
+}

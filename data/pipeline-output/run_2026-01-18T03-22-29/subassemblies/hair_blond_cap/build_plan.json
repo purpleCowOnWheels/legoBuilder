@@ -1,0 +1,37 @@
+{
+  "subassembly_name": "Hair (blond) cap",
+  "image_location_description": "Very top of the figure: blond layered hair cap with a slight forward fringe",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Base ring + fringe tabs",
+      "description": "Add 1x 3022 Tan (2x2 plate). Add 2x 3023 Tan (1x2) as side overhangs, 1x 3023 Yellow (1x2) as front."
+    },
+    {
+      "step": 2,
+      "title": "Raise core",
+      "description": "On the 2x2 area, stack 2x 3004 BrightLightYellow (1x2 bricks) to form a 2x2 core."
+    },
+    {
+      "step": 3,
+      "title": "Thicken bangs area",
+      "description": "Add 2x 3005 Yellow (1x1 bricks) on the front-left/right studs of the core."
+    },
+    {
+      "step": 4,
+      "title": "Widen lower hair",
+      "description": "Attach 4x 3040b Tan (2x2 corner plates) around the core, 1-stud overlap each."
+    },
+    {
+      "step": 5,
+      "title": "Build crown volume",
+      "description": "Add 2x 3004 BrightLightYellow (1x2 bricks) on top center; add 2x 3005 Tan (1x1 bricks) at back-left/"
+    },
+    {
+      "step": 6,
+      "title": "Add strand ridges + swoop",
+      "description": "Add 1x 3710 Tan (1x4 plate) across top, then 1x 3710 Yellow (1x4) perpendicular. Finish with 1x 3004"
+    }
+  ],
+  "estimated_pieces": 22
+}

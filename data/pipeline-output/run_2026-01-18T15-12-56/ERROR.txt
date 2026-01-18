@@ -1,0 +1,16 @@
+Pipeline failed at 2026-01-18T15:13:04.152Z
+
+Error: OpenAI error 429: {
+  "error": {
+    "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.",
+    "type": "insufficient_quota",
+    "param": null,
+    "code": "insufficient_quota"
+  }
+}
+    at fetchResponsesJsonWithRetry (/Users/dan.costanza/repos/legoBuilder/src/lib/openai.ts:282:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async callOpenAIJsonInput (/Users/dan.costanza/repos/legoBuilder/src/lib/openai.ts:864:16)
+    at async generateStructurePlan (/Users/dan.costanza/repos/legoBuilder/src/lib/openai.ts:2057:16)
+    at async generateBlueprintMultiPhase (/Users/dan.costanza/repos/legoBuilder/src/lib/openai.ts:2500:18)
+    at async main (/Users/dan.costanza/repos/legoBuilder/scripts/run-multiphase-pipeline.ts:92:20)

@@ -1,0 +1,32 @@
+{
+  "subassembly_name": "Feet + Lower Legs (2-block-wide stance)",
+  "image_location_description": "Bottom of the image: the two chunky white feet and short lower legs with tan/dark-tan hints.",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Lay down both feet",
+      "description": "Place 2x white 2x3 plates side-by-side (forms 4x3 base)."
+    },
+    {
+      "step": 2,
+      "title": "Start lower legs",
+      "description": "Add 4x white 1x2 bricks on rear 2 studs of the feet (2 per leg)."
+    },
+    {
+      "step": 3,
+      "title": "Build leg height",
+      "description": "Stack 4x white 1x2 bricks directly on the previous layer."
+    },
+    {
+      "step": 4,
+      "title": "Cap the legs",
+      "description": "Add 2x white 1x2 plates on top, one per leg, to lock the stack."
+    },
+    {
+      "step": 5,
+      "title": "Add tan print hints",
+      "description": "Attach 1x tan + 1x dark-tan 1x1 round plates to front of legs."
+    }
+  ],
+  "estimated_pieces": 14
+}

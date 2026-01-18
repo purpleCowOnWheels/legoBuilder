@@ -1,0 +1,19 @@
+{
+  "valid": false,
+  "errors": [
+    "[1] 3004 on 3003: No stud connection at (-2,0) → Try: (-1,0), (1,0), (-1,-2), (1,-2), (-1,2)",
+    "[2] 3004 on 3003: No stud connection at (2,0) → Try: (-1,0), (1,0), (-1,-2), (1,-2), (-1,2)",
+    "[3] 3005 on 3004: No stud connection at (0,2) → Try: (0,1), (0,-1)",
+    "[4] 3005 on 3004: No stud connection at (0,2) → Try: (0,1), (0,-1)",
+    "[5] 3003 on 3004: No stud connection at (0,-2) → Try: (1,0), (-1,0), (1,2), (-1,2), (1,-2)",
+    "[6] 3003 on 3004: No stud connection at (0,-2) → Try: (1,0), (-1,0), (1,2), (-1,2), (1,-2)",
+    "[9] 3004 on 3022: No stud connection at (0,0) → Try: (0,-1), (0,1), (-2,-1), (2,-1), (-2,1)",
+    "[10] 3004 on 3022: No stud connection at (0,0) → Try: (0,-1), (0,1), (-2,-1), (2,-1), (-2,1)",
+    "[11] 3023 on 3004: No stud connection at (0,2) → Try: (0,0), (-2,0), (2,0)",
+    "[12] 3023 on 3004: No stud connection at (0,2) → Try: (0,0), (-2,0), (2,0)",
+    "[13] 3005 on 3023: No stud connection at (0,0) → Try: (-1,0), (1,0)",
+    "[14] 3005 on 3023: No stud connection at (0,0) → Try: (-1,0), (1,0)",
+    "[15] 3022 on 3003: No stud connection at (0,-4) → Try: (0,0), (-2,0), (0,-2), (2,0), (0,2)"
+  ],
+  "summary": "INVALID (13):\n[1] 3004 on 3003: No stud connection at (-2,0) → Try: (-1,0), (1,0), (-1,-2), (1,-2), (-1,2)\n[2] 3004 on 3003: No stud connection at (2,0) → Try: (-1,0), (1,0), (-1,-2), (1,-2), (-1,2)\n[3] 3005 on 3004: No stud connection at (0,2) → Try: (0,1), (0,-1)\n[4] 3005 on 3004: No stud connection at (0,2) → Try: (0,1), (0,-1)\n[5] 3003 on 3004: No stud connection at (0,-2) → Try: (1,0), (-1,0), (1,2), (-1,2), (1,-2)\n[6] 3003 on 3004: No stud connection at (0,-2) → Try: (1,0), (-1,0), (1,2), (-1,2), (1,-2)\n[9] 3004 on 3022: No stud connection at (0,0) → Try: (0,-1), (0,1), (-2,-1), (2,-1), (-2,1)\n[10] 3004 on 3022: No stud connection at (0,0) → Try: (0,-1), (0,1), (-2,-1), (2,-1), (-2,1)\n[11] 3023 on 3004: No stud connection at (0,2) → Try: (0,0), (-2,0), (2,0)\n[12] 3023 on 3004: No stud connection at (0,2) → Try: (0,0), (-2,0), (2,0)\n[13] 3005 on 3023: No stud connection at (0,0) → Try: (-1,0), (1,0)\n[14] 3005 on 3023: No stud connection at (0,0) → Try: (-1,0), (1,0)\n[15] 3022 on 3003: No stud connection at (0,-4) → Try: (0,0), (-2,0), (0,-2), (2,0), (0,2)"
+}

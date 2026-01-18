@@ -1,0 +1,13 @@
+0 FILE legs_hips_white_pants_boots_.ldr
+0 legs_hips_white_pants_boots_
+0 Author: Pipeline
+1 15 0 0 0 1 0 0 0 1 0 0 0 1 3003.dat
+1 15 -10 24 0 0 0 1 0 1 0 -1 0 0 3023.dat
+1 15 -20 32 10 1 0 0 0 1 0 0 0 1 3004.dat
+1 15 0 32 10 1 0 0 0 1 0 0 0 1 3004.dat
+1 15 -20 56 10 1 0 0 0 1 0 0 0 1 3004.dat
+1 15 0 56 10 1 0 0 0 1 0 0 0 1 3004.dat
+1 15 -30 80 20 0 0 1 0 1 0 -1 0 0 3004.dat
+1 15 -10 80 20 0 0 1 0 1 0 -1 0 0 3004.dat
+0 STEP
+0 NOFILE

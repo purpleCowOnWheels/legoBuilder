@@ -1,0 +1,37 @@
+{
+  "subassembly_name": "Head (face block)",
+  "image_location_description": "Upper middle (above torso)",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Base layer",
+      "description": "Place 2x Plate 1x2 Tan (3023) side-by-side to make 2x2 base."
+    },
+    {
+      "step": 2,
+      "title": "Build head core",
+      "description": "Add 2x Brick 1x2 MediumNougat (3004) on base, aligned front-to-back."
+    },
+    {
+      "step": 3,
+      "title": "Lock the core",
+      "description": "Add 2x Brick 1x2 MediumNougat (3004) on top, rotated 90°."
+    },
+    {
+      "step": 4,
+      "title": "Top cap",
+      "description": "Add 2x Plate 1x2 Tan (3023) side-by-side to form a 2x2 top."
+    },
+    {
+      "step": 5,
+      "title": "Eyes shelf",
+      "description": "Add 1x Plate 1x2 Tan (3023) on front studs; add 2x Tile Round 1x1 Black (98138)."
+    },
+    {
+      "step": 6,
+      "title": "Brow line",
+      "description": "Add 1x Tile 1x2 Black (2420) on the rear two top studs."
+    }
+  ],
+  "estimated_pieces": 12
+}

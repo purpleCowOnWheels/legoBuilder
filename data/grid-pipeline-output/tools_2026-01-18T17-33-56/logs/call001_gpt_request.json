@@ -1,0 +1,26 @@
+{
+  "tool_name": "preview_build",
+  "tool_call_id": "call_k4MVd12eqaml43dU3mb0cT7C",
+  "arguments_raw": "{\"parts\":[{\"part_id\":\"3031\",\"color\":71,\"grid_x\":0,\"grid_z\":0,\"layer\":0,\"rotation\":0},{\"part_id\":\"3031\",\"color\":71,\"grid_x\":0,\"grid_z\":8,\"layer\":0,\"rotation\":0}]}",
+  "arguments_parsed": {
+    "parts": [
+      {
+        "part_id": "3031",
+        "color": 71,
+        "grid_x": 0,
+        "grid_z": 0,
+        "layer": 0,
+        "rotation": 0
+      },
+      {
+        "part_id": "3031",
+        "color": 71,
+        "grid_x": 0,
+        "grid_z": 8,
+        "layer": 0,
+        "rotation": 0
+      }
+    ]
+  },
+  "parts_count": 2
+}

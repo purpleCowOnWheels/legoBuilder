@@ -1,0 +1,76 @@
+{
+  "timestamp": "2026-01-18T02-38-08",
+  "inputImage": "/Users/dan.costanza/Documents/GitHub/legoBuilder/data/pipeline-output/run_2026-01-18T01-49-16/00_input_image.png",
+  "structurePlan": {
+    "overview": "Brick-built, display-scale minifigure inspired by the reference: a blonde-hooded hero in an all-white outfit holding a blue “lightsaber.” Build in stacked brick/plate layers (BrickHeadz-like proportions) so it’s sturdy and achievable with the available white/gray inventory and accent colors.",
+    "subassemblies": [
+      {
+        "name": "Display base (optional)",
+        "description": "Small rectangular stand to stabilize the figure and set the stance; keep it dark bluish gray/black with a light bluish gray edge.",
+        "image_location": "Bottom of model (not visible in reference; adds stability under the feet)."
+      },
+      {
+        "name": "Feet + lower legs",
+        "description": "Two blocky feet with short shins. Primary color white, with light bluish gray/ tan greeble options for the subtle boot/leg pattern seen in the reference. Connect feet to hips with simple stacked bricks/plates.",
+        "image_location": "Bottom of image: both feet and lower legs."
+      },
+      {
+        "name": "Hips / belt block",
+        "description": "A 1–2 brick-tall waist section in white with a contrasting belt stripe (reddish brown/dark red) wrapping the front; add a small centered “buckle/pouch” using dark red/ reddish brown small plates/tiles.",
+        "image_location": "Mid-lower area: the brown belt across the waist."
+      },
+      {
+        "name": "Torso / jacket body",
+        "description": "Main chest volume in white. Suggest the crossed robe folds using subtle plate offsets and a few dark accents (dark bluish gray or black lines) without over-detailing. Build as a rigid box that the arms pin into from the sides.",
+        "image_location": "Center of image: white torso with robe seams."
+      },
+      {
+        "name": "Arms (2)",
+        "description": "Two white arms posed forward to grip the saber. Use simple hinged/stepped shoulders (plates/brackets if available; otherwise plate-stacking) so the hands meet at the centerline. End each arm with a small “hand” block in tan/light nougat tones if you choose to suggest skin.",
+        "image_location": "Right/center: both arms held forward around the hilt."
+      },
+      {
+        "name": "Hands + saber grip cradle",
+        "description": "A compact central clamp/‘fist’ assembly that locks between the two arms and holds the hilt. Build the grip cradle first, then attach arms to it so the pose is consistent and strong.",
+        "image_location": "Center-right: where both hands meet on the lightsaber handle."
+      },
+      {
+        "name": "Lightsaber hilt",
+        "description": "Short metallic cylinder using light/dark bluish gray round/curved elements and small black accents (to suggest the emitter/grip rings). Keep it stout so it can be supported by the hand cradle.",
+        "image_location": "Center-right: silver handle below the blue blade."
+      },
+      {
+        "name": "Lightsaber blade",
+        "description": "Straight, slightly tapered look using Medium Azure/Blue plates/tiles/1xN elements in a thin vertical stack; add trans-clear pieces near the tip if you want a “glow” highlight. Attach firmly to the hilt with a simple stud-to-stud connection.",
+        "image_location": "Top-right: blue blade extending upward."
+      },
+      {
+        "name": "Neck + head block",
+        "description": "A compact head module: tan/light nougat face area on the front, with a mostly cubic head shape. Use a 1-plate inset to suggest the face plane vs. hair frame.",
+        "image_location": "Top center-left: head/face area."
+      },
+      {
+        "name": "Hair (blonde)",
+        "description": "Layered ‘helmet’ of tan/yellow elements over the head block, stepped to suggest shaggy hair. Prioritize a rounded silhouette via plates/tiles and slopes/curves if available; keep it symmetrical with a slight forward overhang.",
+        "image_location": "Top of image: blonde hair around the head."
+      }
+    ],
+    "estimated_total_pieces": 170,
+    "notes": [
+      "Target size: ~10–14 bricks tall (including hair), with chunky ‘BrickHeadz-like’ proportions for stability.",
+      "Color blocking: mostly White for outfit; ReddishBrown/DarkRed for the belt; Tan/Yellow mix for hair; Light/Dark Bluish Gray for saber hilt; MediumAzure/Blue for blade.",
+      "If you run short on tan/yellow for hair, blend in MediumNougat or BrightLightYellow for highlights.",
+      "Keep the arms’ connection simple (plate-stacked shoulders) and let the central ‘hand cradle’ carry the saber so the blade doesn’t wobble.",
+      "Leg pattern in the reference can be suggested with a few tan/light bluish gray tiles/plates on the front of the shins rather than complex shaping."
+    ]
+  },
+  "subassemblies": [
+    {
+      "name": "Display base (optional)",
+      "pieces": 25,
+      "validation_rounds": 1
+    }
+  ],
+  "totalPieces": 25,
+  "totalValidationRounds": 1
+}

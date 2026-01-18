@@ -1,0 +1,62 @@
+{
+  "subassembly_name": "Base/Feet Platform",
+  "image_location_description": "Bottom of the model (under both feet): two blocky white feet on a small shared base.",
+  "steps": [
+    {
+      "step": 1,
+      "title": "LBG reinforcement pad",
+      "description": "Place 2x Light Bluish Gray 1x4 plates side-by-side (2x4)."
+    },
+    {
+      "step": 2,
+      "title": "Lock the seam",
+      "description": "Add 1x White 1x2 plate across the middle seam of the LBG pad."
+    },
+    {
+      "step": 3,
+      "title": "White base layer",
+      "description": "On top, place 2x White 2x4 plates side-by-side (make 4x4)."
+    },
+    {
+      "step": 4,
+      "title": "Foot base plates",
+      "description": "Add 2x White 2x3 plates at the front: left and right foot."
+    },
+    {
+      "step": 5,
+      "title": "Thicken foot bases",
+      "description": "Stack 2x White 2x3 plates on top of the foot plates."
+    },
+    {
+      "step": 6,
+      "title": "Build left foot block",
+      "description": "On left foot, place 3x White 1x2 bricks to fill the 2x3 area."
+    },
+    {
+      "step": 7,
+      "title": "Build right foot block",
+      "description": "On right foot, place 3x White 1x2 bricks to fill the 2x3 area."
+    },
+    {
+      "step": 8,
+      "title": "Main foot tiles",
+      "description": "Top each foot with 1x White 2x2 tile (2 tiles total)."
+    },
+    {
+      "step": 9,
+      "title": "Finish toe tiles",
+      "description": "Add 1x White 1x2 tile to each foot to complete the 2x3 top."
+    },
+    {
+      "step": 10,
+      "title": "Rear base strip",
+      "description": "Behind the feet, add 1x White 1x4 plate (back row of base)."
+    },
+    {
+      "step": 11,
+      "title": "Rear strip tiles",
+      "description": "Tile the rear strip with 2x White 1x2 tiles (covers the 1x4)."
+    }
+  ],
+  "estimated_pieces": 22
+}

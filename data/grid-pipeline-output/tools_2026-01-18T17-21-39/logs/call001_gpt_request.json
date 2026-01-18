@@ -1,0 +1,186 @@
+{
+  "tool_name": "preview_build",
+  "tool_call_id": "fc_01b88ff0e3a9920900696d16a5d5388197add911bbd6aa6000",
+  "arguments_raw": "{\"parts\":[{\"part_id\":\"3031\",\"color\":7,\"grid_x\":0,\"grid_z\":0,\"layer\":0,\"rotation\":0},{\"part_id\":\"3004\",\"color\":15,\"grid_x\":-1,\"grid_z\":1,\"layer\":1,\"rotation\":0},{\"part_id\":\"3004\",\"color\":15,\"grid_x\":1,\"grid_z\":1,\"layer\":1,\"rotation\":0},{\"part_id\":\"3004\",\"color\":15,\"grid_x\":-1,\"grid_z\":-1,\"layer\":1,\"rotation\":0},{\"part_id\":\"3004\",\"color\":15,\"grid_x\":1,\"grid_z\":-1,\"layer\":1,\"rotation\":0},{\"part_id\":\"3003\",\"color\":15,\"grid_x\":0,\"grid_z\":0,\"layer\":3,\"rotation\":0},{\"part_id\":\"3004\",\"color\":4,\"grid_x\":0,\"grid_z\":-2,\"layer\":3,\"rotation\":0},{\"part_id\":\"3004\",\"color\":15,\"grid_x\":-2,\"grid_z\":0,\"layer\":3,\"rotation\":90},{\"part_id\":\"3004\",\"color\":15,\"grid_x\":2,\"grid_z\":0,\"layer\":3,\"rotation\":90},{\"part_id\":\"3003\",\"color\":15,\"grid_x\":0,\"grid_z\":0,\"layer\":6,\"rotation\":0},{\"part_id\":\"3005\",\"color\":71,\"grid_x\":0,\"grid_z\":1,\"layer\":7,\"rotation\":0},{\"part_id\":\"3010\",\"color\":15,\"grid_x\":0,\"grid_z\":0,\"layer\":8,\"rotation\":0},{\"part_id\":\"3005\",\"color\":14,\"grid_x\":-1,\"grid_z\":0,\"layer\":11,\"rotation\":0},{\"part_id\":\"3005\",\"color\":14,\"grid_x\":0,\"grid_z\":0,\"layer\":11,\"rotation\":0},{\"part_id\":\"3005\",\"color\":14,\"grid_x\":1,\"grid_z\":0,\"layer\":11,\"rotation\":0},{\"part_id\":\"3005\",\"color\":14,\"grid_x\":-1,\"grid_z\":1,\"layer\":11,\"rotation\":0},{\"part_id\":\"3005\",\"color\":14,\"grid_x\":0,\"grid_z\":1,\"layer\":11,\"rotation\":0},{\"part_id\":\"3005\",\"color\":14,\"grid_x\":1,\"grid_z\":1,\"layer\":11,\"rotation\":0},{\"part_id\":\"3023\",\"color\":71,\"grid_x\":1,\"grid_z\":1,\"layer\":12,\"rotation\":0},{\"part_id\":\"3023\",\"color\":71,\"grid_x\":1,\"grid_z\":2,\"layer\":12,\"rotation\":90},{\"part_id\":\"3023\",\"color\":15,\"grid_x\":1,\"grid_z\":3,\"layer\":13,\"rotation\":90},{\"part_id\":\"3023\",\"color\":15,\"grid_x\":1,\"grid_z\":4,\"layer\":14,\"rotation\":90}]}",
+  "arguments_parsed": {
+    "parts": [
+      {
+        "part_id": "3031",
+        "color": 7,
+        "grid_x": 0,
+        "grid_z": 0,
+        "layer": 0,
+        "rotation": 0
+      },
+      {
+        "part_id": "3004",
+        "color": 15,
+        "grid_x": -1,
+        "grid_z": 1,
+        "layer": 1,
+        "rotation": 0
+      },
+      {
+        "part_id": "3004",
+        "color": 15,
+        "grid_x": 1,
+        "grid_z": 1,
+        "layer": 1,
+        "rotation": 0
+      },
+      {
+        "part_id": "3004",
+        "color": 15,
+        "grid_x": -1,
+        "grid_z": -1,
+        "layer": 1,
+        "rotation": 0
+      },
+      {
+        "part_id": "3004",
+        "color": 15,
+        "grid_x": 1,
+        "grid_z": -1,
+        "layer": 1,
+        "rotation": 0
+      },
+      {
+        "part_id": "3003",
+        "color": 15,
+        "grid_x": 0,
+        "grid_z": 0,
+        "layer": 3,
+        "rotation": 0
+      },
+      {
+        "part_id": "3004",
+        "color": 4,
+        "grid_x": 0,
+        "grid_z": -2,
+        "layer": 3,
+        "rotation": 0
+      },
+      {
+        "part_id": "3004",
+        "color": 15,
+        "grid_x": -2,
+        "grid_z": 0,
+        "layer": 3,
+        "rotation": 90
+      },
+      {
+        "part_id": "3004",
+        "color": 15,
+        "grid_x": 2,
+        "grid_z": 0,
+        "layer": 3,
+        "rotation": 90
+      },
+      {
+        "part_id": "3003",
+        "color": 15,
+        "grid_x": 0,
+        "grid_z": 0,
+        "layer": 6,
+        "rotation": 0
+      },
+      {
+        "part_id": "3005",
+        "color": 71,
+        "grid_x": 0,
+        "grid_z": 1,
+        "layer": 7,
+        "rotation": 0
+      },
+      {
+        "part_id": "3010",
+        "color": 15,
+        "grid_x": 0,
+        "grid_z": 0,
+        "layer": 8,
+        "rotation": 0
+      },
+      {
+        "part_id": "3005",
+        "color": 14,
+        "grid_x": -1,
+        "grid_z": 0,
+        "layer": 11,
+        "rotation": 0
+      },
+      {
+        "part_id": "3005",
+        "color": 14,
+        "grid_x": 0,
+        "grid_z": 0,
+        "layer": 11,
+        "rotation": 0
+      },
+      {
+        "part_id": "3005",
+        "color": 14,
+        "grid_x": 1,
+        "grid_z": 0,
+        "layer": 11,
+        "rotation": 0
+      },
+      {
+        "part_id": "3005",
+        "color": 14,
+        "grid_x": -1,
+        "grid_z": 1,
+        "layer": 11,
+        "rotation": 0
+      },
+      {
+        "part_id": "3005",
+        "color": 14,
+        "grid_x": 0,
+        "grid_z": 1,
+        "layer": 11,
+        "rotation": 0
+      },
+      {
+        "part_id": "3005",
+        "color": 14,
+        "grid_x": 1,
+        "grid_z": 1,
+        "layer": 11,
+        "rotation": 0
+      },
+      {
+        "part_id": "3023",
+        "color": 71,
+        "grid_x": 1,
+        "grid_z": 1,
+        "layer": 12,
+        "rotation": 0
+      },
+      {
+        "part_id": "3023",
+        "color": 71,
+        "grid_x": 1,
+        "grid_z": 2,
+        "layer": 12,
+        "rotation": 90
+      },
+      {
+        "part_id": "3023",
+        "color": 15,
+        "grid_x": 1,
+        "grid_z": 3,
+        "layer": 13,
+        "rotation": 90
+      },
+      {
+        "part_id": "3023",
+        "color": 15,
+        "grid_x": 1,
+        "grid_z": 4,
+        "layer": 14,
+        "rotation": 90
+      }
+    ]
+  },
+  "parts_count": 22
+}

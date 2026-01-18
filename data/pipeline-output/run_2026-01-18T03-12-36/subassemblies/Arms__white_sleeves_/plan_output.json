@@ -1,0 +1,37 @@
+{
+  "subassembly_name": "Arms (white sleeves)",
+  "image_location_description": "Mid-left and mid-right of torso, arms converge to front-center for two-hand saber grip",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Left shoulder + upper arm",
+      "description": "Stack 3005 White; top with 3023 White, extending forward."
+    },
+    {
+      "step": 2,
+      "title": "Left elbow step",
+      "description": "Add 3024 White on the front stud; stack 3005 White on it."
+    },
+    {
+      "step": 3,
+      "title": "Left cuff + hand",
+      "description": "Top forearm with 3024 White; cap with 3070b White tile."
+    },
+    {
+      "step": 4,
+      "title": "Right shoulder + upper arm",
+      "description": "Stack 3005 White; top with 3023 White, extending inward."
+    },
+    {
+      "step": 5,
+      "title": "Right elbow step",
+      "description": "Add 3024 White on far stud; stack 3005 White on it."
+    },
+    {
+      "step": 6,
+      "title": "Right cuff + hand",
+      "description": "Top forearm with 3024 White; cap with 3070b White tile."
+    }
+  ],
+  "estimated_pieces": 12
+}

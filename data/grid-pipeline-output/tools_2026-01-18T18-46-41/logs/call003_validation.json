@@ -1,0 +1,16 @@
+{
+  "valid": false,
+  "errors": [
+    {
+      "partIndex": 19,
+      "error": "No stud connection: offset (1,1) doesn't align any 3005 studs with 3005 studs",
+      "suggestion": "Try one of these offsets: (0,0)"
+    },
+    {
+      "partIndex": 20,
+      "error": "No stud connection: offset (-1,1) doesn't align any 3005 studs with 3005 studs",
+      "suggestion": "Try one of these offsets: (0,0)"
+    }
+  ],
+  "summary": "INVALID (2):\n[19] 3005 on 3005: No stud connection: offset (1,1) doesn't align any 3005 studs with 3005 studs → Try one of these offsets: (0,0)\n[20] 3005 on 3005: No stud connection: offset (-1,1) doesn't align any 3005 studs with 3005 studs → Try one of these offsets: (0,0)"
+}

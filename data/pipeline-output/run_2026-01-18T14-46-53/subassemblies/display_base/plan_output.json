@@ -1,0 +1,37 @@
+{
+  "subassembly_name": "Display base",
+  "image_location_description": "Bottom of image (under the feet): small rectangular pedestal, dark base with a white front edge.",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Start base footprint",
+      "description": "Place 2x Plate 2x2 (3022) Black side-by-side to make 4x2."
+    },
+    {
+      "step": 2,
+      "title": "Complete 4x4 base",
+      "description": "Add 1x Plate 2x2 (3022) Dark Bluish Gray and 1x Plate 2x2 (3022) White to form 4x4."
+    },
+    {
+      "step": 3,
+      "title": "Stiffen the middle",
+      "description": "On top, add 2x Plate 1x2 (3023) Dark Bluish Gray across center seams."
+    },
+    {
+      "step": 4,
+      "title": "Add center top tile",
+      "description": "Place 1x Tile 2x2 (2420) Black centered on the top surface."
+    },
+    {
+      "step": 5,
+      "title": "Fill top in black",
+      "description": "Add 3x Tile 1x2 (2412b) Black around the center tile (leave front edge open)."
+    },
+    {
+      "step": 6,
+      "title": "Clean white front edge",
+      "description": "Place 2x Tile 1x2 (3069b) White along the front edge as a crisp border."
+    }
+  ],
+  "estimated_pieces": 12
+}

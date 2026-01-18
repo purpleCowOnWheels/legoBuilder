@@ -1,0 +1,62 @@
+{
+  "overview": "Brick-built, slightly chibi “Jedi in white with blue lightsaber” character inspired by the reference minifigure. Build as a small display statue: blocky legs and torso, a rounded head with blond hair cap, and a separate lightsaber accessory held in front. Designed to be stable and achievable with common plates/bricks in White/Lt Bluish Gray/Black/Tan plus Trans-Clear/Trans-Blue style blade (use TransClear pieces if no trans-light-blue).",
+  "subassemblies": [
+    {
+      "name": "Display base",
+      "description": "Low, sturdy platform to anchor the feet (2–4 studs wider than the stance). Use Dark Bluish Gray/Black plates and a few tiles to clean the edges.",
+      "image_location": "Bottom of the image, under both feet"
+    },
+    {
+      "name": "Left leg + foot (white)",
+      "description": "One blocky leg built from stacked white bricks/plates; add simple tan/gold-ish knee/boot detailing with small plates/tiles. Build feet as widened toe blocks for stability.",
+      "image_location": "Lower-left of the figure"
+    },
+    {
+      "name": "Right leg + foot (white)",
+      "description": "Mirror of the left leg. Keep both legs keyed into the hips so the stance matches the reference’s slight step-forward pose.",
+      "image_location": "Lower-right of the figure"
+    },
+    {
+      "name": "Hips / belt section",
+      "description": "A 1–2 brick-tall connector that locks both legs together and supports the torso. Add a belt stripe using Dark Red/Red and small black accents; optionally hang a small pouch shape centered/front.",
+      "image_location": "Mid-lower center (just above the legs)"
+    },
+    {
+      "name": "Torso / tunic core",
+      "description": "Main chest block in white with a subtle V-neck/robe wrap suggestion using a few dark/gray lines (Dark Bluish Gray/Black tiles or plates). Include internal bracing so shoulders can attach strongly.",
+      "image_location": "Center of the figure"
+    },
+    {
+      "name": "Left arm (posed inward)",
+      "description": "Segmented arm (upper arm + forearm) in white with tan “hand” block at the end. Angle it inward to meet the saber grip; use small plates/hinge-like offsets if available, otherwise step-stud offsets for a bent look.",
+      "image_location": "Upper-left, crossing toward the center"
+    },
+    {
+      "name": "Right arm (posed inward)",
+      "description": "Mirror arm posed to form a two-handed grip in front of the torso. Prioritize a strong connection into the torso using stacked plates/brick overlaps.",
+      "image_location": "Upper-right, crossing toward the center"
+    },
+    {
+      "name": "Hands / grip block",
+      "description": "A compact tan/light-nougat block between the forearms to represent hands clasping. Provide a central hole/clip-like cavity substitute by leaving a 1-stud channel for the hilt to seat against.",
+      "image_location": "Center-front, in front of the torso"
+    },
+    {
+      "name": "Lightsaber hilt",
+      "description": "Short cylindrical/stepped hilt built from Light Bluish Gray/Dark Bluish Gray round-like substitutes (or stacked 1x1/1x2 plates/tiles to suggest rings). Must attach firmly to the hands/grip block.",
+      "image_location": "Front-center, between the hands"
+    },
+    {
+      "name": "Lightsaber blade",
+      "description": "Vertical blade rising up-right. Use TransClear elements (or any available transparent pieces) in a straight stack; edge-highlight with Light Bluish Gray if needed to mimic glow.",
+      "image_location": "Top-right diagonal/vertical element above the hands"
+    }
+  ],
+  "estimated_total_pieces": 170,
+  "notes": [
+    "Primary colors: White for clothing; Tan/Medium Nougat for face/hands; Yellow/Tan for hair; Light/Dark Bluish Gray for saber hilt; TransClear pieces for the blade (stand-in for blue).",
+    "Keep the center of mass over the feet by locking legs into a single hip block and pinning the torso down with overlapping plates.",
+    "For the head, aim for a 4x4-ish rounded block: tan face front (simple eyes suggested with black tiles/plates if you choose), and a yellow/blond “hair cap” built as a separate shell on top.",
+    "If arm articulation parts aren’t available, simulate bends with stepped plate offsets (one-stud forward/back) to create the two-handed saber pose."
+  ]
+}

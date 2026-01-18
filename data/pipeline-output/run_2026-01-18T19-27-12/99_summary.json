@@ -1,0 +1,48 @@
+{
+  "timestamp": "2026-01-18T19-27-12",
+  "mode": "debug",
+  "blueprint": {
+    "overview": "Reference shows a single LEGO-style minifigure Jedi holding a blue lightsaber in a two-handed pose. Plan below breaks it into 5 sub-assemblies sized for a micro/brick-built character (not a true minifig), totaling ~120 pieces.",
+    "subassemblies": [
+      {
+        "name": "Feet + legs (stance base)",
+        "description": "Bottom of image: build 2 feet (left and right) and 2 legs (left and right) in a slightly staggered stance. Use 2 large foot blocks, 2 leg columns, and add 2 small knee/hip accents (1 per leg) to suggest the printed leg lines.",
+        "imageRegion": "Bottom third of the image (white legs/feet).",
+        "estimatedPieces": 28
+      },
+      {
+        "name": "Hips + torso (white tunic + brown belt)",
+        "description": "Middle of image: build 1 hips/waist section and 1 torso block. Include 1 belt band around the waist and 1 front belt-knot/pouch detail centered. Keep torso primarily white with 2 thin dark lines to hint the robe overlap.",
+        "imageRegion": "Center of the image (white torso with brown belt).",
+        "estimatedPieces": 26
+      },
+      {
+        "name": "Arms + hands (two-handed grip)",
+        "description": "Upper-middle: build 2 arms (left and right) bent forward, plus 2 hands (left and right) meeting at the saber hilt. Add 2 small forearm cuffs (1 per arm) to suggest sleeve edges; pose so both hands align vertically on the hilt.",
+        "imageRegion": "Right-center of image, in front of torso (crossed/forward arms).",
+        "estimatedPieces": 22
+      },
+      {
+        "name": "Head",
+        "description": "Upper portion: build 1 head as a rounded/boxed cube. Add 2 eyes, 2 eyebrows (angled), and 1 small mouth line on the face side to match the expression.",
+        "imageRegion": "Upper-left/center (face).",
+        "estimatedPieces": 18
+      },
+      {
+        "name": "Hair + lightsaber (hilt + blade)",
+        "description": "Top and upper-right: build 1 hair cap with a layered/swept look, plus 1 lightsaber made of 1 hilt and 1 blade. Suggest metallic hilt bands with 2 ring details, and make the blade as a straight light-blue bar rising diagonally.",
+        "imageRegion": "Hair at very top; lightsaber extends from hands to top-right corner.",
+        "estimatedPieces": 26
+      }
+    ],
+    "totalEstimatedPieces": 120
+  },
+  "subassemblies": [
+    {
+      "name": "Feet + legs (stance base)",
+      "pieces": 28,
+      "validationRounds": 7
+    }
+  ],
+  "finalAssembly": null
+}

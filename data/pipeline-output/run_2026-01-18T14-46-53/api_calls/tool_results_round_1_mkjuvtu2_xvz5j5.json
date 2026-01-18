@@ -1,0 +1,22 @@
+{
+  "id": "tool_results_round_1_mkjuvtu2_xvz5j5",
+  "tag": "tool_results_round_1",
+  "at": "2026-01-18T14:53:07.658Z",
+  "round": 1,
+  "note": "1 validation result(s) - validation level: full_validation",
+  "toolResults": [
+    {
+      "tool_call_id": "call_iy2kXbq0SnEQqbbnoKx90IQ0",
+      "output": "{\"ok\":true,\"validation_level\":\"full_validation\",\"steps_validated\":\"1-6\",\"rendered_image_path\":\"/Users/dan.costanza/repos/legoBuilder/data/pipeline-output/run_2026-01-18T14-46-53/renders/validation_progress_round_1_mkjuvtu0_ohn0yj.png\",\"pieces_in_chunk\":26,\"pieces_total\":26}",
+      "progressImagePath": "/Users/dan.costanza/repos/legoBuilder/data/pipeline-output/run_2026-01-18T14-46-53/renders/validation_progress_round_1_mkjuvtu0_ohn0yj.png",
+      "outputParsed": {
+        "ok": true,
+        "validation_level": "full_validation",
+        "steps_validated": "1-6",
+        "rendered_image_path": "/Users/dan.costanza/repos/legoBuilder/data/pipeline-output/run_2026-01-18T14-46-53/renders/validation_progress_round_1_mkjuvtu0_ohn0yj.png",
+        "pieces_in_chunk": 26,
+        "pieces_total": 26
+      }
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+[
+  {
+    "part_id": "3003",
+    "color": 14,
+    "attach_to": null,
+    "offset_x": 0,
+    "offset_z": 0,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3024",
+    "color": 0,
+    "attach_to": 0,
+    "offset_x": -1,
+    "offset_z": -1,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3024",
+    "color": 0,
+    "attach_to": 0,
+    "offset_x": 1,
+    "offset_z": -1,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3024",
+    "color": 0,
+    "attach_to": 0,
+    "offset_x": 0,
+    "offset_z": 1,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3022",
+    "color": 14,
+    "attach_to": 0,
+    "offset_x": 0,
+    "offset_z": 0,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3023",
+    "color": 14,
+    "attach_to": 4,
+    "offset_x": 0,
+    "offset_z": -2,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3023",
+    "color": 14,
+    "attach_to": 4,
+    "offset_x": 0,
+    "offset_z": 2,
+    "stack": "on_top",
+    "rotation": 0
+  }
+]

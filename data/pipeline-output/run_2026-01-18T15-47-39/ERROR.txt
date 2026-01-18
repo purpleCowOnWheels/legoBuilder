@@ -1,0 +1,11 @@
+Pipeline failed at 2026-01-18T15:59:08.586Z
+
+Error: OpenAI tool loop exceeded max rounds (8) without producing a final JSON result.
+    at callOpenAIJsonWithToolLoop (/Users/dan.costanza/repos/legoBuilder/src/lib/openai.ts:1649:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async generateLDrawMpdChunkForIdea (/Users/dan.costanza/repos/legoBuilder/src/lib/openai.ts:1811:7)
+    at async buildAndValidateSubassembly (/Users/dan.costanza/repos/legoBuilder/src/lib/openai.ts:2341:18)
+    at async <anonymous> (/Users/dan.costanza/repos/legoBuilder/src/lib/openai.ts:2669:20)
+    at async Promise.all (index 0)
+    at async generateBlueprintMultiPhase (/Users/dan.costanza/repos/legoBuilder/src/lib/openai.ts:2681:24)
+    at async main (/Users/dan.costanza/repos/legoBuilder/scripts/run-multiphase-pipeline.ts:92:20)

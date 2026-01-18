@@ -1,0 +1,27 @@
+{
+  "subassembly_name": "Lightsaber blade (blue/teal beam)",
+  "image_location_description": "From minifig hands, blade extends diagonally toward the top-right corner",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Emitter base",
+      "description": "Stack 3023 (DarkAzure) with 3045 (MediumAzure) aligned as a 1x2 base."
+    },
+    {
+      "step": 2,
+      "title": "Start trans core",
+      "description": "On the base stud, stack 4x 60601 (TransClear) straight up."
+    },
+    {
+      "step": 3,
+      "title": "Extend blade",
+      "description": "Add 4x more 60601 (TransClear) to lengthen the beam."
+    },
+    {
+      "step": 4,
+      "title": "Tip & glow cap",
+      "description": "Add 1x 60601 (TransClear), cap with 2431 (DarkAzure) at the tip."
+    }
+  ],
+  "estimated_pieces": 12
+}

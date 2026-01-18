@@ -23,6 +23,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import dotenv from "dotenv";
+import sharp from "sharp";
 import { readDb } from "@/lib/storage";
 import type { InventoryItem } from "@/lib/models";
 
@@ -86,12 +87,20 @@ interface PipelineResult {
   instructionsPdfPath?: string;
 }
 
+interface BoundingBox {
+  x: number;      // 0-1, left edge
+  y: number;      // 0-1, top edge
+  width: number;  // 0-1
+  height: number; // 0-1
+}
+
 interface Blueprint {
   overview: string;
   subassemblies: Array<{
     name: string;
     description: string;
     imageRegion: string;
+    boundingBox: BoundingBox;
     estimatedPieces: number;
   }>;
   totalEstimatedPieces: number;
@@ -355,6 +364,28 @@ function readFileAsDataUrl(filePath: string): string {
   return `data:${mimeType};base64,${data.toString("base64")}`;
 }
 
+async function cropImage(
+  sourcePath: string,
+  boundingBox: BoundingBox,
+  outputPath: string
+): Promise<void> {
+  const image = sharp(sourcePath);
+  const metadata = await image.metadata();
+  
+  if (!metadata.width || !metadata.height) {
+    throw new Error("Could not get image dimensions");
+  }
+  
+  const left = Math.round(boundingBox.x * metadata.width);
+  const top = Math.round(boundingBox.y * metadata.height);
+  const width = Math.round(boundingBox.width * metadata.width);
+  const height = Math.round(boundingBox.height * metadata.height);
+  
+  await image
+    .extract({ left, top, width, height })
+    .toFile(outputPath);
+}
+
 function buildInventoryDescription(inventory: InventoryItem[]): string {
   const byPart: Record<string, { colors: Record<number, number>; name?: string }> = {};
   for (const item of inventory) {
@@ -532,11 +563,22 @@ async function generateBlueprint(params: {
         items: {
           type: "object",
           additionalProperties: false,
-          required: ["name", "description", "image_region", "estimated_pieces"],
+          required: ["name", "description", "image_region", "bounding_box", "estimated_pieces"],
           properties: {
             name: { type: "string" },
             description: { type: "string" },
             image_region: { type: "string" },
+            bounding_box: {
+              type: "object",
+              additionalProperties: false,
+              required: ["x", "y", "width", "height"],
+              properties: {
+                x: { type: "number", description: "Left edge, 0-1" },
+                y: { type: "number", description: "Top edge, 0-1" },
+                width: { type: "number", description: "Width, 0-1" },
+                height: { type: "number", description: "Height, 0-1" }
+              }
+            },
             estimated_pieces: { type: "integer" }
           }
         }
@@ -551,13 +593,17 @@ async function generateBlueprint(params: {
         role: "system",
         content: `You are analyzing a reference image to plan a LEGO build.
 Identify 2-5 major sub-assemblies (e.g., legs, torso, head, accessories).
-For each, describe WHERE in the image it appears and estimate pieces needed.
-Keep total between 25-200 pieces.
+For each sub-assembly provide:
+- name: short identifier
+- description: what to build, with QUANTITIES (e.g., "2 legs", "4 wheels", "1 head with 2 eyes")
+- image_region: text description of where it appears (e.g., "lower third", "top center")
+- bounding_box: exact region as {x, y, width, height} where each value is 0-1
+  - x=0 is left edge, x=1 is right edge
+  - y=0 is top edge, y=1 is bottom edge
+  - Example: legs at bottom-center might be {x: 0.3, y: 0.6, width: 0.4, height: 0.4}
+- estimated_pieces: piece count for this sub-assembly
 
-IMPORTANT - SPECIFY QUANTITIES:
-In the description for each sub-assembly, explicitly state HOW MANY of each element to build.
-Examples: "2 legs (left and right)", "4 wheels", "1 head with 2 eyes", "2 arms", "6 windows"
-Count what you see in the reference image and include the number in the description.`
+Keep total between 25-200 pieces.`
       },
       {
         role: "user",
@@ -580,6 +626,7 @@ Count what you see in the reference image and include the number in the descript
       name: sa.name,
       description: sa.description,
       imageRegion: sa.image_region,
+      boundingBox: sa.bounding_box,
       estimatedPieces: sa.estimated_pieces
     })),
     totalEstimatedPieces: parsed.total_estimated_pieces
@@ -590,6 +637,19 @@ Count what you see in the reference image and include the number in the descript
   blueprint.subassemblies.forEach((sa, i) => {
     console.log(`    ${i + 1}. ${sa.name} (~${sa.estimatedPieces} pieces)`);
   });
+
+  // Crop reference images for each sub-assembly
+  console.log("  Cropping reference images...");
+  for (let i = 0; i < blueprint.subassemblies.length; i++) {
+    const sa = blueprint.subassemblies[i];
+    const safeName = sa.name.toLowerCase().replace(/[^a-z0-9]+/g, "_");
+    const cropPath = path.join(params.logDir, `01_crop_${i}_${safeName}.png`);
+    try {
+      await cropImage(params.imagePath, sa.boundingBox, cropPath);
+    } catch (err) {
+      console.log(`    Warning: Could not crop for ${sa.name}: ${err}`);
+    }
+  }
 
   fs.writeFileSync(
     path.join(params.logDir, "01_blueprint.json"),
@@ -670,7 +730,7 @@ Color 67 is Trans-Clear, NOT white. Use 15 for white.`;
 
 async function buildSubassembly(params: {
   subassembly: Blueprint["subassemblies"][0];
-  imagePath: string;
+  croppedImagePath: string;  // Cropped reference image for this sub-assembly
   inventory: InventoryItem[];
   logDir: string;
   subassemblyIndex: number;
@@ -679,10 +739,14 @@ async function buildSubassembly(params: {
   const saDir = path.join(params.logDir, `02_subassembly_${params.subassemblyIndex}_${safeName}`);
   fs.mkdirSync(saDir, { recursive: true });
 
+  // Copy cropped reference to sub-assembly folder for logging
+  const refCopyPath = path.join(saDir, "00_reference_crop.png");
+  fs.copyFileSync(params.croppedImagePath, refCopyPath);
+
   console.log(`\n[BUILD] ${params.subassembly.name}`);
   console.log(`  Renders: ${saDir}`);
 
-  const imageDataUrl = readFileAsDataUrl(params.imagePath);
+  const imageDataUrl = readFileAsDataUrl(params.croppedImagePath);
   const inventoryDesc = buildInventoryDescription(params.inventory);
 
   const messages: Array<any> = [
@@ -790,18 +854,20 @@ async function buildSubassembly(params: {
               { type: "input_text", text: `Preview of "${params.subassembly.name}" (${parts.length} parts).
 
 SUB-ASSEMBLY DESCRIPTION: ${params.subassembly.description}
-IMAGE REGION: ${params.subassembly.imageRegion}
 
-Compare this render to the ${params.subassembly.imageRegion.toUpperCase()} region of the input image.
+Compare your render to the cropped reference image below.
 
 CHECK:
 1. MATCHES DESCRIPTION? Does it include everything specified above?
 2. QUANTITY correct? (e.g., "2 legs" = BOTH legs built)
-3. ORIENTATION correct? Does it face the same direction as in the input?
-4. SHAPE similar? Does the overall form match that region of the input?
+3. ORIENTATION correct? Does it face the same direction as in the reference?
+4. SHAPE similar? Does the overall form match the reference?
 
 If any of these are wrong, fix before finalizing.` },
-              { type: "input_image", image_url: renderDataUrl }
+              { type: "input_text", text: "YOUR RENDER:" },
+              { type: "input_image", image_url: renderDataUrl },
+              { type: "input_text", text: "CROPPED REFERENCE:" },
+              { type: "input_image", image_url: imageDataUrl }
             ]
           });
         } else {
@@ -838,17 +904,16 @@ If any of these are wrong, fix before finalizing.` },
               { type: "input_text", text: `FINAL CONFIRMATION for "${params.subassembly.name}"
 
 SUB-ASSEMBLY DESCRIPTION: ${params.subassembly.description}
-IMAGE REGION: ${params.subassembly.imageRegion}
 
-Below is your final render. Compare it to:
+Compare your final render to:
 1. The DESCRIPTION above - does it include everything specified?
-2. The ${params.subassembly.imageRegion.toUpperCase()} region of the reference image - does it match that part?
+2. The CROPPED REFERENCE below - does your render match this portion of the original image?
 
 If BOTH match: respond "CONFIRMED" and nothing else.
 If either doesn't match: describe what's wrong and continue building.` },
               { type: "input_text", text: "YOUR FINAL RENDER:" },
               { type: "input_image", image_url: renderDataUrl },
-              { type: "input_text", text: "REFERENCE IMAGE (compare to " + params.subassembly.imageRegion + "):" },
+              { type: "input_text", text: "CROPPED REFERENCE (this is the region you're building):" },
               { type: "input_image", image_url: imageDataUrl }
             ]
           });
@@ -1103,15 +1168,20 @@ async function runPipeline(params: {
   const subassemblyResults: SubassemblyResult[] = [];
   
   // Build in parallel
-  const buildPromises = subassembliesToBuild.map((sa, i) => 
-    buildSubassembly({
+  const buildPromises = subassembliesToBuild.map((sa) => {
+    // Find original index in blueprint for correct crop file
+    const originalIndex = blueprint.subassemblies.findIndex(s => s.name === sa.name);
+    const safeName = sa.name.toLowerCase().replace(/[^a-z0-9]+/g, "_");
+    const croppedImagePath = path.join(logDir, `01_crop_${originalIndex}_${safeName}.png`);
+    
+    return buildSubassembly({
       subassembly: sa,
-      imagePath: params.imagePath,
+      croppedImagePath,
       inventory,
       logDir,
-      subassemblyIndex: i
-    })
-  );
+      subassemblyIndex: originalIndex
+    });
+  });
 
   const results = await Promise.all(buildPromises);
   subassemblyResults.push(...results);

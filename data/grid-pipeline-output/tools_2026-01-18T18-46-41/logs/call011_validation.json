@@ -1,0 +1,11 @@
+{
+  "valid": false,
+  "errors": [
+    {
+      "partIndex": 23,
+      "error": "No stud connection: offset (0,3) doesn't align any 3004 studs with 3001 studs",
+      "suggestion": "Try one of these offsets: (0,-1), (0,1), (-2,-1), (2,-1), (-2,1)"
+    }
+  ],
+  "summary": "INVALID (1):\n[23] 3004 on 3001: No stud connection: offset (0,3) doesn't align any 3004 studs with 3001 studs → Try one of these offsets: (0,-1), (0,1), (-2,-1), (2,-1), (-2,1)"
+}

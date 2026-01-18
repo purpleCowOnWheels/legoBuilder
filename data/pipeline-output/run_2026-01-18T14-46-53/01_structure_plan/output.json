@@ -1,0 +1,62 @@
+{
+  "overview": "Build a brick-built minifigure-style Jedi (inspired by the reference) with a white tunic, tan belt, blond hair/hood-like head shaping, and a blue lightsaber held in front. Scale: “bigfig/minifig statue” (about 12–15 bricks tall), simple SNOT-free where possible, stable and buildable from common bricks/plates in your inventory.",
+  "subassemblies": [
+    {
+      "name": "Display base",
+      "description": "A small rectangular pedestal to stabilize the statue; mostly dark bluish gray/black plates and a few white tiles/plates for a clean edge.",
+      "image_location": "Bottom of image (under the feet)"
+    },
+    {
+      "name": "Feet & lower legs (2x)",
+      "description": "Two blocky feet with slightly stepped toes (using plates) and straight shins. White is primary color; add a couple tan/light bluish gray accents if desired to hint at boot/trim like the reference’s leg printing.",
+      "image_location": "Bottom left and bottom right (the legs/feet)"
+    },
+    {
+      "name": "Hips/pelvis block",
+      "description": "A compact core that locks both legs together and supports the torso. Use white bricks with a 1-plate-thick front layer where a belt will attach.",
+      "image_location": "Lower center (between legs, just above the thighs)"
+    },
+    {
+      "name": "Belt & tunic hem",
+      "description": "A horizontal belt band around the waist: tan plates/tiles with small dark red/brown “pouches”/buckle detail at the front (use dark red pieces if tan tiles are limited).",
+      "image_location": "Mid-lower center (waist area)"
+    },
+    {
+      "name": "Torso/robes",
+      "description": "White torso block with a V-neck/robe wrap suggestion: create the V using layered plates/tiles (white with a few dark accents like dark bluish gray or dark tan lines). Keep the chest mostly smooth and bright like the reference.",
+      "image_location": "Center of image (chest/upper body)"
+    },
+    {
+      "name": "Arms (2x)",
+      "description": "Chunky white arms built as simple rectangular columns attached at shoulders. Pose both arms forward to hold the saber; one arm can be slightly higher to mimic the crossed grip.",
+      "image_location": "Mid-right and mid-left (arms in front of torso)"
+    },
+    {
+      "name": "Hands/grip block",
+      "description": "A small, centered grip assembly between the arms using light bluish gray/dark bluish gray rounds/plates to suggest hands around the hilt. Designed to accept a vertical blade element.",
+      "image_location": "Center-right (where the hands meet the lightsaber hilt)"
+    },
+    {
+      "name": "Lightsaber hilt",
+      "description": "Silver/gray cylindrical look: stack light bluish gray/dark bluish gray round elements and short plates to form a 1x1-ish column. Add a small black detail ring if available.",
+      "image_location": "Right side of model, held in front of chest"
+    },
+    {
+      "name": "Lightsaber blade",
+      "description": "Blue blade using trans-clear bars/plates with blue plates/tiles behind (or trans pieces if available). Keep it straight and slightly taller than the head for the iconic silhouette.",
+      "image_location": "Upper right diagonal/vertical blade"
+    },
+    {
+      "name": "Neck & head core",
+      "description": "A small neck spacer (light bluish gray/white) supporting a tan/white head block. Face detail can be implied with minimal dark tiles/plates (eyes/brow) if you want a stylized look.",
+      "image_location": "Upper center (head)"
+    }
+  ],
+  "estimated_total_pieces": 120,
+  "notes": [
+    "Color-matching the reference: prioritize WHITE for robes/legs/arms; TAN for belt; light/dark bluish gray for saber hilt; BLUE accents for blade.",
+    "Keep the arms connected with simple studs-on-top shoulders so you can angle them forward; if joints aren’t available, use stepped plate offsets to approximate the pose.",
+    "If you don’t want to build a detailed face, make the head a clean tan/white block and put all character recognition into the blond “hair” shaping and lightsaber.",
+    "Use your abundant 2x4/2x3/2x2 bricks (3001/3003/3004/3002) for the internal core, and plates (3020/3021/3022/3023/3024/3710) for shaping and belt layering."
+  ]
+}

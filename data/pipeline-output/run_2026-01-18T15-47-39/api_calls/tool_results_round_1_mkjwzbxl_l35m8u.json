@@ -1,0 +1,45 @@
+{
+  "id": "tool_results_round_1_mkjwzbxl_l35m8u",
+  "tag": "tool_results_round_1",
+  "at": "2026-01-18T15:51:50.313Z",
+  "round": 1,
+  "note": "1 validation result(s) - validation level: full_validation",
+  "toolResults": [
+    {
+      "tool_call_id": "call_TykbqvUyUip8Otnhfv7Rp64e",
+      "output": "{\"ok\":false,\"error\":\"5 connection error(s)\",\"issues\":[{\"type\":\"continuity\",\"message\":\"[floating_part] FLOATING: Plate 1x4 at (0, 12, -20) is not connected. Nearest part: Brick 1x2 at Y=12. Gap: dx=0, dy=8, dz=0. FIX: Y: 12 → 4 (move by -8)\"},{\"type\":\"continuity\",\"message\":\"[floating_part] FLOATING: Brick 1x2 at (-30, 12, -10) is not connected. Nearest part: Plate 1x2 at Y=20. Gap: dx=0, dy=16, dz=0. FIX: Y: 12 → -4 (move by -16)\"},{\"type\":\"continuity\",\"message\":\"[floating_part] FLOATING: Brick 1x2 at (-10, 12, -10) is not connected. Nearest part: Plate 1x2 at Y=20. Gap: dx=0, dy=16, dz=0. FIX: Y: 12 → -4 (move by -16)\"},{\"type\":\"continuity\",\"message\":\"[floating_part] FLOATING: Brick 1x1 at (-20, 12, 10) is not connected. Nearest part: Plate 1x2 at Y=28. Gap: dx=0, dy=8, dz=0. FIX: Y: 12 → 4 (move by -8)\"},{\"type\":\"continuity\",\"message\":\"[floating_part] FLOATING: Brick 1x1 at (-20, 12, 10) is not connected. Nearest part: Plate 1x2 at Y=28. Gap: dx=0, dy=8, dz=0. FIX: Y: 12 → 4 (move by -8)\"}],\"validation_level\":\"full_validation\",\"steps_validated\":\"1-9\",\"rendered_image_path\":\"/Users/dan.costanza/repos/legoBuilder/data/pipeline-output/run_2026-01-18T15-47-39/renders/validation_progress_round_1_mkjwzbxj_0lsxk1.png\",\"pieces_in_chunk\":26,\"pieces_total\":26}",
+      "progressImagePath": "/Users/dan.costanza/repos/legoBuilder/data/pipeline-output/run_2026-01-18T15-47-39/renders/validation_progress_round_1_mkjwzbxj_0lsxk1.png",
+      "outputParsed": {
+        "ok": false,
+        "error": "5 connection error(s)",
+        "issues": [
+          {
+            "type": "continuity",
+            "message": "[floating_part] FLOATING: Plate 1x4 at (0, 12, -20) is not connected. Nearest part: Brick 1x2 at Y=12. Gap: dx=0, dy=8, dz=0. FIX: Y: 12 → 4 (move by -8)"
+          },
+          {
+            "type": "continuity",
+            "message": "[floating_part] FLOATING: Brick 1x2 at (-30, 12, -10) is not connected. Nearest part: Plate 1x2 at Y=20. Gap: dx=0, dy=16, dz=0. FIX: Y: 12 → -4 (move by -16)"
+          },
+          {
+            "type": "continuity",
+            "message": "[floating_part] FLOATING: Brick 1x2 at (-10, 12, -10) is not connected. Nearest part: Plate 1x2 at Y=20. Gap: dx=0, dy=16, dz=0. FIX: Y: 12 → -4 (move by -16)"
+          },
+          {
+            "type": "continuity",
+            "message": "[floating_part] FLOATING: Brick 1x1 at (-20, 12, 10) is not connected. Nearest part: Plate 1x2 at Y=28. Gap: dx=0, dy=8, dz=0. FIX: Y: 12 → 4 (move by -8)"
+          },
+          {
+            "type": "continuity",
+            "message": "[floating_part] FLOATING: Brick 1x1 at (-20, 12, 10) is not connected. Nearest part: Plate 1x2 at Y=28. Gap: dx=0, dy=8, dz=0. FIX: Y: 12 → 4 (move by -8)"
+          }
+        ],
+        "validation_level": "full_validation",
+        "steps_validated": "1-9",
+        "rendered_image_path": "/Users/dan.costanza/repos/legoBuilder/data/pipeline-output/run_2026-01-18T15-47-39/renders/validation_progress_round_1_mkjwzbxj_0lsxk1.png",
+        "pieces_in_chunk": 26,
+        "pieces_total": 26
+      }
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "subassembly_name": "Display base",
+  "image_location_description": "Bottom of the image, under both feet",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Bottom layer plates",
+      "description": "Place 3x DBG 2x6 plates side-by-side to form a 6x6 base."
+    },
+    {
+      "step": 2,
+      "title": "Center brace",
+      "description": "Add 1x DBG 1x4 plate across a seam at the center for stiffness."
+    },
+    {
+      "step": 3,
+      "title": "Top layer lock",
+      "description": "Add 3x DBG 2x6 plates perpendicular to bottom to make 2 plates thick."
+    },
+    {
+      "step": 4,
+      "title": "Front edge tiles",
+      "description": "Tile the front edge with 3x Black 1x2 tiles; leave center studs open."
+    },
+    {
+      "step": 5,
+      "title": "Back edge tiles",
+      "description": "Tile the back edge with 3x Black 1x2 tiles; keep middle studs exposed."
+    },
+    {
+      "step": 6,
+      "title": "Corner texture",
+      "description": "Add 4x DBG 1x1 round plates near the four corners on top."
+    }
+  ],
+  "estimated_pieces": 17
+}

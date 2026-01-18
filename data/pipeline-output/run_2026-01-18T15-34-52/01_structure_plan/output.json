@@ -1,0 +1,62 @@
+{
+  "overview": "Brick-built display-scale (roughly 12–16 bricks tall) figure inspired by the reference: a blond-haired hero in a white outfit holding a blue lightsaber. Build as a simple, sturdy “chibi statue” with a compact internal core and chunky limbs so it’s stable and achievable with the available plates/bricks and clear/trans-blue elements.",
+  "subassemblies": [
+    {
+      "name": "Feet + Lower Legs",
+      "description": "Two blocky feet and short shins to match the white boots/pants in the reference. Use mostly white bricks/plates (3004/3005/3024/3023) with a few tan/light-brown accents near the lower leg to hint at the printed leg detail. Connect to hips with a 2-stud-wide stance for stability.",
+      "image_location": "Bottom of image (boots/legs)"
+    },
+    {
+      "name": "Hips/Pelvis",
+      "description": "A compact 4x4-ish core section in white with a thin dark-red/brown band around the front to suggest the belt. This is the main structural anchor tying both legs to the torso.",
+      "image_location": "Lower center (belt line above legs)"
+    },
+    {
+      "name": "Torso/Chest",
+      "description": "White outer shell around a small internal core (light bluish gray/dark bluish gray) to keep it rigid. Add a subtle V/diagonal ‘robe’ line using dark pieces or thin plate layering on the front. Keep sides mostly smooth and boxy.",
+      "image_location": "Center of image (white tunic/torso)"
+    },
+    {
+      "name": "Arms (Both)",
+      "description": "Two short, chunky arms in white, angled forward so the hands meet at center. Build each as a 1–2 stud thick assembly; use hinge/clip-style connections if available in your lot, otherwise use stepped plates to create the forward pose.",
+      "image_location": "Mid-right and mid-left (arms crossed/forward)"
+    },
+    {
+      "name": "Hands/Grip Block",
+      "description": "A small central grip block in tan/light nougat tones to represent minifig hands, designed to clamp the saber hilt between both arms. Prioritize strength: lock it into the torso with plates so the saber can’t wobble.",
+      "image_location": "Center-right (hands holding hilt)"
+    },
+    {
+      "name": "Lightsaber Hilt",
+      "description": "Cylindrical-looking gray/silver stack using light/dark bluish gray and flat silver elements (e.g., 6141/18976/4528 where workable) in a short handle. Attach firmly into the grip block.",
+      "image_location": "Right of center, below blade"
+    },
+    {
+      "name": "Lightsaber Blade",
+      "description": "A straight blue/transparent-blue blade using trans-clear/trans-blue look: stack trans-clear elements and/or use clear pieces backed by medium/dark azure plates to read as a glowing blade. Keep it one-stud wide and reinforce at the base.",
+      "image_location": "Top-right diagonal (blue blade)"
+    },
+    {
+      "name": "Neck + Head",
+      "description": "A 3x3-ish tan/medium-nougat ‘head’ block with a simple face suggestion (dark tiles/plates for eyes/brows). Mount on a short neck so the head sits slightly forward like the reference.",
+      "image_location": "Upper center (face)"
+    },
+    {
+      "name": "Hair",
+      "description": "Layered blond ‘hair’ cap using tan/yellow plates (tan, yellow, bright light yellow) in stepped layers to imitate swept hair. Slight overhang on the forehead/sides for silhouette.",
+      "image_location": "Top of image (blond hair)"
+    },
+    {
+      "name": "Back Bracing (Optional)",
+      "description": "Hidden reinforcement on the back of torso and hips (light bluish gray/dark bluish gray) to prevent the forward-posed arms/saber from tipping the model. Can also widen the back footprint subtly.",
+      "image_location": "Back side (not visible in reference)"
+    }
+  ],
+  "estimated_total_pieces": 160,
+  "notes": [
+    "Color matching can be approximate: use white as the dominant outfit color; add a dark-red/brown belt stripe at the waist; use tan/yellow for hair.",
+    "Prioritize a strong internal core running from feet through hips into torso; the saber/arms add forward leverage.",
+    "Keep the blade either mostly trans-clear with blue backing accents, or a mix of medium/dark azure plates if you don’t have enough clear pieces for length.",
+    "If you lack true hinges/clips for arm posing, use stepped plate offsets to angle the forearms inward toward the hilt."
+  ]
+}

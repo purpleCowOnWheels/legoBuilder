@@ -1,0 +1,42 @@
+{
+  "subassembly_name": "Base / Feet",
+  "image_location_description": "Bottom edge of image: character’s boots/feet",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Soles",
+      "description": "Place 2x White 3020 plates (2x4) side-by-side as left/right soles."
+    },
+    {
+      "step": 2,
+      "title": "Upper blocks",
+      "description": "Add 2x White 3021 plates (2x3) on top, aligned to the heel (toe overhang)."
+    },
+    {
+      "step": 3,
+      "title": "Ankle rise",
+      "description": "Add 2x White 3022 plates (2x2) on the rear of each foot, centered."
+    },
+    {
+      "step": 4,
+      "title": "Toe step",
+      "description": "Add 2x LBG 3023 plates (1x2) on the front row of each foot."
+    },
+    {
+      "step": 5,
+      "title": "Rear connector",
+      "description": "Bridge inner rear studs with 1x LBG 3710 plate (1x4) to lock feet together."
+    },
+    {
+      "step": 6,
+      "title": "Front connector",
+      "description": "Bridge inner toe studs with 1x White 3710 plate (1x4) for stability."
+    },
+    {
+      "step": 7,
+      "title": "Mount studs",
+      "description": "Add 2x White 3024 plates (1x1) on the rear connector as attachment points."
+    }
+  ],
+  "estimated_pieces": 12
+}

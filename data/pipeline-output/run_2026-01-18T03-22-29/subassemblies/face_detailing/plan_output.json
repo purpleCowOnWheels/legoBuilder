@@ -1,0 +1,52 @@
+{
+  "subassembly_name": "Face detailing",
+  "image_location_description": "Front of head, upper center; minimal eyes/brows and small mouth line",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Base plate",
+      "description": "Place 1x Tan plate 2x4 as the core base."
+    },
+    {
+      "step": 2,
+      "title": "Square the footprint",
+      "description": "Add 1x Tan plate 2x2 and 2x Tan plates 1x2 to form 4x4."
+    },
+    {
+      "step": 3,
+      "title": "Build outer wall",
+      "description": "Stack 4x Tan bricks 1x2 around edges for thickness."
+    },
+    {
+      "step": 4,
+      "title": "Fill and brace",
+      "description": "Add 2x Tan bricks 1x2 and 2x Dark Tan bricks 1x2 to fill center."
+    },
+    {
+      "step": 5,
+      "title": "Rear mount tab",
+      "description": "Add 1x Tan plate 1x2 on the back/top as an attachment tab."
+    },
+    {
+      "step": 6,
+      "title": "Front face layer",
+      "description": "Cap front with 1x Tan plate 2x4, 1x Tan 2x2, and 2x Tan 1x2."
+    },
+    {
+      "step": 7,
+      "title": "Add eyes",
+      "description": "Place 2x Black round tiles 1x1 as eyes on the mid row."
+    },
+    {
+      "step": 8,
+      "title": "Add brows",
+      "description": "Place 2x Black grille tiles 1x2 above the eyes as brows."
+    },
+    {
+      "step": 9,
+      "title": "Add mouth",
+      "description": "Place 1x Black grille tile 1x2 as a short mouth line below eyes."
+    }
+  ],
+  "estimated_pieces": 22
+}

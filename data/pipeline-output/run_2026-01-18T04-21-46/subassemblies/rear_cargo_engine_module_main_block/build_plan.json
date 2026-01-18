@@ -1,0 +1,37 @@
+{
+  "subassembly_name": "Rear cargo/engine module (main block)",
+  "image_location_description": "Left side: the largest light/dark gray rectangular block with studs on top.",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Base plate",
+      "description": "Place 1x 4x4 plate (3031) Light Bluish Gray."
+    },
+    {
+      "step": 2,
+      "title": "Lower block",
+      "description": "Stack 2x 2x4 bricks (3001) Dark Bluish Gray to fill 4x4."
+    },
+    {
+      "step": 3,
+      "title": "Beltline layer",
+      "description": "Add 1x 4x4 plate (3031) Light Bluish Gray on top."
+    },
+    {
+      "step": 4,
+      "title": "Upper block",
+      "description": "Build next layer with 4x 1x4 bricks (3010) Light Bluish Gray."
+    },
+    {
+      "step": 5,
+      "title": "Studded roof",
+      "description": "Cover top with 4x 1x4 plates (3710) Light Bluish Gray."
+    },
+    {
+      "step": 6,
+      "title": "Top greebles/mounts",
+      "description": "Add 1x 2x2 plate (3022), 2x 1x2 plates (3023), 2x 1x1 plates (3024), all DBG."
+    }
+  ],
+  "estimated_pieces": 17
+}

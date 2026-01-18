@@ -1,0 +1,27 @@
+{
+  "subassembly_name": "Hips + Belt (brown/red band)",
+  "image_location_description": "Center (waistline), 1-brick-tall belt between torso and legs with small front pouch/buckle",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Lay front & back belt runs",
+      "description": "Place 2x 3002 ReddishBrown as a 1x6 front; repeat for back, parallel."
+    },
+    {
+      "step": 2,
+      "title": "Close the belt loop",
+      "description": "Connect ends with 4x 3004 DarkRed (two per side) to form a 6x4 ring."
+    },
+    {
+      "step": 3,
+      "title": "Add front pouch block",
+      "description": "Center a 3004 ReddishBrown on the front edge, sticking out as a pouch."
+    },
+    {
+      "step": 4,
+      "title": "Buckle + studs",
+      "description": "Add 1x 3005 DarkRed atop pouch; add 2x 3005 DarkRed as front studs."
+    }
+  ],
+  "estimated_pieces": 12
+}

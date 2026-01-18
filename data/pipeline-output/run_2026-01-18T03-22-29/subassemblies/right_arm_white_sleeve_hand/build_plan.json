@@ -1,0 +1,37 @@
+{
+  "subassembly_name": "Right arm (white sleeve) + hand",
+  "image_location_description": "Upper right of torso (viewer’s right); arm angles inward to meet lightsaber grip.",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Shoulder base",
+      "description": "3021 White x1 + 3023 White x1 + 3024 White x2 as a 2x3 shoulder pad."
+    },
+    {
+      "step": 2,
+      "title": "Anti-sag shoulder brace",
+      "description": "Layer 3023 White x2 crosswise + 3024 White x1 to stiffen the mount."
+    },
+    {
+      "step": 3,
+      "title": "Upper arm block",
+      "description": "Attach 3004 White x2 under shoulder; cap with 3023 White x1."
+    },
+    {
+      "step": 4,
+      "title": "Elbow angle inward",
+      "description": "Add 2420 White x1 as elbow corner + 3023 White x1 + 3024 White x2."
+    },
+    {
+      "step": 5,
+      "title": "Forearm + sleeve cuff",
+      "description": "Build forearm with 3005 White x2 + 3023 White x1 + 3034 White x1."
+    },
+    {
+      "step": 6,
+      "title": "Hand + saber grip point",
+      "description": "Add 15573 Tan x1 as hand + 11090 Black x1 grip + 3024 White x2 as lock plates."
+    }
+  ],
+  "estimated_pieces": 22
+}

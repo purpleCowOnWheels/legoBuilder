@@ -1,0 +1,37 @@
+{
+  "overview": "Build a compact sci‑fi blaster/cannon: a chunky rear “power pack” body feeding a narrow barrel with a front muzzle block. Matches the reference silhouette (large block on left, thin barrel running to the right).",
+  "subassemblies": [
+    {
+      "name": "Rear Power Pack / Main Body",
+      "description": "Large rectangular block (stacked bricks/plates) with a studded top, forming the heaviest mass of the model. Add a slight step/offset on the right side where the barrel attaches.",
+      "image_location": "Left 40% of the image (big dark gray block with studded top)."
+    },
+    {
+      "name": "Connector/Shoulder Block",
+      "description": "Small 1–2 brick-wide spacer that bridges from the big body to the barrel, keeping the barrel centered and slightly lower than the top surface.",
+      "image_location": "Just right of the main body (small dark gray block)."
+    },
+    {
+      "name": "Barrel Core (Segmented)",
+      "description": "A short run of alternating round elements (1x1 round bricks/round plates) to create a ribbed barrel look. Keep it straight and low-profile.",
+      "image_location": "Middle-right (the line of small round pieces between the connector block and the muzzle)."
+    },
+    {
+      "name": "Front Muzzle / Emitter",
+      "description": "A compact front block using a stud-on-the-side (or bracket/headlight-style) element to suggest an emitter opening; optionally add a small top plate/tile as a sight nub.",
+      "image_location": "Far right end (the blocky black piece with a circular detail facing outward)."
+    },
+    {
+      "name": "Top Detail / Greebles (Optional)",
+      "description": "A few 1x1/1x2 plates/tiles on top of the rear body to imply vents or control panels without changing the main shape.",
+      "image_location": "On top of the left body block."
+    }
+  ],
+  "estimated_total_pieces": 55,
+  "notes": [
+    "Color-block for readability: Dark Bluish Gray/Light Bluish Gray for the body, Black for barrel/muzzle accents.",
+    "Keep the rear body roughly 4x4-ish footprint and ~2–3 bricks tall so the barrel looks appropriately thin.",
+    "Use common plates/bricks from the provided inventory for the body; use black round elements for the barrel ribs; use a SNOT-capable part for the front face detail.",
+    "This is a display prop scale build (not minifig-scale weapon) to stay sturdy with the available parts."
+  ]
+}

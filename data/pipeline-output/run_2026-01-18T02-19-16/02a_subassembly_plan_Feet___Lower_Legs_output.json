@@ -1,0 +1,42 @@
+{
+  "subassembly_name": "Feet & Lower Legs",
+  "image_location_description": "Bottom of image: both chunky white feet on ground; tan/gold striping sits on lower legs above feet.",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Left foot base",
+      "description": "Stack 3021 white 2x3 plate + 3021 white 2x3 plate; add 3024 white 1x1 at toe center."
+    },
+    {
+      "step": 2,
+      "title": "Right foot base",
+      "description": "Repeat Step 1 for the right foot (same parts/placement)."
+    },
+    {
+      "step": 3,
+      "title": "Add ankle plates",
+      "description": "Place 3022 white 2x2 on rear half of each foot (centered)."
+    },
+    {
+      "step": 4,
+      "title": "Left shin block",
+      "description": "On left ankle: add two 3004 white 1x2 bricks side-by-side (2x2)."
+    },
+    {
+      "step": 5,
+      "title": "Right shin block",
+      "description": "On right ankle: add two 3004 white 1x2 bricks side-by-side (2x2)."
+    },
+    {
+      "step": 6,
+      "title": "Tan striping",
+      "description": "Top-front of each shin: add 3023 tan 1x2 plate as a stripe band."
+    },
+    {
+      "step": 7,
+      "title": "Lock shins together",
+      "description": "Bridge shins with 3023 white 1x2 plate across the back/top studs."
+    }
+  ],
+  "estimated_pieces": 15
+}

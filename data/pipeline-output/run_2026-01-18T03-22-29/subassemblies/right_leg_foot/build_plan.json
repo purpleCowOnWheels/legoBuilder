@@ -1,0 +1,47 @@
+{
+  "subassembly_name": "Right leg + foot",
+  "image_location_description": "Lower right of the figure (viewer’s right leg); mirrored tan/gold striping on white leg",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Foot sole + toe corners",
+      "description": "Place 3021 White 2x3 plate; add 2x 3024 White 1x1 plates at front corners."
+    },
+    {
+      "step": 2,
+      "title": "Build boot top",
+      "description": "On sole add 3003 White 2x2 brick (rear), 2x 3005 White 1x1 (front), 3004 White 1x2 between."
+    },
+    {
+      "step": 3,
+      "title": "Calf layer 1",
+      "description": "Stack 3004 White 1x2 (inner side) + 3004 Tan 1x2 (outer side) on the boot top."
+    },
+    {
+      "step": 4,
+      "title": "Calf layer 2 + knee band",
+      "description": "Repeat inner White 1x2 + outer Tan 1x2; add 3749 Tan 2x2 on front as knee stripe."
+    },
+    {
+      "step": 5,
+      "title": "Thigh stack",
+      "description": "Add 3004 White 1x2 (inner) + 3004 Tan 1x2 (outer); cap with 2x 3004 White 1x2."
+    },
+    {
+      "step": 6,
+      "title": "Hip platform (wide)",
+      "description": "Add 3021 White 2x3 plate on top; add 2x 3005 White 1x1 on inner edge for hip width."
+    },
+    {
+      "step": 7,
+      "title": "Tan accent stripes",
+      "description": "Attach 2x 3023 Tan 1x2 plates on outer calf/thigh to mirror left leg striping."
+    },
+    {
+      "step": 8,
+      "title": "Gold accent dot",
+      "description": "Place 26047 PearlGold detail on outer knee area for the gold highlight."
+    }
+  ],
+  "estimated_pieces": 22
+}

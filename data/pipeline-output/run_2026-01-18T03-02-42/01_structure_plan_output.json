@@ -1,0 +1,63 @@
+{
+  "overview": "Brick-built chibi “Jedi in white” figure inspired by the reference: a small character with blond hair, white outfit with a belt, and a blue lightsaber held in front. Built as a sturdy display model using mostly white/light-bluish-gray with tan/black/red accents and trans-clear elements for the blade.",
+  "subassemblies": [
+    {
+      "name": "Feet + Lower Legs (2-block-wide stance)",
+      "description": "Two chunky white feet with short lower legs, with small tan/dark-tan accents to hint at the printed leg details. Build as a stable rectangular base for the character.",
+      "image_location": "Bottom of the image (the two white legs/feet)."
+    },
+    {
+      "name": "Hips + Upper Legs (blocky minifig shorts shape)",
+      "description": "A wider hip block that transitions into the two legs. Use white plates/bricks; add subtle tan/dark-tan striping on the front/sides if possible with available colors.",
+      "image_location": "Lower middle (upper legs/hip area above the feet)."
+    },
+    {
+      "name": "Torso Core (white tunic)",
+      "description": "Main body as a 4x3-ish brick core in white, with a slight front panel look (layered plates/tiles). Keep it mostly white to match the robe.",
+      "image_location": "Center (white torso and robe)."
+    },
+    {
+      "name": "Belt + Front Pouch Detail",
+      "description": "A contrasting belt band around the torso using dark red/red/brown and a small centered ‘pouch’ block on the front. This is a visual focal line separating torso and legs.",
+      "image_location": "Across the waist in the middle (brown/red belt area)."
+    },
+    {
+      "name": "Shoulders + Arms (posed to hold saber)",
+      "description": "Two arms built as slim white subassemblies attached at the torso sides, angled inward. Use small hinge/clip-like geometry where possible with plates and small elements to create the “hands together” pose.",
+      "image_location": "Middle-right/center (both arms bent inward, hands near the saber hilt)."
+    },
+    {
+      "name": "Hands/Grip Block (2-handed hold)",
+      "description": "A small tan/light-nougat grip cluster between the arms that the hilt plugs into. Prioritize strength: pin the hilt into the grip block rather than relying on a single stud connection.",
+      "image_location": "Center-right (where the hands meet around the saber)."
+    },
+    {
+      "name": "Head (face block)",
+      "description": "A compact tan/light-nougat cube with a simple ‘face’ suggestion using minimal black tiles/plates/studs for eyes/eyebrows and a tiny mouth line. Keep it readable from the front.",
+      "image_location": "Top-center (skin-tone head/face)."
+    },
+    {
+      "name": "Hair (blond swoop)",
+      "description": "Layered yellow plates/tiles/slopes to form a swept, slightly shaggy hair cap. Build it as a removable top module that sits on the head.",
+      "image_location": "Very top (yellow/blond hair)."
+    },
+    {
+      "name": "Lightsaber Hilt",
+      "description": "Cylindrical-looking hilt using light-bluish-gray/dark-bluish-gray and flat-silver/gray accents (stacked round-like approximations with small plates). Designed to plug securely into the grip block.",
+      "image_location": "Center-right (silver/gray handle below the blade)."
+    },
+    {
+      "name": "Lightsaber Blade",
+      "description": "A straight blue blade using trans-clear elements with blue/azure pieces as accents, forming a rigid “beam” extending upward. Keep it simple and straight for durability.",
+      "image_location": "Upper-right (bright blue blade extending diagonally upward)."
+    }
+  ],
+  "estimated_total_pieces": 140,
+  "notes": [
+    "Color-matching: use mostly White for clothing; Light Bluish Gray/Dark Bluish Gray for the hilt; Yellow for hair; Tan/Medium Nougat for face/hands; Dark Red/Red/Reddish Brown for the belt.",
+    "Scale: aim for ~10–14 bricks tall total (feet to hair) for a recognizable, sturdy chibi figure.",
+    "Posing: lock the arms into the torso with plates/overlaps so the 2-handed saber pose doesn’t droop.",
+    "If you’re short on suitable small face detailing parts, prioritize the hair silhouette and belt line—those sell the character fastest.",
+    "Blade strength: build the blade as a layered plate/brick beam (not a single-stud stack) to avoid wobble."
+  ]
+}

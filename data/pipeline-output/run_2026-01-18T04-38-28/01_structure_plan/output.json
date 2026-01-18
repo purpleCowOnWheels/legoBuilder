@@ -1,0 +1,37 @@
+{
+  "overview": "Build a small sci‑fi rover/tank: a chunky gray rear hull with a compact “engine pod” and a forward black sensor/cannon module mounted low to the ground on simple roller/wheel elements (matching the reference’s left-to-right layout).",
+  "subassemblies": [
+    {
+      "name": "Rear Hull / Main Body Block",
+      "description": "A dense rectangular gray block (stacked plates/bricks) forming the vehicle’s mass and stability. Top should be studded/flat like the reference. This is the anchor for all other modules.",
+      "image_location": "Left side: the large light/dark gray block with a studded top surface."
+    },
+    {
+      "name": "Side Pod / Neck Connector",
+      "description": "A smaller gray rectangular block that steps out from the hull and provides the attachment point for the forward assembly. Keep it 2–4 studs long so it reads as the “bridge” between hull and front module.",
+      "image_location": "Center-left: the smaller gray block protruding from the main hull toward the right."
+    },
+    {
+      "name": "Running Gear (Rollers/Wheels)",
+      "description": "A short line of small round/roller elements under the forward section to suggest wheels or suspension. Use black cylinders/round bricks as wheels/rollers, with small round plates/tiles as spacers to create the segmented look.",
+      "image_location": "Mid-right: the sequence of black cylinder pieces with gray round spacers between them."
+    },
+    {
+      "name": "Front Sensor/Cannon Module",
+      "description": "A compact black “head” built from a 1x1 brick with side stud / bracket feel, plus a small plate/arm on top to read as a periscope/camera or cannon mount. Keep it slightly lower than the hull for a prow-like silhouette.",
+      "image_location": "Far right: the black blocky end piece with a side-facing circular detail."
+    },
+    {
+      "name": "Top Detailing / Greebles (Optional)",
+      "description": "Light greebling on the hull roof (small tiles/plates) to add interest while staying sturdy; avoid overhanging details that interfere with the connector pod.",
+      "image_location": "Top of the left hull block."
+    }
+  ],
+  "estimated_total_pieces": 90,
+  "notes": [
+    "Color blocking: prioritize light/dark bluish gray for the hull/pod and black for the rollers + front module to match the reference.",
+    "Keep the forward assembly attached via a simple 2-stud-wide spine from the side pod so it stays rigid.",
+    "If parts allow, widen the hull by 1 stud per side at the base (hidden layer) to improve stability without changing the silhouette much.",
+    "The roller line can be decorative (not true spinning wheels) to stay buildable with the listed parts."
+  ]
+}

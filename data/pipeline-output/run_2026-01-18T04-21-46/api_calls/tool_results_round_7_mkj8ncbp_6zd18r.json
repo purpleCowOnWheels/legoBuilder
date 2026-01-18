@@ -1,0 +1,87 @@
+{
+  "id": "tool_results_round_7_mkj8ncbp_6zd18r",
+  "tag": "tool_results_round_7",
+  "at": "2026-01-18T04:30:40.165Z",
+  "round": 7,
+  "note": "1 validation result(s) - validation level: full_validation",
+  "toolResults": [
+    {
+      "tool_call_id": "call_ZYbNkIUVilEPC5atVg8g4G5S",
+      "output": "{\"ok\":false,\"error\":\"16 connection error(s)\",\"issues\":[{\"type\":\"continuity\",\"message\":\"[floating_part] FLOATING: Brick 2x4 at (0, 8, 0) is not connected. Nearest part: Plate 4x4 at Y=24. Gap: dx=0, dy=8, dz=0. FIX: Y: 8 → 0 (move by -8)\"},{\"type\":\"continuity\",\"message\":\"[floating_part] FLOATING: Brick 2x4 at (0, 8, 40) is not connected. Nearest part: Plate 4x4 at Y=24. Gap: dx=0, dy=8, dz=0. FIX: Y: 8 → 0 (move by -8)\"},{\"type\":\"continuity\",\"message\":\"[floating_part] FLOATING: Plate 4x4 at (0, 24, 0) is not connected. Nearest part: Brick 1x4 at Y=32. Gap: dx=-10, dy=0, dz=0. FIX: X: 0 → 10 (move by 10)\"},{\"type\":\"continuity\",\"message\":\"[floating_part] FLOATING: Brick 1x4 at (0, 32, 0) is not connected. Nearest part: Plate 1x4 at Y=48. Gap: dx=0, dy=8, dz=0. FIX: Y: 32 → 24 (move by -8)\"},{\"type\":\"continuity\",\"message\":\"[floating_part] FLOATING: Brick 1x4 at (0, 32, 20) is not connected. Nearest part: Plate 1x4 at Y=48. Gap: dx=0, dy=8, dz=0. FIX: Y: 32 → 24 (move by -8)\"},{\"type\":\"continuity\",\"message\":\"[floating_part] FLOATING: Brick 1x4 at (0, 32, 40) is not connected. Nearest part: Plate 1x4 at Y=48. Gap: dx=0, dy=8, dz=0. FIX: Y: 32 → 24 (move by -8)\"},{\"type\":\"continuity\",\"message\":\"[floating_part] FLOATING: Brick 1x4 at (0, 32, 60) is not connected. Nearest part: Plate 1x4 at Y=48. Gap: dx=0, dy=8, dz=0. FIX: Y: 32 → 24 (move by -8)\"},{\"type\":\"continuity\",\"message\":\"[floating_part] FLOATING: Plate 1x4 at (0, 48, 0) is not connected. Nearest part: Plate 1x4 at Y=48. Gap: dx=0, dy=8, dz=0. FIX: Y: 48 → 40 (move by -8)\"},{\"type\":\"continuity\",\"message\":\"[floating_part] FLOATING: Plate 1x4 at (0, 48, 20) is not connected. Nearest part: Plate 1x4 at Y=48. Gap: dx=0, dy=8, dz=0. FIX: Y: 48 → 40 (move by -8)\"},{\"type\":\"continuity\",\"message\":\"[floating_part] FLOATING: Plate 1x4 at (0, 48, 40) is not connected. Nearest part: Plate 1x4 at Y=48. Gap: dx=0, dy=8, dz=0. FIX: Y: 48 → 40 (move by -8)\"},{\"type\":\"continuity\",\"message\":\"[floating_part] FLOATING: Plate 1x4 at (0, 48, 60) is not connected. Nearest part: Plate 1x4 at Y=48. Gap: dx=0, dy=8, dz=0. FIX: Y: 48 → 40 (move by -8)\"},{\"type\":\"continuity\",\"message\":\"[floating_part] FLOATING: Plate 2x2 at (20, 56, 20) is not connected. Nearest part: Plate 1x2 at Y=56. Gap: dx=-10, dy=8, dz=0. FIX: Y: 56 → 48 (move by -8); X: 20 → 30 (move by 10)\"},{\"type\":\"continuity\",\"message\":\"[floating_part] FLOATING: Plate 1x2 at (20, 56, 0) is not connected. Nearest part: Plate 2x2 at Y=56. Gap: dx=10, dy=8, dz=0. FIX: Y: 56 → 48 (move by -8); X: 20 → 10 (move by -10)\"},{\"type\":\"continuity\",\"message\":\"[floating_part] FLOATING: Plate 1x2 at (20, 56, 60) is not connected. Nearest part: Plate 1x4 at Y=48. Gap: dx=20, dy=16, dz=0. FIX: Y: 56 → 40 (move by -16); X: 20 → 0 (move by -20)\"},{\"type\":\"continuity\",\"message\":\"[floating_part] FLOATING: Plate 1x1 at (0, 56, 20) is not connected. Nearest part: Plate 1x4 at Y=48. Gap: dx=0, dy=16, dz=10. FIX: Y: 56 → 40 (move by -16); Z: 20 → 10 (move by -10)\"},{\"type\":\"continuity\",\"message\":\"[floating_part] FLOATING: Plate 1x1 at (60, 56, 20) is not connected. Nearest part: Plate 2x2 at Y=56. Gap: dx=30, dy=8, dz=10. FIX: Y: 56 → 48 (move by -8); X: 60 → 30 (move by -30); Z: 20 → 10 (move by -10)\"}],\"validation_level\":\"full_validation\",\"steps_validated\":\"1-6\",\"pieces_in_chunk\":25,\"pieces_total\":25}",
+      "outputParsed": {
+        "ok": false,
+        "error": "16 connection error(s)",
+        "issues": [
+          {
+            "type": "continuity",
+            "message": "[floating_part] FLOATING: Brick 2x4 at (0, 8, 0) is not connected. Nearest part: Plate 4x4 at Y=24. Gap: dx=0, dy=8, dz=0. FIX: Y: 8 → 0 (move by -8)"
+          },
+          {
+            "type": "continuity",
+            "message": "[floating_part] FLOATING: Brick 2x4 at (0, 8, 40) is not connected. Nearest part: Plate 4x4 at Y=24. Gap: dx=0, dy=8, dz=0. FIX: Y: 8 → 0 (move by -8)"
+          },
+          {
+            "type": "continuity",
+            "message": "[floating_part] FLOATING: Plate 4x4 at (0, 24, 0) is not connected. Nearest part: Brick 1x4 at Y=32. Gap: dx=-10, dy=0, dz=0. FIX: X: 0 → 10 (move by 10)"
+          },
+          {
+            "type": "continuity",
+            "message": "[floating_part] FLOATING: Brick 1x4 at (0, 32, 0) is not connected. Nearest part: Plate 1x4 at Y=48. Gap: dx=0, dy=8, dz=0. FIX: Y: 32 → 24 (move by -8)"
+          },
+          {
+            "type": "continuity",
+            "message": "[floating_part] FLOATING: Brick 1x4 at (0, 32, 20) is not connected. Nearest part: Plate 1x4 at Y=48. Gap: dx=0, dy=8, dz=0. FIX: Y: 32 → 24 (move by -8)"
+          },
+          {
+            "type": "continuity",
+            "message": "[floating_part] FLOATING: Brick 1x4 at (0, 32, 40) is not connected. Nearest part: Plate 1x4 at Y=48. Gap: dx=0, dy=8, dz=0. FIX: Y: 32 → 24 (move by -8)"
+          },
+          {
+            "type": "continuity",
+            "message": "[floating_part] FLOATING: Brick 1x4 at (0, 32, 60) is not connected. Nearest part: Plate 1x4 at Y=48. Gap: dx=0, dy=8, dz=0. FIX: Y: 32 → 24 (move by -8)"
+          },
+          {
+            "type": "continuity",
+            "message": "[floating_part] FLOATING: Plate 1x4 at (0, 48, 0) is not connected. Nearest part: Plate 1x4 at Y=48. Gap: dx=0, dy=8, dz=0. FIX: Y: 48 → 40 (move by -8)"
+          },
+          {
+            "type": "continuity",
+            "message": "[floating_part] FLOATING: Plate 1x4 at (0, 48, 20) is not connected. Nearest part: Plate 1x4 at Y=48. Gap: dx=0, dy=8, dz=0. FIX: Y: 48 → 40 (move by -8)"
+          },
+          {
+            "type": "continuity",
+            "message": "[floating_part] FLOATING: Plate 1x4 at (0, 48, 40) is not connected. Nearest part: Plate 1x4 at Y=48. Gap: dx=0, dy=8, dz=0. FIX: Y: 48 → 40 (move by -8)"
+          },
+          {
+            "type": "continuity",
+            "message": "[floating_part] FLOATING: Plate 1x4 at (0, 48, 60) is not connected. Nearest part: Plate 1x4 at Y=48. Gap: dx=0, dy=8, dz=0. FIX: Y: 48 → 40 (move by -8)"
+          },
+          {
+            "type": "continuity",
+            "message": "[floating_part] FLOATING: Plate 2x2 at (20, 56, 20) is not connected. Nearest part: Plate 1x2 at Y=56. Gap: dx=-10, dy=8, dz=0. FIX: Y: 56 → 48 (move by -8); X: 20 → 30 (move by 10)"
+          },
+          {
+            "type": "continuity",
+            "message": "[floating_part] FLOATING: Plate 1x2 at (20, 56, 0) is not connected. Nearest part: Plate 2x2 at Y=56. Gap: dx=10, dy=8, dz=0. FIX: Y: 56 → 48 (move by -8); X: 20 → 10 (move by -10)"
+          },
+          {
+            "type": "continuity",
+            "message": "[floating_part] FLOATING: Plate 1x2 at (20, 56, 60) is not connected. Nearest part: Plate 1x4 at Y=48. Gap: dx=20, dy=16, dz=0. FIX: Y: 56 → 40 (move by -16); X: 20 → 0 (move by -20)"
+          },
+          {
+            "type": "continuity",
+            "message": "[floating_part] FLOATING: Plate 1x1 at (0, 56, 20) is not connected. Nearest part: Plate 1x4 at Y=48. Gap: dx=0, dy=16, dz=10. FIX: Y: 56 → 40 (move by -16); Z: 20 → 10 (move by -10)"
+          },
+          {
+            "type": "continuity",
+            "message": "[floating_part] FLOATING: Plate 1x1 at (60, 56, 20) is not connected. Nearest part: Plate 2x2 at Y=56. Gap: dx=30, dy=8, dz=10. FIX: Y: 56 → 48 (move by -8); X: 60 → 30 (move by -30); Z: 20 → 10 (move by -10)"
+          }
+        ],
+        "validation_level": "full_validation",
+        "steps_validated": "1-6",
+        "pieces_in_chunk": 25,
+        "pieces_total": 25
+      }
+    }
+  ]
+}

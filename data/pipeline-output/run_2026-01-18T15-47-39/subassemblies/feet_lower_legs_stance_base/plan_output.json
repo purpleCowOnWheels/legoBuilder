@@ -1,0 +1,52 @@
+{
+  "subassembly_name": "Feet + Lower Legs (stance base)",
+  "image_location_description": "Bottom of the image: both feet and lower legs/boots.",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Place both soles",
+      "description": "Set 2x white 2x3 plates 1 stud apart; toes forward, slight splay."
+    },
+    {
+      "step": 2,
+      "title": "Lock the stance",
+      "description": "Bridge inner heels with 1x white 1x4 plate to keep legs apart."
+    },
+    {
+      "step": 3,
+      "title": "Build left foot block",
+      "description": "On left sole add 2x white 1x2 bricks (heel/mid) + 2x white 1x1 bricks (toe)."
+    },
+    {
+      "step": 4,
+      "title": "Build right foot block",
+      "description": "Repeat Step 3 on the right sole for the second foot."
+    },
+    {
+      "step": 5,
+      "title": "Stack shin cores",
+      "description": "On each heel stack 2x white 1x2 bricks (2 per leg) for shin height."
+    },
+    {
+      "step": 6,
+      "title": "Add top mounting pads",
+      "description": "Cap each shin with 1x white 2x2 plate; align studs square for torso."
+    },
+    {
+      "step": 7,
+      "title": "Tan boot line",
+      "description": "Add 1x tan 1x2 plate in front of each shin on the foot top."
+    },
+    {
+      "step": 8,
+      "title": "DBG crease accents",
+      "description": "Add 1x DBG 1x2 plate on the outer side of each foot top."
+    },
+    {
+      "step": 9,
+      "title": "Center heel detail",
+      "description": "Add 1x DBG 1x1 plate on the rear center of the bridging plate."
+    }
+  ],
+  "estimated_pieces": 22
+}

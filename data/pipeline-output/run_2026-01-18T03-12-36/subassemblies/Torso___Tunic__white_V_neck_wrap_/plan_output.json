@@ -1,0 +1,32 @@
+{
+  "subassembly_name": "Torso / Tunic (white V-neck wrap)",
+  "image_location_description": "Middle of figure (chest/upper body); large white rectangular torso with subtle dark V-neck lines.",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Base footprint",
+      "description": "Place 1x White 3020 plate (2x4) as the torso base."
+    },
+    {
+      "step": 2,
+      "title": "Build core layer 1",
+      "description": "Add 4x White 3004 bricks (1x2) to form a 4x2 rectangle."
+    },
+    {
+      "step": 3,
+      "title": "Build core layer 2",
+      "description": "Stack 4x White 3004 bricks (1x2) directly above layer 1."
+    },
+    {
+      "step": 4,
+      "title": "Cap the torso",
+      "description": "Top with 1x White 3020 plate (2x4) to lock the block."
+    },
+    {
+      "step": 5,
+      "title": "Add V-neck hints",
+      "description": "Place 2x DBG 3024 plates (1x1) near top front to suggest a V."
+    }
+  ],
+  "estimated_pieces": 12
+}

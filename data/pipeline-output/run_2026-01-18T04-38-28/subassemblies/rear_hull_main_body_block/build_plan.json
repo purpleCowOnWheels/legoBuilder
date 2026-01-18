@@ -1,0 +1,42 @@
+{
+  "subassembly_name": "Rear Hull / Main Body Block",
+  "image_location_description": "Left side: large light/dark gray rectangular block with studded top surface.",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Double base plate",
+      "description": "Stack 2x LBG 4x4 plates (3031) aligned."
+    },
+    {
+      "step": 2,
+      "title": "Lower brick layer (half)",
+      "description": "Add 4x LBG 1x2 bricks (3004) on base, start a 4x4 ring."
+    },
+    {
+      "step": 3,
+      "title": "Lower brick layer (finish)",
+      "description": "Add 4x more LBG 1x2 bricks (3004) to complete 4x4 layer."
+    },
+    {
+      "step": 4,
+      "title": "Dark center band",
+      "description": "Place 2x DBG 2x4 bricks (3001) side-by-side on top."
+    },
+    {
+      "step": 5,
+      "title": "Top plates (front)",
+      "description": "Add 2x LBG 1x4 plates (3710) to cover front half."
+    },
+    {
+      "step": 6,
+      "title": "Top plates (rear)",
+      "description": "Add 2x LBG 1x4 plates (3710) to finish 4x4 studded top."
+    },
+    {
+      "step": 7,
+      "title": "Side smooth accents",
+      "description": "Add 2x LBG 1x2 tiles (3069b) on opposite side faces."
+    }
+  ],
+  "estimated_pieces": 18
+}

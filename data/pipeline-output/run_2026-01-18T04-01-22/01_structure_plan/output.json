@@ -1,0 +1,42 @@
+{
+  "overview": "Build a small sci‑fi side‑mounted cannon/turret: a chunky base block on the left with a forward armature leading to a twin‑barrel/energy‑coil module on the right, matching the reference silhouette.",
+  "subassemblies": [
+    {
+      "name": "Base / Body Block",
+      "description": "Large rectangular platform with a studded top, forming the main mass. Build as a 2–3 brick‑tall box using plates/bricks in Light/Dark Bluish Gray; keep the top mostly studs for mounting.",
+      "image_location": "Left side (the big light/dark gray rectangular block with many studs on top)"
+    },
+    {
+      "name": "Side Mount / Shoulder Extension",
+      "description": "A smaller rectangular protrusion that connects the base to the cannon. Use a short stack of plates/bricks to step out from the base and provide a sturdy attachment point.",
+      "image_location": "Center-left (small gray block sticking out from the big base)"
+    },
+    {
+      "name": "Cannon Core / Greeble Linkage",
+      "description": "A thin ‘spine’ between the shoulder extension and barrels, made from small round plates/tiles to suggest joints/couplers. Keep it straight and low-profile.",
+      "image_location": "Center (the small gray round elements between the extension and the black cylinders)"
+    },
+    {
+      "name": "Twin Barrels / Energy Coils",
+      "description": "Two short black cylindrical stacks (each a 1x1 round brick/cylinder with a round top) mounted in line to read as twin barrels or coil housings.",
+      "image_location": "Center-right (the two black cylinders)"
+    },
+    {
+      "name": "Muzzle / Front Housing",
+      "description": "Compact front unit using a small black bracket/modified brick with a circular detail (or a 1x1 with stud/round plate) to read as the cannon’s muzzle/receiver. Attach directly ahead of the barrels.",
+      "image_location": "Far right (the black piece with a round detail on its face)"
+    },
+    {
+      "name": "Optional Stand / Stabilizer (recommended)",
+      "description": "A simple underside foot or small skid under the cannon module to keep the model stable and ‘intentional’ when displayed; use a couple of plates/tiles in dark gray/black.",
+      "image_location": "Under the center-right area (not prominent in the reference, but supports the long overhang)"
+    }
+  ],
+  "estimated_total_pieces": 80,
+  "notes": [
+    "Color-match the reference with Light/Dark Bluish Gray for the base and Black for the barrel module; use small round Light Bluish Gray elements as couplers.",
+    "Keep connections simple: base block built as a sturdy box; extension attaches with overlapping plates; barrels attach via studs on top or a small bracket/modified plate.",
+    "If you have spare 1x2/1x4 plates, widen the base slightly to counterbalance the right-side overhang.",
+    "You can add 2–6 small greebles (cheese slopes/tiles/rounds) on the base top to make it feel more ‘mechanical’ while staying buildable."
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "subassembly_name": "Hands / Saber grip block",
+  "image_location_description": "Front-center, directly in front of the torso; both hands wrapped around the gray/silver hilt.",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Start hilt core",
+      "description": "Slide 1x 18977 (Black) onto 1x 30374 bar; add 1x 2654 (LBG)."
+    },
+    {
+      "step": 2,
+      "title": "Finish main grip",
+      "description": "Add 1x 2654 (LBG) to continue the cylindrical hilt body."
+    },
+    {
+      "step": 3,
+      "title": "Upper collar/emitter",
+      "description": "Add 1x 98138pr0186 (LBG) + 1x 18976 (FlatSilver) + 1x 64648 (FlatSilver)."
+    },
+    {
+      "step": 4,
+      "title": "Lower collar/pommel",
+      "description": "Add 1x 98138pr0186 (LBG) + 1x 18976 (FlatSilver) + 1x 2450 (DBG)."
+    },
+    {
+      "step": 5,
+      "title": "Side detail box",
+      "description": "Attach 1x 2540 (DBG) to the hilt side as a small control box."
+    },
+    {
+      "step": 6,
+      "title": "Set hand positions",
+      "description": "Bring both arms in; close both hands onto the exposed bar for a 2-hand grip."
+    }
+  ],
+  "estimated_pieces": 12
+}

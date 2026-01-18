@@ -1,0 +1,63 @@
+{
+  "overview": "Brick-built display-scale LEGO minifigure inspired by the reference: a white-robed hero with blond hair, holding a blue lightsaber in a two-handed pose. Build as a sturdy, mostly rectangular “bigfig/minifig statue” with simple shaping and color blocking (white body, tan face/hands, blond hair, gray saber hilt, trans-light-blue blade).",
+  "subassemblies": [
+    {
+      "name": "Base/Feet Platform",
+      "description": "Two blocky feet with a small shared base to keep the stance stable. Use mostly white bricks/plates; optional light bluish gray underlayer for strength.",
+      "image_location": "Bottom of the model (under both feet)."
+    },
+    {
+      "name": "Left Leg (front-left from viewer)",
+      "description": "White rectangular leg with a slightly stepped knee/boot suggestion using plates/tiles. Add a tan/light-tan accent stripe motif if desired (to echo the printed leg pattern) using tan plates/tiles.",
+      "image_location": "Lower-left half of the figure."
+    },
+    {
+      "name": "Right Leg (front-right from viewer)",
+      "description": "Mirror of the left leg. Keep both legs solid (stacked bricks) to support the torso and arms.",
+      "image_location": "Lower-right half of the figure."
+    },
+    {
+      "name": "Hip/Pelvis Belt Block",
+      "description": "A 1-brick-tall “belt” band tying legs to torso: reddish brown/dark red stripe with a small centered buckle/pouch suggestion (red/dark red). This also acts as a structural bridge between the legs.",
+      "image_location": "Across the waist, just above the legs."
+    },
+    {
+      "name": "Torso Core (White Robe)",
+      "description": "Main chest/robe block in white. Suggest the V-neck wrap by using a few angled/stepped plates/tiles in white with small dark accents (black/dark bluish gray) for the robe opening lines, kept simple and symmetric.",
+      "image_location": "Center mass of the figure, above the belt."
+    },
+    {
+      "name": "Back Support/Spine Stack",
+      "description": "A hidden internal column (light bluish gray/dark bluish gray) running from hips into the torso to lock the model and provide an anchor for arms.",
+      "image_location": "Inside the torso (not visible), aligned center-back."
+    },
+    {
+      "name": "Left Arm (upper + forearm)",
+      "description": "Blocky white sleeve with a tan hand section at the end. Pose forward so both hands meet at the saber hilt; use simple hinge/offset via plates to angle the forearm inward.",
+      "image_location": "Left side of torso, angled toward the center holding the hilt."
+    },
+    {
+      "name": "Right Arm (upper + forearm)",
+      "description": "Matching white sleeve and tan hand, posed to cross slightly in front of the torso for the two-handed grip.",
+      "image_location": "Right side of torso, angled toward the center holding the hilt."
+    },
+    {
+      "name": "Hands/Grip Connector",
+      "description": "A small central grip block where both arms meet. Build a compact clamp-like assembly (using small plates/tiles) that securely attaches the lightsaber hilt and keeps the arms aligned.",
+      "image_location": "Center-front of torso, just below chest level (where the hands meet)."
+    },
+    {
+      "name": "Lightsaber Hilt",
+      "description": "Cylindrical-looking gray/metallic hilt approximated with stacked round/curved elements if available, otherwise a short square-section handle in light/dark bluish gray with a small black accent band.",
+      "image_location": "Held between both hands at center-front."
+    }
+  ],
+  "estimated_total_pieces": 220,
+  "notes": [
+    "Use mostly white (robes) and tan (face/hands) from the inventory; gray tones for internal structure and saber hilt; trans-clear pieces can be stacked/offset to suggest a glowing blade if trans-light-blue isn’t available—otherwise use trans-clear with a blue core strip.",
+    "Keep everything buildable with basic stacking: legs and torso as solid bricks; arms as simple rectangular beams attached to the torso sides; avoid fragile micro-connections.",
+    "For the blade, make a straight vertical stack rising up and to the upper-right; reinforce at the base by embedding 2–3 layers of plates around the hilt connection.",
+    "Hair can be a simple stepped “helmet” shape in tan/dark tan/yellow tones to evoke the blond look; keep it as one removable top module.",
+    "If you want a simpler build, omit robe line details and focus on silhouette: white body + tan head + yellow/tan hair + gray hilt + blue/trans blade."
+  ]
+}

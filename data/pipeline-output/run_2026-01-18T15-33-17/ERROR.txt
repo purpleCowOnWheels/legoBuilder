@@ -1,0 +1,10 @@
+Pipeline failed at 2026-01-18T15:34:32.270Z
+
+Error: Stream ended without receiving response.done event
+    at parseSSEStream (/Users/dan.costanza/repos/legoBuilder/src/lib/openai.ts:281:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async fetchResponsesJsonWithRetry (/Users/dan.costanza/repos/legoBuilder/src/lib/openai.ts:357:24)
+    at async callOpenAIJsonInput (/Users/dan.costanza/repos/legoBuilder/src/lib/openai.ts:952:16)
+    at async generateStructurePlan (/Users/dan.costanza/repos/legoBuilder/src/lib/openai.ts:2145:16)
+    at async generateBlueprintMultiPhase (/Users/dan.costanza/repos/legoBuilder/src/lib/openai.ts:2588:18)
+    at async main (/Users/dan.costanza/repos/legoBuilder/scripts/run-multiphase-pipeline.ts:92:20)

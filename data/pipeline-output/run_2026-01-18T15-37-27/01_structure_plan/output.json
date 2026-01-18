@@ -1,0 +1,57 @@
+{
+  "overview": "Build a small, brick-built “minifig statue” inspired by the reference: a white-robed Jedi with blonde hair holding a blue lightsaber. Keep it chunky and readable at ~10–12 studs tall using stacked plates/bricks, simple SNOT for the saber, and a stable feet/legs core.",
+  "subassemblies": [
+    {
+      "name": "Display Base (optional)",
+      "description": "Small black/DBG plate base to stabilize the statue’s feet and pose.",
+      "image_location": "Bottom of image (not shown as a base, but supports the standing figure)."
+    },
+    {
+      "name": "Feet + Lower Legs",
+      "description": "Two blocky feet with short shins; use mostly White with a few Tan/Gold accents to echo the printed leg details. Build each leg as a 2x2-ish column on a wide foot for stability.",
+      "image_location": "Bottom of image (white legs/feet)."
+    },
+    {
+      "name": "Hips / Belt Block",
+      "description": "A 4–6 stud wide waist section that transitions from legs to torso. Add a dark red/brown belt stripe using Red/DarkRed/ReddishBrown plates and a small centered “buckle/pouch” greeble.",
+      "image_location": "Mid-lower center (red-brown belt area)."
+    },
+    {
+      "name": "Torso / Robe Chest",
+      "description": "Main upper-body block in White. Suggest the robe wrap using a few DarkBluishGray/Black lines (thin plates/tiles) and slight layering to create a V-shape impression. Keep shoulders squared and simple.",
+      "image_location": "Center (white torso with robe fold lines)."
+    },
+    {
+      "name": "Arms + Hands (2 submodules)",
+      "description": "Two White arms built as narrow columns/hinged stacks attached at the sides of the torso. Hands in LightNougat/MediumNougat tones (or tan-ish substitutes) clasping in front to hold the hilt. Pose: both arms forward and slightly bent.",
+      "image_location": "Center-right (arms crossing to hold lightsaber)."
+    },
+    {
+      "name": "Lightsaber (Hilt + Blade)",
+      "description": "Cylindrical-looking gray hilt using LightBluishGray/DarkBluishGray pieces; attach a TransLightBlue/Blue blade made from trans-clear elements with blue plates behind/within for color. Connect to hands as a single accessory module.",
+      "image_location": "Right side, angled upward (blue blade with gray hilt)."
+    },
+    {
+      "name": "Neck / Head Core",
+      "description": "A small transition stack to center the head on the torso; keep it mostly White/LBG to hide structure.",
+      "image_location": "Upper center (between torso and head)."
+    },
+    {
+      "name": "Head (brick-built)",
+      "description": "A 3–4 stud wide light “skin-tone” cube/rounded block; add minimal facial suggestion with tiny black elements or tiles (eyes/brows) and a small mouth mark. Keep it iconic, not detailed.",
+      "image_location": "Top center (face)."
+    },
+    {
+      "name": "Hair / Hood-like Blonde Top",
+      "description": "Layered “swoop” hair mass in Yellow/Tan/Light tones, stepped plates/curves to suggest the swept bangs and volume. Overhang slightly at the front and sides.",
+      "image_location": "Very top (blonde hair)."
+    }
+  ],
+  "estimated_total_pieces": 180,
+  "notes": [
+    "Color match: prioritize White for robes; use Red/DarkRed/ReddishBrown for belt; LBG/DBG for saber hilt; Blue + TransClear/Trans elements for blade glow.",
+    "Use wide feet (each at least 4x3 footprint) and connect legs with a solid hip block to prevent wobble.",
+    "Keep the silhouette readable: big white robe, blonde hair cap, and a strong diagonal blue saber.",
+    "If you have enough trans parts, stack/line them for the blade and back it with MediumAzure/Blue plates to intensify the color."
+  ]
+}

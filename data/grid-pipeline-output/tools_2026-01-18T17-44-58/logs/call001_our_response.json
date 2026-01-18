@@ -1,0 +1,7 @@
+{
+  "type": "preview_success",
+  "parts_count": 10,
+  "render_duration_ms": 117,
+  "render_file": "call001_render.png",
+  "message_sent": "Preview: 10 parts rendered in 117ms."
+}

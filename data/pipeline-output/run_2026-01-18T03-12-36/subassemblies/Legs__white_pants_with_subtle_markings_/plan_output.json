@@ -1,0 +1,42 @@
+{
+  "subassembly_name": "Legs (white pants with subtle markings)",
+  "image_location_description": "Lower third (legs), from boots up to belt line",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Lay out feet",
+      "description": "Place 2x white 1x2 plates side-by-side as boots."
+    },
+    {
+      "step": 2,
+      "title": "Build lower legs",
+      "description": "Add 2x white 1x2 bricks on top of the boot plates."
+    },
+    {
+      "step": 3,
+      "title": "Add knee markings",
+      "description": "Stack 2x tan 1x2 plates on the lower-leg bricks."
+    },
+    {
+      "step": 4,
+      "title": "Build upper legs",
+      "description": "Add 2x white 1x2 bricks on top to form thighs."
+    },
+    {
+      "step": 5,
+      "title": "Add thigh markings",
+      "description": "Stack 2x tan 1x2 plates on top for subtle upper pattern."
+    },
+    {
+      "step": 6,
+      "title": "Cap at belt line",
+      "description": "Bridge both legs with 1x white 2x2 plate as the hip top."
+    },
+    {
+      "step": 7,
+      "title": "Dark tan accent",
+      "description": "Add 1x dark tan 1x1 piece on front of the hip plate."
+    }
+  ],
+  "estimated_pieces": 12
+}

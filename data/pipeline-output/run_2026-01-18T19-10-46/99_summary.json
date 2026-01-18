@@ -1,0 +1,48 @@
+{
+  "timestamp": "2026-01-18T19-10-46",
+  "mode": "debug",
+  "blueprint": {
+    "overview": "Reference shows a LEGO minifigure-style Jedi (Luke-like) in a white outfit, blond hair, holding a blue lightsaber in a two-handed pose. Plan below breaks it into 5 sub-assemblies you can build as a small brick-built display figure (not a true minifig) using your common bricks/plates/tiles. Piece estimates are sized to keep the whole model ~minifig-scale-ish as a small desk build.",
+    "subassemblies": [
+      {
+        "name": "Legs + Feet (white pants stance)",
+        "description": "Build a compact 2-legged base with slightly separated feet to suggest the stance. Use stacked plates/bricks for each leg with a small toe overhang using plates/tiles; keep the inner gap 1 stud wide for definition. Add a couple thin plates near the “knee” to hint at the tan/print striping seen on the legs.",
+        "imageRegion": "Bottom half of image; from the belt down to the feet (lower center).",
+        "estimatedPieces": 34
+      },
+      {
+        "name": "Torso + Belt (white tunic with brown belt)",
+        "description": "Make a 4x2-ish torso block sitting on the legs. Wrap a belt line using a contrasting plate/tile band around the midsection; add a small centered buckle/pouch bump with a 1x1 element. Slightly taper shoulders with plates on the sides to read as arms attached later.",
+        "imageRegion": "Center of image; chest/waist area with visible brown belt (middle center).",
+        "estimatedPieces": 28
+      },
+      {
+        "name": "Arms + Two-handed grip pose",
+        "description": "Create two simple articulated-looking arms using 1-stud-wide stacks; angle them inward so the hands meet in front of the torso. Represent hands with 1x1 round/clip-like substitutions from your parts (or simple 1x1 plates) and leave a 1-stud gap/channel between them to accept the saber hilt connection.",
+        "imageRegion": "Mid-right of image; both forearms crossed in front holding the saber hilt (center-right).",
+        "estimatedPieces": 22
+      },
+      {
+        "name": "Head + Hair (blond)",
+        "description": "Build a small head block (2x2 footprint) with a flat face tile/plate on the front; add a simple brow/nose suggestion with a 1-plate offset. For hair, layer curved/sloped pieces on top/front to create the shaggy blond look and slight forward fringe.",
+        "imageRegion": "Top-left quadrant; face and blond hair (upper left).",
+        "estimatedPieces": 26
+      },
+      {
+        "name": "Lightsaber (silver hilt + blue blade)",
+        "description": "Assemble a short, thicker hilt (stack of round-looking parts/1x1 cylinders if available; otherwise 1x1 bricks/plates) and a straight blade made from a thin column of plates/bricks in a contrasting color. Connect to the hands/arm channel so it reads as being gripped with two hands.",
+        "imageRegion": "Right side of image; angled blue blade extending up-right from the hands (right half).",
+        "estimatedPieces": 14
+      }
+    ],
+    "totalEstimatedPieces": 124
+  },
+  "subassemblies": [
+    {
+      "name": "Legs + Feet (white pants stance)",
+      "pieces": 19,
+      "validationRounds": 5
+    }
+  ],
+  "finalAssembly": null
+}

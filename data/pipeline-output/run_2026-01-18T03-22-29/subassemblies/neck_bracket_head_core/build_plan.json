@@ -1,0 +1,52 @@
+{
+  "subassembly_name": "Neck bracket + head core",
+  "image_location_description": "Top center, between torso and head: compact LBG/white neck stack under a tan/medium-nougat head block",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Neck base plates",
+      "description": "Stack 2x2 plate LBG (3022) then 2x2 plate White (3022)."
+    },
+    {
+      "step": 2,
+      "title": "Neck core column",
+      "description": "Add 2x White headlight bricks (4070) left/right + 2x White 1x1 bricks (3005) front/back."
+    },
+    {
+      "step": 3,
+      "title": "Neck side collars",
+      "description": "Attach 2x 1x2 tiles LBG (3069b) to the headlight side studs."
+    },
+    {
+      "step": 4,
+      "title": "Neck cap",
+      "description": "Cap with 2x2 plate LBG (3022), keep studs facing up."
+    },
+    {
+      "step": 5,
+      "title": "Head seat",
+      "description": "Add 2x2 plate Tan (3022) centered on the neck cap."
+    },
+    {
+      "step": 6,
+      "title": "Lower head + brow step",
+      "description": "Add 2x2 brick MediumNougat (3003), then 2x 1x2 plates Tan (3023) as a thin step layer."
+    },
+    {
+      "step": 7,
+      "title": "Upper head + cheek step",
+      "description": "Add 2x2 brick MediumNougat (3003), then 2x 1x2 plates Tan (3023) on top."
+    },
+    {
+      "step": 8,
+      "title": "Crown pre-rounding",
+      "description": "Place 3x 1x1 bricks MediumNougat (3005) on top to form a small dome step."
+    },
+    {
+      "step": 9,
+      "title": "Top cap tiles",
+      "description": "Add 2x2 plate Tan (3022), then 2x 1x1 tiles Tan (3070b)."
+    }
+  ],
+  "estimated_pieces": 22
+}

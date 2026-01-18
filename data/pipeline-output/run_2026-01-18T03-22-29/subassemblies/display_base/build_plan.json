@@ -1,0 +1,37 @@
+{
+  "subassembly_name": "Display base",
+  "image_location_description": "Bottom of the image, directly under both feet (small gray pedestal base).",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Back base layer (8x6)",
+      "description": "Place 4x Plate 2x6 (3795 DBG) side-by-side to form 8x6."
+    },
+    {
+      "step": 2,
+      "title": "Front base extension",
+      "description": "Add 4x Plate 1x4 (3710 LBG) to complete an 8x8 footprint."
+    },
+    {
+      "step": 3,
+      "title": "Top layer (back 8x6)",
+      "description": "Stack 4x Plate 2x6 (3795 DBG) aligned over the back 8x6 area."
+    },
+    {
+      "step": 4,
+      "title": "Top layer front row",
+      "description": "Front edge: add 2x Tile 1x4 (2431 LBG); behind ends add 2x Plate 1x2 (3023 LBG)."
+    },
+    {
+      "step": 5,
+      "title": "Top layer front fill",
+      "description": "Behind center: add 2x Tile 1x2 (3069b LBG); fill remaining gaps with 2x Plate 1x2 (3023 DBG)."
+    },
+    {
+      "step": 6,
+      "title": "Foot lock studs",
+      "description": "Center top: place 2x Jumper Plate 1x2 (15573: 1 Black, 1 Tan) where feet will sit."
+    }
+  ],
+  "estimated_pieces": 22
+}

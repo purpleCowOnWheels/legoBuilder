@@ -1,0 +1,62 @@
+{
+  "subassembly_name": "Left leg + foot",
+  "image_location_description": "Lower left of the figure (viewer’s left leg)",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Foot sole",
+      "description": "Place 1 white 2x4 plate as the foot bottom (studs up)."
+    },
+    {
+      "step": 2,
+      "title": "Foot thickness",
+      "description": "Stack 1 white 2x4 plate on top to thicken the foot."
+    },
+    {
+      "step": 3,
+      "title": "Foot top shape",
+      "description": "Add 1 white 2x3 plate at heel + 1 white 1x4 plate at toe."
+    },
+    {
+      "step": 4,
+      "title": "Ankle pad",
+      "description": "Center 1 white 2x2 plate on top, toward the heel."
+    },
+    {
+      "step": 5,
+      "title": "Leg base layer",
+      "description": "On ankle pad, place 2 white 1x2 bricks to form a 2x2 layer."
+    },
+    {
+      "step": 6,
+      "title": "Shin w/ side stud",
+      "description": "Next layer: 1 white 1x2 brick + 1 white headlight (stud outward) + 1 white 1x1 brick."
+    },
+    {
+      "step": 7,
+      "title": "Mid leg layer",
+      "description": "Stack 2 white 1x2 bricks to keep a 2x2 leg."
+    },
+    {
+      "step": 8,
+      "title": "Upper shin side stud",
+      "description": "Repeat: 1 white 1x2 brick + 1 white headlight outward + 1 white 1x1 brick."
+    },
+    {
+      "step": 9,
+      "title": "Thigh layer",
+      "description": "Stack 2 white 1x2 bricks to finish the blocky leg."
+    },
+    {
+      "step": 10,
+      "title": "Top cap",
+      "description": "Cap with 2 white 1x2 plates; add 1 white 1x1 plate at front."
+    },
+    {
+      "step": 11,
+      "title": "Tan stripe accents",
+      "description": "Attach 2 tan 1x2 plates onto the 2 outward headlight studs."
+    }
+  ],
+  "estimated_pieces": 22
+}

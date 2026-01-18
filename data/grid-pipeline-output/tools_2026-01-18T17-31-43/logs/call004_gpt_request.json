@@ -1,0 +1,274 @@
+{
+  "tool_name": "preview_build",
+  "tool_call_id": "call_FcZ59jlNRJ6p0JW0ZrRWvPTW",
+  "arguments_raw": "{\"parts\":[{\"part_id\":\"3031\",\"color\":71,\"grid_x\":0,\"grid_z\":0,\"layer\":0,\"rotation\":0},{\"part_id\":\"3003\",\"color\":15,\"grid_x\":0,\"grid_z\":0,\"layer\":1,\"rotation\":0},{\"part_id\":\"3022\",\"color\":15,\"grid_x\":0,\"grid_z\":0,\"layer\":4,\"rotation\":0},{\"part_id\":\"3003\",\"color\":15,\"grid_x\":0,\"grid_z\":0,\"layer\":5,\"rotation\":0},{\"part_id\":\"3003\",\"color\":15,\"grid_x\":-2,\"grid_z\":-2,\"layer\":8,\"rotation\":0},{\"part_id\":\"3003\",\"color\":15,\"grid_x\":2,\"grid_z\":-2,\"layer\":8,\"rotation\":0},{\"part_id\":\"3003\",\"color\":15,\"grid_x\":-2,\"grid_z\":2,\"layer\":8,\"rotation\":0},{\"part_id\":\"3003\",\"color\":15,\"grid_x\":2,\"grid_z\":2,\"layer\":8,\"rotation\":0},{\"part_id\":\"3022\",\"color\":15,\"grid_x\":0,\"grid_z\":0,\"layer\":8,\"rotation\":0},{\"part_id\":\"3022\",\"color\":4,\"grid_x\":0,\"grid_z\":2,\"layer\":9,\"rotation\":0},{\"part_id\":\"3023\",\"color\":70,\"grid_x\":0,\"grid_z\":2,\"layer\":10,\"rotation\":0},{\"part_id\":\"3023\",\"color\":70,\"grid_x\":0,\"grid_z\":4,\"layer\":10,\"rotation\":0},{\"part_id\":\"3023\",\"color\":70,\"grid_x\":0,\"grid_z\":0,\"layer\":10,\"rotation\":0},{\"part_id\":\"3005\",\"color\":72,\"grid_x\":0,\"grid_z\":6,\"layer\":11,\"rotation\":0},{\"part_id\":\"3023\",\"color\":71,\"grid_x\":0,\"grid_z\":8,\"layer\":11,\"rotation\":0},{\"part_id\":\"3023\",\"color\":71,\"grid_x\":0,\"grid_z\":10,\"layer\":11,\"rotation\":0},{\"part_id\":\"3023\",\"color\":71,\"grid_x\":0,\"grid_z\":12,\"layer\":11,\"rotation\":0},{\"part_id\":\"3022\",\"color\":71,\"grid_x\":0,\"grid_z\":6,\"layer\":11,\"rotation\":0},{\"part_id\":\"3003\",\"color\":15,\"grid_x\":0,\"grid_z\":0,\"layer\":11,\"rotation\":0},{\"part_id\":\"3003\",\"color\":15,\"grid_x\":-2,\"grid_z\":0,\"layer\":14,\"rotation\":0},{\"part_id\":\"3003\",\"color\":15,\"grid_x\":2,\"grid_z\":0,\"layer\":14,\"rotation\":0},{\"part_id\":\"3022\",\"color\":15,\"grid_x\":0,\"grid_z\":0,\"layer\":17,\"rotation\":0},{\"part_id\":\"3005\",\"color\":15,\"grid_x\":0,\"grid_z\":0,\"layer\":18,\"rotation\":0},{\"part_id\":\"3022\",\"color\":14,\"grid_x\":0,\"grid_z\":0,\"layer\":19,\"rotation\":0},{\"part_id\":\"3022\",\"color\":14,\"grid_x\":-2,\"grid_z\":0,\"layer\":19,\"rotation\":0},{\"part_id\":\"3022\",\"color\":14,\"grid_x\":2,\"grid_z\":0,\"layer\":19,\"rotation\":0},{\"part_id\":\"3022\",\"color\":14,\"grid_x\":0,\"grid_z\":-2,\"layer\":19,\"rotation\":0},{\"part_id\":\"3022\",\"color\":14,\"grid_x\":0,\"grid_z\":2,\"layer\":19,\"rotation\":0},{\"part_id\":\"3024\",\"color\":0,\"grid_x\":-1,\"grid_z\":-1,\"layer\":20,\"rotation\":0},{\"part_id\":\"3024\",\"color\":0,\"grid_x\":1,\"grid_z\":-1,\"layer\":20,\"rotation\":0},{\"part_id\":\"3024\",\"color\":0,\"grid_x\":0,\"grid_z\":1,\"layer\":20,\"rotation\":0},{\"part_id\":\"3024\",\"color\":0,\"grid_x\":-1,\"grid_z\":1,\"layer\":20,\"rotation\":0},{\"part_id\":\"3024\",\"color\":0,\"grid_x\":1,\"grid_z\":1,\"layer\":20,\"rotation\":0}]}",
+  "arguments_parsed": {
+    "parts": [
+      {
+        "part_id": "3031",
+        "color": 71,
+        "grid_x": 0,
+        "grid_z": 0,
+        "layer": 0,
+        "rotation": 0
+      },
+      {
+        "part_id": "3003",
+        "color": 15,
+        "grid_x": 0,
+        "grid_z": 0,
+        "layer": 1,
+        "rotation": 0
+      },
+      {
+        "part_id": "3022",
+        "color": 15,
+        "grid_x": 0,
+        "grid_z": 0,
+        "layer": 4,
+        "rotation": 0
+      },
+      {
+        "part_id": "3003",
+        "color": 15,
+        "grid_x": 0,
+        "grid_z": 0,
+        "layer": 5,
+        "rotation": 0
+      },
+      {
+        "part_id": "3003",
+        "color": 15,
+        "grid_x": -2,
+        "grid_z": -2,
+        "layer": 8,
+        "rotation": 0
+      },
+      {
+        "part_id": "3003",
+        "color": 15,
+        "grid_x": 2,
+        "grid_z": -2,
+        "layer": 8,
+        "rotation": 0
+      },
+      {
+        "part_id": "3003",
+        "color": 15,
+        "grid_x": -2,
+        "grid_z": 2,
+        "layer": 8,
+        "rotation": 0
+      },
+      {
+        "part_id": "3003",
+        "color": 15,
+        "grid_x": 2,
+        "grid_z": 2,
+        "layer": 8,
+        "rotation": 0
+      },
+      {
+        "part_id": "3022",
+        "color": 15,
+        "grid_x": 0,
+        "grid_z": 0,
+        "layer": 8,
+        "rotation": 0
+      },
+      {
+        "part_id": "3022",
+        "color": 4,
+        "grid_x": 0,
+        "grid_z": 2,
+        "layer": 9,
+        "rotation": 0
+      },
+      {
+        "part_id": "3023",
+        "color": 70,
+        "grid_x": 0,
+        "grid_z": 2,
+        "layer": 10,
+        "rotation": 0
+      },
+      {
+        "part_id": "3023",
+        "color": 70,
+        "grid_x": 0,
+        "grid_z": 4,
+        "layer": 10,
+        "rotation": 0
+      },
+      {
+        "part_id": "3023",
+        "color": 70,
+        "grid_x": 0,
+        "grid_z": 0,
+        "layer": 10,
+        "rotation": 0
+      },
+      {
+        "part_id": "3005",
+        "color": 72,
+        "grid_x": 0,
+        "grid_z": 6,
+        "layer": 11,
+        "rotation": 0
+      },
+      {
+        "part_id": "3023",
+        "color": 71,
+        "grid_x": 0,
+        "grid_z": 8,
+        "layer": 11,
+        "rotation": 0
+      },
+      {
+        "part_id": "3023",
+        "color": 71,
+        "grid_x": 0,
+        "grid_z": 10,
+        "layer": 11,
+        "rotation": 0
+      },
+      {
+        "part_id": "3023",
+        "color": 71,
+        "grid_x": 0,
+        "grid_z": 12,
+        "layer": 11,
+        "rotation": 0
+      },
+      {
+        "part_id": "3022",
+        "color": 71,
+        "grid_x": 0,
+        "grid_z": 6,
+        "layer": 11,
+        "rotation": 0
+      },
+      {
+        "part_id": "3003",
+        "color": 15,
+        "grid_x": 0,
+        "grid_z": 0,
+        "layer": 11,
+        "rotation": 0
+      },
+      {
+        "part_id": "3003",
+        "color": 15,
+        "grid_x": -2,
+        "grid_z": 0,
+        "layer": 14,
+        "rotation": 0
+      },
+      {
+        "part_id": "3003",
+        "color": 15,
+        "grid_x": 2,
+        "grid_z": 0,
+        "layer": 14,
+        "rotation": 0
+      },
+      {
+        "part_id": "3022",
+        "color": 15,
+        "grid_x": 0,
+        "grid_z": 0,
+        "layer": 17,
+        "rotation": 0
+      },
+      {
+        "part_id": "3005",
+        "color": 15,
+        "grid_x": 0,
+        "grid_z": 0,
+        "layer": 18,
+        "rotation": 0
+      },
+      {
+        "part_id": "3022",
+        "color": 14,
+        "grid_x": 0,
+        "grid_z": 0,
+        "layer": 19,
+        "rotation": 0
+      },
+      {
+        "part_id": "3022",
+        "color": 14,
+        "grid_x": -2,
+        "grid_z": 0,
+        "layer": 19,
+        "rotation": 0
+      },
+      {
+        "part_id": "3022",
+        "color": 14,
+        "grid_x": 2,
+        "grid_z": 0,
+        "layer": 19,
+        "rotation": 0
+      },
+      {
+        "part_id": "3022",
+        "color": 14,
+        "grid_x": 0,
+        "grid_z": -2,
+        "layer": 19,
+        "rotation": 0
+      },
+      {
+        "part_id": "3022",
+        "color": 14,
+        "grid_x": 0,
+        "grid_z": 2,
+        "layer": 19,
+        "rotation": 0
+      },
+      {
+        "part_id": "3024",
+        "color": 0,
+        "grid_x": -1,
+        "grid_z": -1,
+        "layer": 20,
+        "rotation": 0
+      },
+      {
+        "part_id": "3024",
+        "color": 0,
+        "grid_x": 1,
+        "grid_z": -1,
+        "layer": 20,
+        "rotation": 0
+      },
+      {
+        "part_id": "3024",
+        "color": 0,
+        "grid_x": 0,
+        "grid_z": 1,
+        "layer": 20,
+        "rotation": 0
+      },
+      {
+        "part_id": "3024",
+        "color": 0,
+        "grid_x": -1,
+        "grid_z": 1,
+        "layer": 20,
+        "rotation": 0
+      },
+      {
+        "part_id": "3024",
+        "color": 0,
+        "grid_x": 1,
+        "grid_z": 1,
+        "layer": 20,
+        "rotation": 0
+      }
+    ]
+  },
+  "parts_count": 33
+}

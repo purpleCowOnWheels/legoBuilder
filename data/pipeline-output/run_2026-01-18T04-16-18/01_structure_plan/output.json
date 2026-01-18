@@ -1,0 +1,36 @@
+{
+  "overview": "Build a compact sci‑fi “cargo sled with articulated sensor boom”: a chunky gray main body on the left, with a stepped side module and a small greebled boom ending in a camera/sensor head on the right, matching the reference silhouette.",
+  "subassemblies": [
+    {
+      "name": "Main body / cargo block",
+      "description": "Large rectangular gray mass with a studded top (built as a 2-layer brick/plate block). Use mostly LBG/DBG bricks and plates to get the clean cuboid with a slightly darker mid-band if desired.",
+      "image_location": "Left side; the biggest block with studs on top."
+    },
+    {
+      "name": "Side step / connector pod",
+      "description": "Smaller gray rectangular extension attached to the right side of the main body, acting as the mount for the boom. Keep it lower than the main top to create the stepped profile.",
+      "image_location": "Immediately right of the main body; the smaller block bridging to the greebles."
+    },
+    {
+      "name": "Articulated sensor/utility boom",
+      "description": "A short, low-profile chain of round and plate elements (round plates + 1x1 round bricks/cylinders) to create the alternating dark/gray ‘joint’ look. Build it as 2–3 segments so it reads as articulated.",
+      "image_location": "Right half; the thin line of small parts between the connector pod and the end head."
+    },
+    {
+      "name": "Sensor head / camera module",
+      "description": "End piece using a small bracket/SNOT element to present a round ‘lens’ or circular detail forward/sideways. Add a 1x1 round plate/tile as the lens detail and a small top plate as the cap.",
+      "image_location": "Far right end; the upright black module with a circular detail."
+    },
+    {
+      "name": "Underside base/feet (optional)",
+      "description": "A simple plate skid under the main body to stabilize the model and prevent nose-heaviness from the boom; keep it hidden under the left block footprint.",
+      "image_location": "Under the left/main body (not prominent in the reference, but improves stability)."
+    }
+  ],
+  "estimated_total_pieces": 45,
+  "notes": [
+    "Color matching: use Dark Bluish Gray/Light Bluish Gray for the body and Black for the boom greebles to mimic the reference contrast.",
+    "Keep the boom attachment point reinforced (at least 2 studs of connection) so the right-side head doesn’t droop.",
+    "If you want it more ‘vehicle-like,’ add small round plates/tiles on the sides of the main block as thrusters or vents using available 1x1 rounds."
+  ]
+}
