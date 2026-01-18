@@ -643,11 +643,15 @@ Common valid offsets:
 
 ## WORKFLOW
 
-1. Call validate_build to check connections
+1. Add a few parts (3-5 max), then call validate_build
 2. If errors: fix using suggestions, validate again
-3. Once valid: call preview_build to see result
-4. Compare to reference image region, refine if needed
-5. Call finalize_build when done
+3. Once valid: call preview_build to see the render
+4. Compare to reference image - does shape/orientation/quantity match?
+5. Repeat steps 1-4 until complete
+6. Call finalize_build when fully satisfied
+
+IMPORTANT: Preview frequently! Don't add more than 5 parts without previewing.
+Visual feedback helps catch issues early.
 
 ## COMMON PARTS
 
@@ -750,10 +754,11 @@ async function buildSubassembly(params: {
           "utf8"
         );
 
-        // Add quantity reminder when validation passes
+        // Add reminders when validation passes
         let output = validation.summary;
         if (validation.valid) {
-          output += `\n\nREMINDER: Stud connections are valid. Before finalizing, verify QUANTITIES match the description (e.g., "2 legs" = build BOTH legs, not just 1).`;
+          output += `\n\nNow call preview_build to see the render and verify it matches the reference.`;
+          output += `\nCheck: shape, orientation, quantity (e.g., "2 legs" = BOTH legs).`;
         }
 
         messages.push({
