@@ -370,7 +370,7 @@ async function cropImage(
   sourcePath: string,
   boundingBox: BoundingBox,
   outputPath: string,
-  padding: number = 0.15  // Add 15% padding on each side
+  padding: number = 0.10  // Add 10% padding on each side
 ): Promise<void> {
   const image = sharp(sourcePath);
   const metadata = await image.metadata();
@@ -612,8 +612,8 @@ For each sub-assembly provide:
 - bounding_box: region as {x, y, width, height} where each value is 0-1
   - x=0 is left edge, x=1 is right edge
   - y=0 is top edge, y=1 is bottom edge
-  - Be GENEROUS with the box - include some surrounding context, not just the tight boundary
-  - Example: legs at bottom-center might be {x: 0.25, y: 0.5, width: 0.5, height: 0.5}
+  - IMPORTANT: Make sure the ENTIRE sub-assembly is fully contained within the box
+  - Example: legs at bottom-center might be {x: 0.3, y: 0.6, width: 0.4, height: 0.4}
 - estimated_pieces: piece count for this sub-assembly
 
 Keep total between 25-200 pieces.`
