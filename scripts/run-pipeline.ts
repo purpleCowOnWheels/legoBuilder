@@ -1006,7 +1006,7 @@ CHECK THE FRONT VIEW against the reference:
 5. Is description COMPLETE? (all specified elements included)
 
 If the FRONT VIEW is a reasonable LEGO representation of the reference: respond "CONFIRMED"
-If not: describe what's wrong and fix it.` },
+If not: use validate_build and preview_build to revise your build, then finalize_build again.` },
             { type: "input_text", text: "FRONT VIEW (should match reference):" }
           ];
           
@@ -1048,13 +1048,13 @@ If not: describe what's wrong and fix it.` },
               similarityScore
             };
           } else {
-            // Not confirmed - continue iterating
+            // Not confirmed - GPT should continue revising
             console.log(`    [${String(callNum).padStart(3, "0")}] finalize rejected, continuing...`);
             messages.push({
               role: "assistant",
               content: confirmResponse.output_text || "Continuing to refine..."
             });
-            // Don't return - let the loop continue
+            // Loop continues - GPT should make more tool calls to fix issues
           }
         } else {
           messages.push({
