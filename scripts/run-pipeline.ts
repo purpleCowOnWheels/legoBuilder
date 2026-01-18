@@ -556,7 +556,7 @@ Keep total between 25-200 pieces.
 
 IMPORTANT - SPECIFY QUANTITIES:
 In the description for each sub-assembly, explicitly state HOW MANY of each element to build.
-Examples: "2 legs (left and right)", "4 wheels", "1 head", "2 arms", "6 windows"
+Examples: "2 legs (left and right)", "4 wheels", "1 head with 2 eyes", "2 arms", "6 windows"
 Count what you see in the reference image and include the number in the description.`
       },
       {
