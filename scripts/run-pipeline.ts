@@ -724,6 +724,9 @@ Common valid offsets:
 VALIDATE after every part addition (fast, text-only).
 PREVIEW every 3-5 parts to visually check progress.
 
+The preview returns a similarity score (0-100). This should generally INCREASE as you build.
+If similarity drops significantly, something may be wrong (orientation, shape, etc.).
+
 ## COMMON PARTS
 
 Bricks: 3001=2x4, 3003=2x2, 3004=1x2, 3005=1x1
@@ -865,6 +868,10 @@ async function buildSubassembly(params: {
           const simStr = similarityScore !== undefined ? `, similarity: ${similarityScore}%` : "";
           console.log(`  [${callNum}] preview: ${parts.length} parts${simStr}`);
           
+          const simInfo = similarityScore !== undefined 
+            ? `Similarity: ${similarityScore}% (should increase as you build correctly)`
+            : "";
+          
           messages.push({
             type: "function_call_output",
             call_id: call.id,
@@ -876,6 +883,7 @@ async function buildSubassembly(params: {
             role: "user",
             content: [
               { type: "input_text", text: `Preview of "${params.subassembly.name}" (${parts.length} parts).
+${simInfo}
 
 SUB-ASSEMBLY DESCRIPTION: ${params.subassembly.description}
 
@@ -886,7 +894,7 @@ CHECK:
 2. QUANTITY: Did you build ALL items? (e.g., "2 legs" = BOTH legs)
 3. SHAPE: Does the overall form match the reference?
 
-If any are wrong, fix them before finalizing.` },
+If similarity dropped or any checks fail, fix before continuing.` },
               { type: "input_text", text: "YOUR RENDER:" },
               { type: "input_image", image_url: renderDataUrl },
               { type: "input_text", text: "CROPPED REFERENCE:" },
