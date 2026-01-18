@@ -683,14 +683,20 @@ Your build is INCOMPLETE if you only build 1 when 2+ are specified.
 
 BEFORE calling finalize_build, verify you have the correct count of each element.
 
-## ORIENTATION - FRONT FACING FORWARD
+## ORIENTATION - CRITICAL
 
-Build the sub-assembly so that its FRONT faces the same direction as in the reference image.
-- The render camera looks at the model from a consistent angle
-- If the reference shows the front of the legs, your build's front should face forward (+Z direction)
-- Positive X is RIGHT, Positive Z is FORWARD (toward camera), Positive Y is UP
+Your first part sets the orientation. Get it RIGHT from the start:
+- Positive X = RIGHT
+- Positive Z = FORWARD (toward camera) 
+- Positive Y = UP
 
-This ensures your render will match the reference orientation for easier comparison.
+Look at the reference image:
+- Which way does the FRONT of this sub-assembly face?
+- Your build's front must face +Z (toward camera)
+- If legs face forward in the reference, build them facing +Z
+
+IMPORTANT: If you realize orientation is wrong mid-build, START OVER with correct orientation.
+Do NOT try to rotate or fix an incorrectly oriented build - rebuild from scratch.
 
 ## CONNECTION SYSTEM
 
@@ -867,12 +873,13 @@ SUB-ASSEMBLY DESCRIPTION: ${params.subassembly.description}
 Compare your render to the cropped reference image below.
 
 CHECK:
-1. MATCHES DESCRIPTION? Does it include everything specified above?
-2. QUANTITY correct? (e.g., "2 legs" = BOTH legs built)
-3. ORIENTATION correct? Does it face the same direction as in the reference?
-4. SHAPE similar? Does the overall form match the reference?
+1. ORIENTATION: Is the front of your build facing the SAME direction as in the reference?
+   - If the reference shows the front, your render should show the front
+   - If orientation is WRONG, start over - don't try to fix it mid-build
+2. QUANTITY: Did you build ALL items? (e.g., "2 legs" = BOTH legs)
+3. SHAPE: Does the overall form match the reference?
 
-If any of these are wrong, fix before finalizing.` },
+If ORIENTATION is wrong, rebuild from scratch with correct orientation.` },
               { type: "input_text", text: "YOUR RENDER:" },
               { type: "input_image", image_url: renderDataUrl },
               { type: "input_text", text: "CROPPED REFERENCE:" },
@@ -914,12 +921,15 @@ If any of these are wrong, fix before finalizing.` },
 
 SUB-ASSEMBLY DESCRIPTION: ${params.subassembly.description}
 
-Compare your final render to:
-1. The DESCRIPTION above - does it include everything specified?
-2. The CROPPED REFERENCE below - does your render match this portion of the original image?
+Compare your final render to the cropped reference. ALL must be true:
 
-If BOTH match: respond "CONFIRMED" and nothing else.
-If either doesn't match: describe what's wrong and continue building.` },
+1. ORIENTATION: Front of your build faces same direction as reference
+2. QUANTITY: All items built (e.g., "2 legs" = BOTH legs present)
+3. SHAPE: Overall form matches the reference
+4. COMPLETENESS: Everything in description is included
+
+If ALL FOUR are correct: respond "CONFIRMED"
+If ANY are wrong: describe what's wrong and rebuild/fix it.` },
               { type: "input_text", text: "YOUR FINAL RENDER:" },
               { type: "input_image", image_url: renderDataUrl },
               { type: "input_text", text: "CROPPED REFERENCE (this is the region you're building):" },
