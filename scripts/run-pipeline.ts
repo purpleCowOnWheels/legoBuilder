@@ -913,7 +913,10 @@ Compare BOTH views of your render to the reference. Ask yourself:
 3. Is the ORIENTATION correct? (front facing same direction)
 4. Did I build the right QUANTITY? (e.g., "2 legs" = BOTH legs)
 
-If your build doesn't look like it's heading toward the reference, revise it.` },
+PROGRESS CHECK: Compare to your last render.
+- Better (closer to reference)? → Keep building
+- Same? → Continue, may need more pieces
+- Worse (further from reference)? → Revise recent additions` },
             { type: "input_text", text: "YOUR RENDER (FRONT VIEW):" }
           ];
           
