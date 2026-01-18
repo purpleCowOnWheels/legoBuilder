@@ -724,8 +724,8 @@ Common valid offsets:
 VALIDATE after every part addition (fast, text-only).
 PREVIEW every 3-5 parts to visually check progress.
 
-The preview returns a similarity score (0-100). This should generally INCREASE as you build.
-If similarity drops significantly, something may be wrong (orientation, shape, etc.).
+Once you've built about half the pieces, previews will show a similarity score (0-100).
+The score should increase as you build correctly. Follow the guidance provided with each score.
 
 ## COMMON PARTS
 
@@ -779,6 +779,8 @@ async function buildSubassembly(params: {
   let finalParts: ConnectedPart[] = [];
   let validationRounds = 0;
   let toolCallCount = 0;
+  let lastSimilarityScore: number | undefined;
+  const targetPieces = params.subassembly.estimatedPieces;
   const maxIterations = 50;
 
   for (let iter = 1; iter <= maxIterations; iter++) {
@@ -856,20 +858,39 @@ async function buildSubassembly(params: {
         if (rendered) {
           const renderDataUrl = readFileAsDataUrl(pngPath);
           
-          // Calculate similarity score (informational)
+          // Only calculate/show similarity once >= 50% of pieces are built
+          const showSimilarity = parts.length >= targetPieces * 0.5;
           let similarityScore: number | undefined;
-          try {
-            const similarity = compareImages(pngPath, params.croppedImagePath);
-            similarityScore = similarity.overall;
-          } catch {
-            // Ignore similarity errors during preview
+          let simGuidance = "";
+          
+          if (showSimilarity) {
+            try {
+              const similarity = compareImages(pngPath, params.croppedImagePath);
+              similarityScore = similarity.overall;
+              
+              // Determine guidance based on trend
+              if (lastSimilarityScore !== undefined) {
+                const diff = similarityScore - lastSimilarityScore;
+                if (diff < -3) {
+                  simGuidance = "Similarity DROPPED. Consider removing or revising recent additions.";
+                } else if (diff < 3) {
+                  simGuidance = "Similarity stable. Continue building to add more detail.";
+                } else {
+                  simGuidance = "Similarity improving. Keep going.";
+                }
+              }
+              
+              lastSimilarityScore = similarityScore;
+            } catch {
+              // Ignore similarity errors during preview
+            }
           }
           
           const simStr = similarityScore !== undefined ? `, similarity: ${similarityScore}%` : "";
           console.log(`  [${callNum}] preview: ${parts.length} parts${simStr}`);
           
           const simInfo = similarityScore !== undefined 
-            ? `Similarity: ${similarityScore}% (should increase as you build correctly)`
+            ? `Similarity: ${similarityScore}%\n${simGuidance}`
             : "";
           
           messages.push({
@@ -894,7 +915,7 @@ CHECK:
 2. QUANTITY: Did you build ALL items? (e.g., "2 legs" = BOTH legs)
 3. SHAPE: Does the overall form match the reference?
 
-If similarity dropped or any checks fail, fix before continuing.` },
+If any checks fail, fix before continuing.` },
               { type: "input_text", text: "YOUR RENDER:" },
               { type: "input_image", image_url: renderDataUrl },
               { type: "input_text", text: "CROPPED REFERENCE:" },
@@ -922,6 +943,23 @@ If similarity dropped or any checks fail, fix before continuing.` },
         if (rendered) {
           const renderDataUrl = readFileAsDataUrl(pngPath);
           
+          // Calculate similarity score BEFORE asking for confirmation
+          let finalSimilarity: number | undefined;
+          try {
+            const similarity = compareImages(pngPath, params.croppedImagePath);
+            finalSimilarity = similarity.overall;
+          } catch {
+            // Ignore similarity errors
+          }
+          
+          const simText = finalSimilarity !== undefined 
+            ? `\nSIMILARITY SCORE: ${finalSimilarity}%\n${finalSimilarity < 50 
+                ? "Score is LOW. Consider significant revisions to better match the reference."
+                : finalSimilarity < 70 
+                  ? "Score is MODERATE. Look for ways to improve the match."
+                  : "Score is GOOD."}`
+            : "";
+          
           // Final confirmation: show render + reference image
           messages.push({
             type: "function_call_output",
@@ -935,6 +973,7 @@ If similarity dropped or any checks fail, fix before continuing.` },
               { type: "input_text", text: `FINAL CONFIRMATION for "${params.subassembly.name}"
 
 SUB-ASSEMBLY DESCRIPTION: ${params.subassembly.description}
+${simText}
 
 Compare your final render to the cropped reference. ALL must be true:
 
@@ -943,8 +982,9 @@ Compare your final render to the cropped reference. ALL must be true:
 3. SHAPE: Overall form matches the reference
 4. COMPLETENESS: Everything in description is included
 
-If ALL FOUR are correct: respond "CONFIRMED"
-If ANY are wrong: describe what's wrong and rebuild/fix it.` },
+If score is below 60%, make revisions to improve it before confirming.
+If ALL FOUR checks pass and score is acceptable: respond "CONFIRMED"
+If ANY are wrong: describe what's wrong and fix it.` },
               { type: "input_text", text: "YOUR FINAL RENDER:" },
               { type: "input_image", image_url: renderDataUrl },
               { type: "input_text", text: "CROPPED REFERENCE (this is the region you're building):" },
@@ -956,15 +996,11 @@ If ANY are wrong: describe what's wrong and rebuild/fix it.` },
           const confirmResponse = await callOpenAI({ messages, tools: BUILD_TOOLS });
           
           if (confirmResponse.output_text?.toUpperCase().includes("CONFIRMED")) {
-            // Calculate similarity score vs cropped reference
-            let similarityScore: number | undefined;
-            try {
-              const similarity = compareImages(pngPath, params.croppedImagePath);
-              similarityScore = similarity.overall;
+            const similarityScore = finalSimilarity;
+            if (similarityScore !== undefined) {
               console.log(`    ✓ ${parts.length} pieces, ${validationRounds} validation rounds, similarity: ${similarityScore}%`);
-            } catch (err) {
+            } else {
               console.log(`    ✓ ${parts.length} pieces, ${validationRounds} validation rounds`);
-              console.log(`    (similarity check failed: ${err})`);
             }
             
             return {
