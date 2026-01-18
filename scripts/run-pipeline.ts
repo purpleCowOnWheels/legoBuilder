@@ -853,10 +853,22 @@ async function buildSubassembly(params: {
         if (rendered) {
           const renderDataUrl = readFileAsDataUrl(pngPath);
           
+          // Calculate similarity score (informational)
+          let similarityScore: number | undefined;
+          try {
+            const similarity = compareImages(pngPath, params.croppedImagePath);
+            similarityScore = similarity.overall;
+          } catch {
+            // Ignore similarity errors during preview
+          }
+          
+          const simStr = similarityScore !== undefined ? `, similarity: ${similarityScore}%` : "";
+          console.log(`  [${callNum}] preview: ${parts.length} parts${simStr}`);
+          
           messages.push({
             type: "function_call_output",
             call_id: call.id,
-            output: JSON.stringify({ success: true, parts: parts.length })
+            output: JSON.stringify({ success: true, parts: parts.length, similarity: similarityScore })
           });
 
           // Send image for review
