@@ -1,0 +1,67 @@
+{
+  "timestamp": "2026-01-18T20-47-29",
+  "mode": "debug",
+  "blueprint": {
+    "overview": "Plan a brick-built LEGO-style minifigure holding a blue lightsaber. Build as 4 major sub-assemblies: legs/base, torso/robe, head+hair, and lightsaber/arms cluster. Colors aren’t provided, so use light/white for robes, tan/light for face/hands, yellow/tan for hair, and gray/blue for saber where possible.",
+    "subassemblies": [
+      {
+        "name": "Legs & feet base",
+        "description": "1 compact lower-body block: 2 feet, 2 legs, and 1 hip/waist connection point. Use a 4x4-ish footprint with a centered top stud area to attach the torso. Suggest stacking plates to create two forward feet and a slight stance (2 feet blocks, 1 pelvis block).",
+        "imageRegion": "bottom third, centered",
+        "boundingBox": {
+          "x": 0.14,
+          "y": 0.58,
+          "width": 0.58,
+          "height": 0.42
+        },
+        "estimatedPieces": 18
+      },
+      {
+        "name": "Torso & white tunic",
+        "description": "1 torso block with layered robe look: 1 chest core, 1 belt band around the waist, and 1 small front-knot/pouch detail. Build a 4-stud-wide chest tapering to the waist using stacked bricks/plates; add a thin belt stripe (1 layer) and a centered buckle/pouch bump (1 small piece).",
+        "imageRegion": "middle, centered",
+        "boundingBox": {
+          "x": 0.09,
+          "y": 0.28,
+          "width": 0.62,
+          "height": 0.38
+        },
+        "estimatedPieces": 24
+      },
+      {
+        "name": "Head + hair",
+        "description": "1 head: 1 face cylinder/brick-built head with 2 eyes and 1 mouth suggested via small dark plates/studs; 1 shaggy hair mass as a rounded cap using curved slopes/tiles layered front-to-back (approx. 6–10 curved elements).",
+        "imageRegion": "top-left/center (above torso)",
+        "boundingBox": {
+          "x": 0.13,
+          "y": 0.02,
+          "width": 0.54,
+          "height": 0.3
+        },
+        "estimatedPieces": 16
+      },
+      {
+        "name": "Arms + lightsaber",
+        "description": "2 arms in a ‘both-hands-on-hilt’ pose plus 1 lightsaber: build 2 forearms angled inward, 2 hands meeting at center, 1 hilt (short gray stack), and 1 blade (long thin blue stack). Use hinge/clip-like parts if available; otherwise approximate with stepped plates to angle arms inward and a straight vertical/diagonal blade.",
+        "imageRegion": "right half, from chest to top-right",
+        "boundingBox": {
+          "x": 0.34,
+          "y": 0.18,
+          "width": 0.62,
+          "height": 0.7
+        },
+        "estimatedPieces": 22
+      }
+    ],
+    "totalEstimatedPieces": 80
+  },
+  "subassemblies": [
+    {
+      "name": "Legs & feet base",
+      "pieces": 16,
+      "validationRounds": 3,
+      "similarityScore": 31
+    }
+  ],
+  "finalAssembly": null
+}
