@@ -1836,7 +1836,7 @@ export async function generateStructurePlan(params: {
     additionalProperties: false,
     required: ["overview", "subassemblies", "estimated_total_pieces", "notes"],
     properties: {
-      overview: { type: "string", minLength: 10 },
+      overview: { type: "string" },
       subassemblies: {
         type: "array",
         minItems: 1,
@@ -1846,9 +1846,9 @@ export async function generateStructurePlan(params: {
           additionalProperties: false,
           required: ["name", "description", "image_location"],
           properties: {
-            name: { type: "string", minLength: 1 },
-            description: { type: "string", minLength: 5 },
-            image_location: { type: "string", minLength: 1 }
+            name: { type: "string" },
+            description: { type: "string" },
+            image_location: { type: "string" }
           }
         }
       },

@@ -1,0 +1,77 @@
+{
+  "subassembly_name": "Display Base",
+  "image_location_description": "Bottom of model, directly under both feet (not shown in reference).",
+  "steps": [
+    {
+      "step": 1,
+      "title": "Base plate",
+      "description": "Place 1x Plate 6x8 (3036) DarkBluishGray."
+    },
+    {
+      "step": 2,
+      "title": "Reinforce layer",
+      "description": "Add 1x Plate 4x8 (3035) DarkBluishGray on top, aligned."
+    },
+    {
+      "step": 3,
+      "title": "Fill width",
+      "description": "Add 1x Plate 2x8 (3034) LightBluishGray beside it to make 6x8."
+    },
+    {
+      "step": 4,
+      "title": "Top surface start",
+      "description": "Add 1x Plate 2x8 (3034) LightBluishGray on top along one side."
+    },
+    {
+      "step": 5,
+      "title": "Top surface fill 1",
+      "description": "Add 2x Plate 1x4 (3710) LightBluishGray to fill the center."
+    },
+    {
+      "step": 6,
+      "title": "Top surface fill 2",
+      "description": "Add 2x Plate 1x4 (3710) LightBluishGray to complete 6x8 top."
+    },
+    {
+      "step": 7,
+      "title": "Front edge tiles",
+      "description": "Add 2x Tile 1x4 (2431) LightBluishGray along the front edge."
+    },
+    {
+      "step": 8,
+      "title": "Back edge tiles",
+      "description": "Add 2x Tile 1x4 (2431) LightBluishGray along the back edge."
+    },
+    {
+      "step": 9,
+      "title": "Left edge tiles",
+      "description": "Add 3x Tile 1x2 Grille (2412b) Black down the left edge."
+    },
+    {
+      "step": 10,
+      "title": "Right edge tiles",
+      "description": "Add 3x Tile 1x2 Grille (2412b) Black down the right edge."
+    },
+    {
+      "step": 11,
+      "title": "Foot pads",
+      "description": "Add 2x Plate 2x2 (3022) Black where the feet will stand."
+    },
+    {
+      "step": 12,
+      "title": "Underside feet",
+      "description": "Flip base; add 4x Plate 1x2 (3023) DarkBluishGray near corners."
+    },
+    {
+      "step": 13,
+      "title": "Underside stiffeners",
+      "description": "Add 2x Plate 1x2 (3703) Black under the center line."
+    },
+    {
+      "step": 14,
+      "title": "Underside centering",
+      "description": "Add 2x Plate 1x2 (3023) LightBluishGray under remaining gaps."
+    }
+  ],
+  "estimated_pieces": 28
+}

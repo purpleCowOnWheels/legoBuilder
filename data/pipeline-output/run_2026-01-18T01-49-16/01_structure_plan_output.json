@@ -1,0 +1,57 @@
+{
+  "overview": "Brick-built minifigure-style Jedi (in white outfit) holding a lightsaber, posed like the reference: feet planted, torso slightly turned, both hands on the hilt, blade angled up to the upper-right. Build as a small “character statue” (not minifig scale), using white as the main color, tan/medium nougat for skin accents, light bluish gray/dark bluish gray for the saber hilt, and trans-clear + medium/dark azure for the blade effect.",
+  "subassemblies": [
+    {
+      "name": "Display Base",
+      "description": "A simple rectangular platform to stabilize the figure (2–4 studs wider than the feet footprint). Use mostly LightBluishGray/Black plates and a few tiles for a clean edge.",
+      "image_location": "Bottom, under both feet (not visible in reference, but required for stability)."
+    },
+    {
+      "name": "Legs + Boots (2-block legs)",
+      "description": "Two chunky legs built from stacked white bricks/plates. Add subtle tan/gold-ish striping with Tan/ReddishBrown accents on the outer lower legs to echo the printed markings in the reference. Feet are slightly larger blocks to read as ‘boots.’",
+      "image_location": "Lower half of the model (bottom-left to bottom-right)."
+    },
+    {
+      "name": "Hips/Belt Section",
+      "description": "A 1-brick-tall belt wrap bridging the legs: White core with a DarkRed/ReddishBrown belt stripe and a small front ‘buckle/pouch’ bump using dark pieces.",
+      "image_location": "Across the waist, center of image just above the legs."
+    },
+    {
+      "name": "Torso/Chest (robe wrap)",
+      "description": "White torso block with a V-wrap suggestion: use SNOT where possible (side-studs) for thin dark lines (DarkTan/DarkBluishGray) to imply the robe overlap. Slight taper toward shoulders using plates/tiles to avoid a pure rectangle.",
+      "image_location": "Center mass of the figure (mid image)."
+    },
+    {
+      "name": "Arms (2) with two-hand grip pose",
+      "description": "Two articulated-looking arms built as simple hinged stacks (plate-built) coming forward to meet at the hilt. Use Tan/MediumNougat for hands/forearms with White sleeves. Right arm crosses slightly over the left to match the ‘both hands on saber’ stance.",
+      "image_location": "Front of torso, centered; hands sit just right of center holding the saber hilt."
+    },
+    {
+      "name": "Head (skin)",
+      "description": "A compact tan/medium-nougat head cube with a simple face suggestion: dark tiles/plates for eyes and a small mouth line. Keep it iconic and readable rather than detailed.",
+      "image_location": "Top-center, under the hair."
+    },
+    {
+      "name": "Hair/Helmet-like blonde hair mass",
+      "description": "A rounded, layered ‘swoop’ using Tan/Yellow/MediumNougat pieces (primarily tan/yellow plates/tiles). Build as a cap that sits on the head with slight forward overhang and side volume.",
+      "image_location": "Very top of the model (upper-center)."
+    },
+    {
+      "name": "Lightsaber Hilt",
+      "description": "Cylindrical-ish hilt built from LightBluishGray/DarkBluishGray and a few metallic-looking accents (FlatSilver where available). Slightly thicker near the hands; add a small emitter at the top.",
+      "image_location": "In both hands, center-right of the model."
+    },
+    {
+      "name": "Lightsaber Blade",
+      "description": "A straight blade core using TransClear elements, ‘tinted’ by sandwiching MediumAzure/DarkAzure plates/tiles behind/along one side, or alternating TransClear with azure plates to read as blue. Keep it rigid with a plate spine.",
+      "image_location": "Extends from the hilt to the upper-right corner."
+    }
+  ],
+  "estimated_total_pieces": 260,
+  "notes": [
+    "Scale target: ~16–20 bricks tall including hair; feet footprint ~6x6 to 8x8 studs plus a small base for stability.",
+    "Color mapping: White dominates outfit; Tan/MediumNougat for skin; Tan/Yellow for hair; DarkRed/ReddishBrown for belt; Light/DarkBluishGray + FlatSilver for saber hilt; TransClear + Medium/DarkAzure for blade color read.",
+    "Keep joints simple: arms can be fixed in position with stepped plates rather than true articulation, to stay sturdy with available parts.",
+    "If the blade can’t read ‘blue’ enough, use DarkAzure/MediumAzure as a solid blade with a thin TransClear edge/highlight."
+  ]
+}
