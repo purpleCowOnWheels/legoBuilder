@@ -785,12 +785,20 @@ async function buildSubassembly(params: {
             content: [
               { type: "input_text", text: `Preview of ${params.subassembly.name} (${parts.length} parts).
 
-QUANTITY CHECK: Re-read the description. Did you build ALL items?
-- If description says "2 legs" - do you have 2 legs? Not just 1?
-- If description says "2 arms" - do you have 2 arms? Not just 1?
+CHECK YOUR BUILD:
 
-Compare to the ${params.subassembly.imageRegion.toUpperCase()} region of the reference.
-Does it match the shape, structure, AND correct quantity? If not, fix it.` },
+1. QUANTITY: Re-read the description. Did you build ALL items?
+   - "2 legs" = BOTH legs, not just 1
+   - "2 arms" = BOTH arms, not just 1
+
+2. ORIENTATION: Does your build face the same direction as in the reference?
+   - If legs point DOWN in the reference, they should point DOWN here
+   - If arms extend FORWARD, they should extend FORWARD here
+
+3. SHAPE: Compare to the ${params.subassembly.imageRegion.toUpperCase()} region.
+   Does the overall shape match?
+
+If any of these are wrong, fix it before finalizing.` },
               { type: "input_image", image_url: renderDataUrl }
             ]
           });
@@ -992,6 +1000,7 @@ async function generateInstructions(params: {
 async function runPipeline(params: {
   imagePath: string;
   fullMode: boolean;
+  debugSubassembly?: string;
 }): Promise<PipelineResult> {
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, -5);
   const logDir = path.join(process.cwd(), "data", "pipeline-output", `run_${timestamp}`);
@@ -1017,11 +1026,24 @@ async function runPipeline(params: {
   // Phase 2: Build sub-assemblies
   console.log("\n── Phase 2: Building Sub-Assemblies ──");
   
-  const subassembliesToBuild = params.fullMode 
-    ? blueprint.subassemblies 
-    : blueprint.subassemblies.slice(0, 1);
-
-  if (!params.fullMode && blueprint.subassemblies.length > 1) {
+  let subassembliesToBuild: typeof blueprint.subassemblies;
+  
+  if (params.fullMode) {
+    subassembliesToBuild = blueprint.subassemblies;
+  } else if (params.debugSubassembly) {
+    // Find sub-assembly matching the test name
+    const match = blueprint.subassemblies.find(sa => 
+      sa.name.toLowerCase().includes(params.debugSubassembly!)
+    );
+    if (match) {
+      subassembliesToBuild = [match];
+      console.log(`  (Debug mode: testing "${match.name}")`);
+    } else {
+      console.log(`  Warning: No sub-assembly matching "${params.debugSubassembly}", using first`);
+      subassembliesToBuild = blueprint.subassemblies.slice(0, 1);
+    }
+  } else {
+    subassembliesToBuild = blueprint.subassemblies.slice(0, 1);
     console.log(`  (Debug mode: building 1 of ${blueprint.subassemblies.length})`);
   }
 
@@ -1114,16 +1136,17 @@ async function runPipeline(params: {
 // CLI
 // ============================================================================
 
-function parseArgs(): { imagePath: string; fullMode: boolean } {
+function parseArgs(): { imagePath: string; fullMode: boolean; debugSubassembly?: string } {
   const args = process.argv.slice(2);
   const imageIndex = args.indexOf("--image");
 
   if (imageIndex === -1 || !args[imageIndex + 1]) {
-    console.error("Usage: npx tsx scripts/run-pipeline.ts --image <path> [--full]");
+    console.error("Usage: npx tsx scripts/run-pipeline.ts --image <path> [--full] [--test <name>]");
     console.error("");
     console.error("Flags:");
-    console.error("  --full    Run all sub-assemblies + final assembly");
-    console.error("            Default: debug mode (1 sub-assembly only)");
+    console.error("  --full        Run all sub-assemblies + final assembly");
+    console.error("  --test <name> In debug mode, test sub-assembly containing <name> (e.g., 'legs')");
+    console.error("                Default: debug mode (1st sub-assembly only)");
     process.exit(1);
   }
 
@@ -1134,13 +1157,20 @@ function parseArgs(): { imagePath: string; fullMode: boolean } {
   }
 
   const fullMode = args.includes("--full");
+  
+  const testIndex = args.indexOf("--test");
+  const debugSubassembly = testIndex !== -1 && args[testIndex + 1] ? args[testIndex + 1].toLowerCase() : undefined;
 
-  return { imagePath, fullMode };
+  return { imagePath, fullMode, debugSubassembly };
 }
 
 async function main() {
   const args = parseArgs();
-  await runPipeline(args);
+  await runPipeline({
+    imagePath: args.imagePath,
+    fullMode: args.fullMode,
+    debugSubassembly: args.debugSubassembly
+  });
 }
 
 main().catch((err) => {
