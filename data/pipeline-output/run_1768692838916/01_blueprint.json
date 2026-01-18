@@ -1,0 +1,162 @@
+{
+  "structure_plan": {
+    "overview": "Brick-built micro statue of a blond-haired Jedi minifigure in a white outfit, holding a blue lightsaber. Uses a small light-bluish-gray base for stability, a red belt accent, simple SNOT eyes, and a stacked-plate lightsaber.",
+    "subassemblies": [
+      {
+        "name": "Base",
+        "description": "Small 4x4 light-bluish-gray platform to stabilize the figure."
+      },
+      {
+        "name": "Legs",
+        "description": "Two blocky white legs locked together with a red belt/waist layer."
+      },
+      {
+        "name": "Torso",
+        "description": "White torso with forward-facing studs to mount arms in a ‘hands-forward’ pose."
+      },
+      {
+        "name": "Arms",
+        "description": "Simple plate-built arms ending in yellow hands."
+      },
+      {
+        "name": "Head & Hair",
+        "description": "White head with SNOT black eyes and a yellow hair cap/overhang."
+      },
+      {
+        "name": "Lightsaber",
+        "description": "Compact gray/black hilt with a blue blade and clear tip."
+      },
+      {
+        "name": "Final Assembly",
+        "description": "Attach the lightsaber to the right hand and square up the pose."
+      }
+    ]
+  },
+  "step_outline": [
+    {
+      "step": 1,
+      "title": "Build the base",
+      "description": "Place 2x Plate 2x4 (3020) in LightBluishGray side-by-side to form a 4x4 platform.",
+      "subassembly_name": "Base"
+    },
+    {
+      "step": 2,
+      "title": "Start the legs",
+      "description": "On the front-left and front-right of the base, place 2x Brick 2x2 (3003) in White, leaving a 2-stud-wide gap between them.",
+      "subassembly_name": "Legs"
+    },
+    {
+      "step": 3,
+      "title": "Raise the legs",
+      "description": "Stack 2x Brick 2x2 (3003) in White on top of the two leg bricks (one per leg).",
+      "subassembly_name": "Legs"
+    },
+    {
+      "step": 4,
+      "title": "Add belt/waist layer",
+      "description": "Bridge both legs with 1x Plate 2x4 (3020) in Red. Add 1x Plate 1x1 (3024) in Yellow centered at the front edge as a buckle.",
+      "subassembly_name": "Legs"
+    },
+    {
+      "step": 5,
+      "title": "Lower torso block",
+      "description": "Center 1x Brick 2x4 (3001) in White on top of the red belt layer.",
+      "subassembly_name": "Torso"
+    },
+    {
+      "step": 6,
+      "title": "Create forward mounts for arms",
+      "description": "On top of the torso, place 2x Brick, Modified 1x1 with Studs on 2 Sides Opposite (87087) in White at the front-left and front-right corners with studs facing forward. Fill the back row with 2x Brick 1x2 (3004) in White.",
+      "subassembly_name": "Torso"
+    },
+    {
+      "step": 7,
+      "title": "Cap the torso",
+      "description": "Add 1x Plate 2x4 (3020) in White on top to lock the torso layer together.",
+      "subassembly_name": "Torso"
+    },
+    {
+      "step": 8,
+      "title": "Build left arm",
+      "description": "Attach 1x Plate 1x2 (3023) in White to the left forward-facing stud. Stack a second Plate 1x2 (3023) in White on top. Add 1x Plate 1x1 (3024) in Yellow at the arm’s front end as the hand.",
+      "subassembly_name": "Arms"
+    },
+    {
+      "step": 9,
+      "title": "Build right arm",
+      "description": "Attach 1x Plate 1x2 (3023) in White to the right forward-facing stud. Stack a second Plate 1x2 (3023) in White on top. Add 1x Plate 1x1 (3024) in Yellow at the arm’s front end as the hand (leave its top stud free).",
+      "subassembly_name": "Arms"
+    },
+    {
+      "step": 10,
+      "title": "Head base (SNOT face)",
+      "description": "On top of the torso, build a 2x2 head layer using 4x Brick, Modified 1x1 Headlight (4070) in White, all oriented with their side studs facing forward.",
+      "subassembly_name": "Head & Hair"
+    },
+    {
+      "step": 11,
+      "title": "Lock the head layer",
+      "description": "Place 1x Plate 2x2 (3022) in White on top of the 2x2 headlight-brick cluster.",
+      "subassembly_name": "Head & Hair"
+    },
+    {
+      "step": 12,
+      "title": "Add eyes",
+      "description": "Attach 2x Plate 1x1 (3024) in Black to the two forward-facing studs (one left, one right) to form eyes.",
+      "subassembly_name": "Head & Hair"
+    },
+    {
+      "step": 13,
+      "title": "Upper head block",
+      "description": "Place 1x Brick 2x2 (3003) in White on top of the head plate.",
+      "subassembly_name": "Head & Hair"
+    },
+    {
+      "step": 14,
+      "title": "Hair cap",
+      "description": "Add 1x Brick 2x2 (3003) in Yellow on top of the head.",
+      "subassembly_name": "Head & Hair"
+    },
+    {
+      "step": 15,
+      "title": "Hair overhang (sides)",
+      "description": "Add 2x Plate 1x2 (3023) in Yellow to the left and right sides of the yellow hair brick (one per side).",
+      "subassembly_name": "Head & Hair"
+    },
+    {
+      "step": 16,
+      "title": "Hair overhang (front/back)",
+      "description": "Add 2x Plate 1x2 (3023) in Yellow to the front and back of the yellow hair brick (one front, one back).",
+      "subassembly_name": "Head & Hair"
+    },
+    {
+      "step": 17,
+      "title": "Build lightsaber hilt",
+      "description": "Stack 3x Plate 1x1 (3024): LightBluishGray, then Black, then LightBluishGray (bottom to top).",
+      "subassembly_name": "Lightsaber"
+    },
+    {
+      "step": 18,
+      "title": "Build the blade",
+      "description": "On top of the hilt, stack 4x Plate 1x1 (3024) in Blue.",
+      "subassembly_name": "Lightsaber"
+    },
+    {
+      "step": 19,
+      "title": "Add blade tip",
+      "description": "Place 1x Tile, Round 1x1 (3062b) in TransClear on top as the blade tip.",
+      "subassembly_name": "Lightsaber"
+    },
+    {
+      "step": 20,
+      "title": "Attach lightsaber to the hand",
+      "description": "Press the bottom of the lightsaber hilt onto the top stud of the right-hand yellow 1x1 plate so the saber points upward/forward like the reference pose.",
+      "subassembly_name": "Final Assembly"
+    }
+  ],
+  "notes": [
+    "All placements are standard stud connections; no illegal angles.",
+    "If you want a more ‘diagonal’ saber look, rotate the entire figure on the base and slightly offset the saber stack forward by rebuilding the right arm one stud closer to center (still using the same parts).",
+    "Color match to reference: White outfit, Yellow hair, Red belt accent, Blue/clear blade, gray/black hilt."
+  ]
+}

@@ -1,0 +1,121 @@
+{
+  "structure_plan": {
+    "overview": "Brick-built display statue of a white-robed minifigure holding a blue lightsaber; blocky proportions, ~8 studs wide x 6 studs deep x ~16 bricks tall. Colors: White robes, Yellow hair, LightBluishGray hilt, Blue blade, Black facial details.",
+    "subassemblies": [
+      {
+        "name": "Base + Feet",
+        "description": "Low platform with two separated feet (standing pose) sized to support 8x6 footprint."
+      },
+      {
+        "name": "Left Leg",
+        "description": "White 2-stud-wide leg column with slight knee/boot shaping via plates."
+      },
+      {
+        "name": "Right Leg",
+        "description": "Matching white leg column, offset to create walking stance."
+      },
+      {
+        "name": "Torso + Belt",
+        "description": "White torso block widening to ~6 studs; red belt stripe across front."
+      },
+      {
+        "name": "Left Arm (supporting)",
+        "description": "White block arm angled inward using stepped plates; ends near saber grip."
+      },
+      {
+        "name": "Right Arm (gripping)",
+        "description": "White block arm angled inward; positioned to align with saber hilt."
+      },
+      {
+        "name": "Head",
+        "description": "White 4x4 head with simple black tile eyes/brow/mouth on front."
+      },
+      {
+        "name": "Hair",
+        "description": "Yellow cap using slopes to form rounded hair silhouette."
+      },
+      {
+        "name": "Lightsaber",
+        "description": "LightBluishGray hilt (2-stud thick) with Blue blade stacked upward."
+      }
+    ]
+  },
+  "step_outline": [
+    {
+      "step": 1,
+      "title": "Base plate",
+      "description": "Build a rigid 8x6 base using overlapping 3024/3023/3022 plates (LightBluishGray or Black). Keep studs up."
+    },
+    {
+      "step": 2,
+      "title": "Feet layout",
+      "description": "Place two 4x3-ish white feet zones on the base: left foot slightly forward, right foot slightly back, leaving a 1-stud gap between feet."
+    },
+    {
+      "step": 3,
+      "title": "Build Left Leg",
+      "description": "Stack White bricks (3003/3004/3002) to form a 2x2-to-2x3 leg column above left foot; add a 3024/3023 plate layer mid-leg to suggest knee separation."
+    },
+    {
+      "step": 4,
+      "title": "Build Right Leg",
+      "description": "Mirror the left leg on the right foot; keep slight stance offset (one leg 1 plate higher at hip if needed using 3024 plates)."
+    },
+    {
+      "step": 5,
+      "title": "Hips + robe hem",
+      "description": "Bridge legs with White plates (3024/3023) to create a 6-stud-wide hip deck; add a 1-plate-thick skirt/robe hem overhang by extending front plates 1 stud."
+    },
+    {
+      "step": 6,
+      "title": "Torso core",
+      "description": "Build up a White torso block to ~6 studs wide x 3 studs deep using 3004/3003/3002 bricks; keep a centered 2-stud-wide channel in front for arms/saber overlap."
+    },
+    {
+      "step": 7,
+      "title": "Belt stripe",
+      "description": "On the front of the torso, create a red belt band by placing a row of Red plates (3023/3024) across the front at mid-torso height."
+    },
+    {
+      "step": 8,
+      "title": "Left Arm subassembly",
+      "description": "Make a 2x2-ish White arm: stack 3004/3003 bricks and use a 1-plate step (3023/3024) to angle inward toward chest. Attach to left side of torso at shoulder height."
+    },
+    {
+      "step": 9,
+      "title": "Right Arm subassembly",
+      "description": "Build and attach a matching right arm, angled more inward so both hands area meets at center-front."
+    },
+    {
+      "step": 10,
+      "title": "Neck platform",
+      "description": "Add a White 4x4-ish plate platform on top of torso (use 3024/3023/3022) centered for head attachment."
+    },
+    {
+      "step": 11,
+      "title": "Head block",
+      "description": "Build a White 4x4 head to ~3 bricks tall. On the front, place Black tiles (3069b) for eyes/brow line and a smaller mouth line; optionally add 1x1 round tile (98138 Black) as nose/cheek mark."
+    },
+    {
+      "step": 12,
+      "title": "Hair cap",
+      "description": "Form yellow hair: top layer Yellow plates, then surround front/sides with Yellow slopes (3039/3040/3660/3665 as available) to create the swept hair silhouette."
+    },
+    {
+      "step": 13,
+      "title": "Lightsaber subassembly",
+      "description": "Hilt: stack LightBluishGray bricks/plates to a 2x2 x ~2-brick grip. Blade: stack Blue 1x2 bricks (3004/3003) upward to ~7–9 bricks tall; cap with a Blue or TransClear 1x1 round tile (98138)."
+    },
+    {
+      "step": 14,
+      "title": "Pose + final mount",
+      "description": "Fix the lightsaber centered in front of torso by stud-connection to the arm tops/torso studs (use plates to lock). Adjust arms so they visually clasp the hilt; ensure blade rises beside head as in reference."
+    }
+  ],
+  "notes": [
+    "Keep all geometry stud-aligned (no clips/bars available).",
+    "If hair slopes are insufficient, use stepped Yellow plates/tiles to suggest rounded hair.",
+    "If you prefer a lighter blade, replace Blue blade bricks with a Blue-to-TransClear tip using 98138 TransClear at the top.",
+    "Use tiles (3068b/3069b) on torso front to smooth robe look where desired, but keep enough exposed studs for saber anchoring."
+  ]
+}

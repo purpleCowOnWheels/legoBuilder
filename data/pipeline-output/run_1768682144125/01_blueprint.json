@@ -1,0 +1,108 @@
+{
+  "structure_plan": {
+    "overview": "Brick-built minifigure-style Jedi in white robes holding a blue lightsaber; ~6x6 footprint, ~11 bricks tall.",
+    "subassemblies": [
+      {
+        "name": "Base",
+        "description": "6x6 plate base in LightBluishGray/Black for stability."
+      },
+      {
+        "name": "Legs",
+        "description": "Two white legs with simple stepped feet, attached centered on base."
+      },
+      {
+        "name": "Torso + Belt",
+        "description": "White torso block with red/black belt stripe around waist."
+      },
+      {
+        "name": "Arms + Hands",
+        "description": "White arms angled forward using headlight bricks; hands as 1x1 round plates."
+      },
+      {
+        "name": "Head + Hair",
+        "description": "Yellow head block with sloped yellow hair cap."
+      },
+      {
+        "name": "Lightsaber",
+        "description": "LightBluishGray hilt with TransClear/Blue blade stack, mounted between hands."
+      }
+    ]
+  },
+  "step_outline": [
+    {
+      "step": 1,
+      "title": "Base plate",
+      "description": "Build a 6x6 base using Plates 2x4 (3020) and Plates 2x3 (3021) in LightBluishGray; lock underside/edges with Plates 2x2 (3022/3023/3024) as needed to make a solid 6x6 rectangle."
+    },
+    {
+      "step": 2,
+      "title": "Feet layout",
+      "description": "On top center of base, place two White Plates 2x3 (3021) side-by-side (studs facing up), leaving no gap (forms a 4x3 area) aligned to the front edge for feet."
+    },
+    {
+      "step": 3,
+      "title": "Legs (2 columns)",
+      "description": "On the back 2 studs of each 2x3 foot plate, stack White Bricks 2x2 (3003) up 3 bricks tall for each leg (two separate 2x2 columns)."
+    },
+    {
+      "step": 4,
+      "title": "Hip connection",
+      "description": "Bridge the two leg columns at the top with White Plates 2x4 (3020) spanning across both legs (creates a unified hip layer)."
+    },
+    {
+      "step": 5,
+      "title": "Torso block",
+      "description": "Stack White Bricks 2x4 (3001) and White Bricks 2x3 (3002) to form a centered torso approximately 4 studs wide x 2 studs deep x 3 bricks tall on the hip layer (keep front face flush)."
+    },
+    {
+      "step": 6,
+      "title": "Belt stripe",
+      "description": "Wrap a belt layer: add Red Plates 1x4 (3710 equivalent not in inventory) SUBSTITUTE using Red Plates 1x2 (3023) and Red Tiles/Plates 1x2 (3069b/3023) across the front midline; add 1–2 Black Tiles 1x2 (3069b) as buckle accents centered."
+    },
+    {
+      "step": 7,
+      "title": "Shoulders (arm mounts)",
+      "description": "At the upper sides of the torso, place 2x Headlight Bricks (87087) in White, one per side, oriented so their side stud faces forward (for hands/saber alignment)."
+    },
+    {
+      "step": 8,
+      "title": "Arms (simple sleeves)",
+      "description": "Extend each arm forward by attaching White Bricks 1x2 (3004) to the torso front (one per side) so they flank the centerline; cap each arm front with a White Round Plate 1x1 (3062b) as a wrist."
+    },
+    {
+      "step": 9,
+      "title": "Hands grip",
+      "description": "Attach Black or White Round Tiles 1x1 (98138) to the forward-facing studs of the headlight bricks to form hands positioned close together (1 stud gap or touching)."
+    },
+    {
+      "step": 10,
+      "title": "Head",
+      "description": "Build a 2x2 Yellow head on top of torso using Yellow Bricks 2x2 (3003) 1 brick tall; optionally add a White Plate 2x2 (3022) as a neck layer beneath for height."
+    },
+    {
+      "step": 11,
+      "title": "Hair cap",
+      "description": "Create hair with Yellow Slopes 45 2x2 (3039) on top/front of head and Yellow Slopes 45 2x1 (3040) on sides to round the silhouette; keep top mostly smooth."
+    },
+    {
+      "step": 12,
+      "title": "Lightsaber hilt",
+      "description": "Assemble hilt: stack LightBluishGray Round Plates 1x1 (3062b) x2 and cap with LightBluishGray Round Tile 1x1 (98138) for emitter; optionally add a Black Round Tile 1x1 (98138) as a grip ring."
+    },
+    {
+      "step": 13,
+      "title": "Lightsaber blade",
+      "description": "Stack blade upward from hilt using TransClear Round Plates 1x1 (3062b) x2 and Blue Round Plates 1x1 (3062b) x2 (alternate for a light-blue look); cap with TransClear Round Tile 1x1 (98138)."
+    },
+    {
+      "step": 14,
+      "title": "Mount lightsaber",
+      "description": "Attach the hilt sideways between the two hands by pressing the hilt’s lowest round element against the hands’ studs (saber aligned diagonally upward like the preview). Adjust arm bricks if needed so blade clears the head."
+    }
+  ],
+  "notes": [
+    "All substitutions must stay within inventory: use (3023 plates 1x2) and (3069b tiles 1x2) to create the belt stripe since no 1x4 plates are listed.",
+    "If arm reach is short/long, adjust by swapping White Bricks 1x2 (3004) with White Plates 1x2 (3023) to fine-tune hand position.",
+    "Keep the model primarily White with Yellow head/hair and Blue/TransClear blade to match the preview silhouette/colors."
+  ]
+}

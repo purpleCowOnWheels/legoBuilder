@@ -1,0 +1,100 @@
+{
+  "structure_plan": {
+    "overview": "Small brick-built Jedi-style statue (white outfit, yellow hair) holding an upright blue lightsaber on a light bluish gray display base; uses SNOT headlights for simple face.",
+    "subassemblies": [
+      {
+        "name": "A. Display Base",
+        "description": "4x6 light bluish gray plate base."
+      },
+      {
+        "name": "B. Body (Feet/Legs/Torso/Arms)",
+        "description": "White blocky humanoid with simple belt accent and forward arms to cradle the saber."
+      },
+      {
+        "name": "C. Head + Hair",
+        "description": "2-stud wide head with headlight bricks for eyes; yellow slopes for hair."
+      },
+      {
+        "name": "D. Lightsaber",
+        "description": "Light bluish gray hilt with stacked blue 1x1 plates and trans-clear tip."
+      }
+    ]
+  },
+  "step_outline": [
+    {
+      "step": 1,
+      "title": "Base layer",
+      "description": "Build a 4x6 rectangle using 3x 3020 Plate 2x4 (LightBluishGray) overlapped to form a solid base."
+    },
+    {
+      "step": 2,
+      "title": "Feet placement",
+      "description": "Place 2x 3022 Plate 2x2 (White) near the front of the base as left/right feet (side-by-side with a 1-stud gap if desired)."
+    },
+    {
+      "step": 3,
+      "title": "Legs",
+      "description": "On each foot, stack 2x 3004 Brick 1x2 (White) to make two 2-brick-tall legs."
+    },
+    {
+      "step": 4,
+      "title": "Hips",
+      "description": "Bridge the two legs with 1x 3023 Plate 1x2 (White) across the top, centered."
+    },
+    {
+      "step": 5,
+      "title": "Torso core",
+      "description": "Stack 2x 3003 Brick 2x2 (White) on the hips to form a 2x2 torso (2 bricks tall)."
+    },
+    {
+      "step": 6,
+      "title": "Belt accent",
+      "description": "Add 1x 3023 Plate 1x2 (Red) to the front at the waistline (attach as a front overhang from the lower torso layer)."
+    },
+    {
+      "step": 7,
+      "title": "Left arm",
+      "description": "Attach 1x 4286 + 1x 4287 Hinge Plate 1x2 pair (White) to the left side of the torso, angled forward. Build the arm with 1x 3004 Brick 1x2 (White) and finish with 1x 3023 Plate 1x2 (White) as the hand (studs up)."
+    },
+    {
+      "step": 8,
+      "title": "Right arm",
+      "description": "Mirror Step 7 on the right side; angle both hands toward the center to cradle the hilt."
+    },
+    {
+      "step": 9,
+      "title": "Lightsaber hilt",
+      "description": "Place 1x 3004 Brick 1x2 (LightBluishGray) across the two hands (studs up). Cover one top stud with 1x 3062b Tile 1x1 (Black) to leave one stud for the blade."
+    },
+    {
+      "step": 10,
+      "title": "Lightsaber blade",
+      "description": "On the remaining exposed hilt stud, stack 6x 3024 Plate 1x1 (Blue) upward; cap with 1x 98138 Round Tile 1x1 (TransClear)."
+    },
+    {
+      "step": 11,
+      "title": "Head core (SNOT face)",
+      "description": "Make a 2-wide front: place 2x 4070 Brick 1x1 Headlight (White) side-by-side facing forward; attach 1x 3004 Brick 1x2 (White) behind them to square the back. Add 1x 3003 Brick 2x2 (White) on top."
+    },
+    {
+      "step": 12,
+      "title": "Eyes",
+      "description": "Attach 2x 98138 Round Tile 1x1 (Black) to the two front studs of the headlight bricks."
+    },
+    {
+      "step": 13,
+      "title": "Hair",
+      "description": "Top the head with 1x 3039 Slope 45 2x2 (Yellow) oriented forward; add 2x 3040 Slope 45 2x1 (Yellow) on left/right as side hair shaping."
+    },
+    {
+      "step": 14,
+      "title": "Attach head",
+      "description": "Place the completed head onto the torso top studs, aligned to face the lightsaber."
+    }
+  ],
+  "notes": [
+    "If hinge plates (4286/4287) are unavailable/awkward in MPD, replace each arm with a fixed stack of 3023 Plate 1x2 (White) and 3004 Brick 1x2 (White) attached to torso sides.",
+    "If yellow hair shaping is limited, substitute yellow slopes with white slopes (3039/3040) to keep silhouette.",
+    "Blade height can be adjusted by changing the count of blue 3024 plates (keep trans-clear 98138 as tip)."
+  ]
+}

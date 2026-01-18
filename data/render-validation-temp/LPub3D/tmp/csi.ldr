@@ -1,0 +1,17 @@
+0 FILE model.ldr
+0 Model
+0 Name: model.ldr
+0 Author: LPub3D
+0 !LDRAW_ORG Unofficial_Model
+0 !LICENSE Redistributable under CCAL version 2.0 : see CAreadme.txt 
+0 // ROTSTEP REL 0 0 0
+1 71 0 -24 -40 0 0 -1 0 1 0 1 0 0 3020.dat
+1 71 0 -24 0 0 0 -1 0 1 0 1 0 0 3020.dat
+1 71 0 -24 40 0 0 -1 0 1 0 1 0 0 3020.dat
+1 15 -20 -16 40 1 0 0 0 1 0 0 0 1 3022.dat
+1 15 20 -16 40 1 0 0 0 1 0 0 0 1 3022.dat
+1 15 -20 0 40 1 0 0 0 1 0 0 0 1 3004.dat
+1 15 -20 24 40 1 0 0 0 1 0 0 0 1 3004.dat
+1 15 20 0 40 1 0 0 0 1 0 0 0 1 3004.dat
+1 15 20 24 40 1 0 0 0 1 0 0 0 1 3004.dat
+0 NOFILE

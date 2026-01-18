@@ -1,0 +1,95 @@
+{
+  "structure_plan": {
+    "overview": "Brick-built minifig-style Jedi in white outfit with yellow hair, holding a blue lightsaber; blocky 6w x 4d footprint on a small stand.",
+    "subassemblies": [
+      {
+        "name": "Stand",
+        "description": "Low LightBluishGray platform to stabilize the statue (approx. 6x6 studs)."
+      },
+      {
+        "name": "Legs",
+        "description": "White block legs with slight foot overhang at front."
+      },
+      {
+        "name": "Torso + Arms",
+        "description": "White torso with red belt stripe; arms brought forward to center to hold saber."
+      },
+      {
+        "name": "Head + Hair",
+        "description": "White head with front-stud eyes/mouth; yellow block hair cap."
+      },
+      {
+        "name": "Lightsaber",
+        "description": "LBG/DBG hilt with stacked blue round bricks for blade."
+      }
+    ]
+  },
+  "step_outline": [
+    {
+      "step": 1,
+      "title": "Stand base (layer 1)",
+      "description": "Build a 6x6 plate footprint in LightBluishGray using 2x4 (3020) + 2x2 (3022) + 1x2 (3023) plates as needed; keep edges squared."
+    },
+    {
+      "step": 2,
+      "title": "Stand base (layer 2)",
+      "description": "Add a second LightBluishGray plate layer, stagger seams vs. layer 1 for strength (same overall 6x6)."
+    },
+    {
+      "step": 3,
+      "title": "Legs (core)",
+      "description": "Center on stand: place two White 2x2 bricks (3003) side-by-side to form a 4w x 2d block; stack to 3 bricks tall total."
+    },
+    {
+      "step": 4,
+      "title": "Feet detail",
+      "description": "On the front of each leg, add one White 1x2 brick (3004) at the lowest level to create a small toe overhang (one per leg)."
+    },
+    {
+      "step": 5,
+      "title": "Hips / lower torso",
+      "description": "On top of legs, make a 4w x 2d White layer using one White 2x4 brick (3001) (or two 2x2 bricks if needed)."
+    },
+    {
+      "step": 6,
+      "title": "Torso core",
+      "description": "Stack 2 more White brick layers (4w x 2d) using White 2x4 (3001) / 2x2 (3003) to reach chest height."
+    },
+    {
+      "step": 7,
+      "title": "Arms forward pose",
+      "description": "Left and right sides of torso: attach White 1x2 bricks (3004) to bring total width to ~6 studs; extend each arm 1 stud forward at chest height using White plates (3023/3024) so both hands meet near center front."
+    },
+    {
+      "step": 8,
+      "title": "Belt accent",
+      "description": "Add a Red 1x2 tile (3069b) (or Red 1x2 plate 3023 if tiles run out) centered on the front of the torso at waist height."
+    },
+    {
+      "step": 9,
+      "title": "Head block (with face studs)",
+      "description": "Build a 4w x 2d x 2h head in White. On the front face, use two White 1x1 bricks w/ stud on 1 side (87087) oriented with studs facing forward; attach Black round tiles (98138) as eyes. Add a Black (or Red) round tile (98138) centered below as mouth/chin detail."
+    },
+    {
+      "step": 10,
+      "title": "Hair cap",
+      "description": "Top the head with a Yellow hair block: one Yellow 2x4 plate (3020) or 2x3 (3021) as the crown, then add Yellow 2x2/1x2 plates (3022/3023) around edges to suggest layered hair."
+    },
+    {
+      "step": 11,
+      "title": "Lightsaber build",
+      "description": "Hilt: stack 2–3 LightBluishGray round bricks 1x1 (3062b) with a Black round tile (98138) as pommel. Blade: stack 4–6 Blue round bricks 1x1 (3062b) on top; cap with TransClear round tile (98138) as tip."
+    },
+    {
+      "step": 12,
+      "title": "Mount lightsaber to hands",
+      "description": "Attach the hilt to the center-front between the arms (use a White 1x1 brick w/ stud on 1 side (87087) or a front-facing 1x2 SNOT brick (3660) embedded in torso if needed). Adjust arm plates so the saber reads as held in both hands."
+    }
+  ],
+  "notes": [
+    "Color limitation: no tan/light-nougat available; head is White with Yellow hair to match silhouette.",
+    "If you need a stronger front mount for the saber: replace a front torso brick with White 1x2 brick w/ stud on side (3660) oriented forward.",
+    "If Blue 3062b quantity is short, alternate blade segments with TransClear 3062b to keep the tall lightsaber look.",
+    "Keep overall proportions: stand 6x6, legs 4w, torso widens to ~6w with arms, head 4w, saber held centered and angled slightly upward."
+  ]
+}

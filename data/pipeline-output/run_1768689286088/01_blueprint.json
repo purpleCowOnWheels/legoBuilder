@@ -1,0 +1,100 @@
+{
+  "structure_plan": {
+    "overview": "Small 6x6 white house centered on an 8x8 light-bluish-gray base, with a black recessed door, 1x1 trans-clear windows, a blue shed-style sloped roof, and a small red chimney plus a tiny front porch/doormat.",
+    "subassemblies": [
+      {
+        "name": "Base + Porch",
+        "description": "8x8 LBG plate base with a small front porch pad and short path."
+      },
+      {
+        "name": "Wall Box",
+        "description": "White 6x6 walls, 4 bricks tall, with a 2-stud-wide front door opening and small trans-clear windows on sides/back."
+      },
+      {
+        "name": "Roof + Chimney",
+        "description": "Blue shed roof made from 2x2 and 2x1 slopes, plus a small red chimney stack with a tile cap."
+      },
+      {
+        "name": "Details",
+        "description": "Windowsills, doormat, and simple eave trim using tiles."
+      }
+    ]
+  },
+  "step_outline": [
+    {
+      "step": 1,
+      "title": "Base (8x8)",
+      "description": "Assemble an 8x8 base using LBG plates 3020 (2x4) x4 (or equivalent mix of LBG plates)."
+    },
+    {
+      "step": 2,
+      "title": "Front porch pad",
+      "description": "At the front-center edge, add a 4x2 porch using White plates 3020 (2x4) x1 cut to 4x2 with 3023 (1x2) x2; add White corner plates 2420 x2 at the front corners for a rounded porch silhouette."
+    },
+    {
+      "step": 3,
+      "title": "Floor footprint (6x6)",
+      "description": "Center a 6x6 floor on the base using White plates (mix 3021/3020/3022/3023). Leave 1-stud margin on left/right and back; porch connects to front edge."
+    },
+    {
+      "step": 4,
+      "title": "Walls layer 1 (door opening)",
+      "description": "Build White brick perimeter for a 6x6 house using 3004/3003/3002/3001, leaving a 2-stud-wide front-center door opening. Add Black bricks 3004/3003 one stud back inside the opening to suggest a recessed door."
+    },
+    {
+      "step": 5,
+      "title": "Walls layer 2 (windows)",
+      "description": "On each side wall, add a 2-wide window: place TransClear tiles 3062b x2 at eye level, framed by White bricks 3004 around them. Add one similar 2-wide window on the back wall."
+    },
+    {
+      "step": 6,
+      "title": "Walls layer 3 (lintels)",
+      "description": "Raise all walls one brick layer higher in White. Over the door opening, span a White brick 3010 (1x4) or 3001 (2x4) as a lintel (centered)."
+    },
+    {
+      "step": 7,
+      "title": "Walls layer 4 + top tie",
+      "description": "Add the 4th brick layer in White to complete wall height. Cap the wall perimeter with a White plate ring (mix 3023/3024/3022) to lock the box."
+    },
+    {
+      "step": 8,
+      "title": "Roof support (shed slope)",
+      "description": "At the back edge only, add one extra White brick layer (height +1) across the full 6-stud width, then cap it with White plates to form the higher roof bearing line."
+    },
+    {
+      "step": 9,
+      "title": "Roof row 1 (back)",
+      "description": "Place Blue slopes across the 6-stud width, oriented sloping down toward the front: per row use 3039 (2x2 slope) x2 + 3040 (2x1 slope) x2 to total 6 studs wide."
+    },
+    {
+      "step": 10,
+      "title": "Roof row 2 (middle)",
+      "description": "Add the second roof row (same parts/orientation): Blue 3039 x2 + Blue 3040 x2."
+    },
+    {
+      "step": 11,
+      "title": "Roof row 3 (front)",
+      "description": "Add the third roof row (same parts/orientation): Blue 3039 x2 + Blue 3040 x2. Add a thin front eave trim using White tiles 3069b (1x2) along the front edge if studs allow."
+    },
+    {
+      "step": 12,
+      "title": "Chimney",
+      "description": "On the back-left roof area, stack Red bricks (e.g., 3004 x2 + 3003 x1) into a 2x2-ish chimney and cap with a Red tile 3068b (2x2) or Red plate 3022 (2x2)."
+    },
+    {
+      "step": 13,
+      "title": "Windowsills + doormat",
+      "description": "Under each window, add White tiles 3069b (1x2) as sills. On the porch, place a Red tile 3069b (1x2) centered as a doormat."
+    },
+    {
+      "step": 14,
+      "title": "Front path",
+      "description": "Add a short LBG path from porch to base edge using LBG tiles 3069b (1x2) x2–3 or LBG plates 3023 if tiles are tight."
+    }
+  ],
+  "notes": [
+    "Color blocking: Walls White, base/path LBG, roof Blue, chimney Red, door recess Black, windows TransClear.",
+    "Roof uses exactly 3 rows: total Blue 3039 x6 and Blue 3040 x6. If short, substitute any available slope colors or reduce to 2 rows (shorter depth).",
+    "If you prefer a larger base, extend with extra LBG plates; keep the 6x6 wall box centered for the same silhouette."
+  ]
+}

@@ -1,0 +1,120 @@
+{
+  "structure_plan": {
+    "overview": "Micro starfighter spaceship in LBG/White with swept wings, trans-clear cockpit, and a single blue forward “beam” cannon (inspired by the reference’s blue blade). ~56 parts, simple build.",
+    "subassemblies": [
+      {
+        "name": "Winged base",
+        "description": "Plated base with left/right wings and tapered front corners."
+      },
+      {
+        "name": "Fuselage + cockpit",
+        "description": "Central spine with raised white cockpit and trans-clear canopy."
+      },
+      {
+        "name": "Nose + cannon",
+        "description": "White sloped nose with blue round-tile cannon tip."
+      },
+      {
+        "name": "Engines + landing pads",
+        "description": "Twin engines on wing rear with glowing exhaust; small pads underneath."
+      }
+    ]
+  },
+  "step_outline": [
+    {
+      "step": 1,
+      "title": "Center base",
+      "description": "Place 3020 Plate 2x4 LightBluishGray. Attach 3022 Plate 2x2 LightBluishGray to the front to form a 2x6 center base."
+    },
+    {
+      "step": 2,
+      "title": "Main wings",
+      "description": "Attach 2x 3021 Plate 2x3 LightBluishGray to left/right sides of the rear section of the center base (one per side), forming swept wings."
+    },
+    {
+      "step": 3,
+      "title": "Tapered front corners",
+      "description": "Attach 2x 2420 Plate 2x2 Corner LightBluishGray at the front-left and front-right corners. Add 2x 3023 Plate 1x2 LightBluishGray as small front winglets extending left/right from the front area."
+    },
+    {
+      "step": 4,
+      "title": "Fuselage core",
+      "description": "On top center: place 3001 Brick 2x4 LightBluishGray over the rear center. Place 3003 Brick 2x2 LightBluishGray over the front center (in front of the 2x4 brick)."
+    },
+    {
+      "step": 5,
+      "title": "Wing root fairings",
+      "description": "Place 2x 3004 Brick 1x2 LightBluishGray on top of the wing roots (one left, one right) adjacent to the fuselage bricks to thicken the wing-body transition."
+    },
+    {
+      "step": 6,
+      "title": "Raise cockpit platform",
+      "description": "On top of the front 2x2 fuselage brick, place 2x 3004 Brick 1x2 White side-by-side to make a 2x2 white platform."
+    },
+    {
+      "step": 7,
+      "title": "Canopy + stripes",
+      "description": "Place 3068b Tile 2x2 TransClear on top of the white 2x2 cockpit platform. Add 2x 3069b Tile 1x2 Blue behind the canopy on the fuselage top as accent stripes."
+    },
+    {
+      "step": 8,
+      "title": "Shape the nose",
+      "description": "At the very front top of the fuselage, add 3039 Slope 45 2x2 White. Add 2x 3040 Slope 45 2x1 White to continue the taper along the left/right of the nose area."
+    },
+    {
+      "step": 9,
+      "title": "Front cannon tip",
+      "description": "Add 3024 Plate 1x1 LightBluishGray at the foremost stud you want as the cannon mount. Place 98138 Tile Round 1x1 Blue on that stud as the beam cannon tip."
+    },
+    {
+      "step": 10,
+      "title": "Wing leading edge smoothing",
+      "description": "Add 4x 3069b Tile 1x2 White on the top leading edges of the wings (2 per wing), aligned frontward for a cleaner silhouette."
+    },
+    {
+      "step": 11,
+      "title": "Wing trailing edge smoothing",
+      "description": "Add 4x 3069b Tile 1x2 LightBluishGray on the top trailing edges of the wings (2 per wing)."
+    },
+    {
+      "step": 12,
+      "title": "Wing tip markers",
+      "description": "Add 2x 3024 Plate 1x1 Red on the outer front tips of each wing (one per wing). Add 2x 3024 Plate 1x1 Blue on the outer rear tips of each wing (one per wing)."
+    },
+    {
+      "step": 13,
+      "title": "Engine mounts",
+      "description": "Place 2x 3003 Brick 2x2 LightBluishGray on the rear section of each wing (one per wing), aligned symmetrically as engine blocks."
+    },
+    {
+      "step": 14,
+      "title": "Engine cylinders",
+      "description": "On the back of each engine block, stack 2x 3062b Brick Round 1x1 Open Stud Black (total 4; two per engine) to form the engine nozzles."
+    },
+    {
+      "step": 15,
+      "title": "Engine exhaust glow",
+      "description": "Cap each rear nozzle with 4x 98138 Tile Round 1x1 TransClear (two per engine) as glowing exhaust."
+    },
+    {
+      "step": 16,
+      "title": "Top hull finishing",
+      "description": "Add 2x 3069b Tile 1x2 LightBluishGray on the rear fuselage top to smooth. Add 3068b Tile 2x2 LightBluishGray on the rear top center area if studs remain exposed. Add 98138 Tile Round 1x1 Red as a top indicator light."
+    },
+    {
+      "step": 17,
+      "title": "Landing pads",
+      "description": "Flip carefully and add 4x 3024 Plate 1x1 Black under the wings near the corners as simple landing pads (two front, two rear, symmetric)."
+    },
+    {
+      "step": 18,
+      "title": "Final front details",
+      "description": "Add 2x 98138 Tile Round 1x1 Yellow on the front-left and front-right as headlights. Add 2x 3024 Plate 1x1 White near the nose sides to fill any remaining small gaps and reinforce the white nose look."
+    }
+  ],
+  "notes": [
+    "If slope parts 3039/3040 differ in your library, substitute with any available slopes from the inventory to keep a tapered white nose.",
+    "If step 16’s 2x2 tile placement conflicts with studs already used, omit the 3068b LBG tile (cosmetic only).",
+    "Color swaps allowed within inventory (LBG/White) while keeping blue cannon tip and trans-clear cockpit to match the reference-inspired accents."
+  ]
+}

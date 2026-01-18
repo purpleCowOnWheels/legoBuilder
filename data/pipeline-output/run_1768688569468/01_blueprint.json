@@ -1,0 +1,51 @@
+{
+  "structure_plan": {
+    "overview": "Small freestanding wall section, footprint 3x2 studs, height 3 bricks, with a tiled cap and one accent-colored brick.",
+    "subassemblies": [
+      {
+        "name": "Base",
+        "description": "Single 2x3 plate foundation."
+      },
+      {
+        "name": "Wall stack",
+        "description": "3 brick-high stack using 2x2 + 1x2 bricks per layer, alternating seam for a simple bond pattern."
+      },
+      {
+        "name": "Cap",
+        "description": "Smooth top using 2x2 + 1x2 tiles."
+      }
+    ]
+  },
+  "step_outline": [
+    {
+      "step": 1,
+      "title": "Base plate",
+      "description": "Place 1x Plate 2x3 (3021) Light Bluish Gray on the ground (studs up)."
+    },
+    {
+      "step": 2,
+      "title": "Layer 1 (height 1 brick)",
+      "description": "On the base, build a 3x2 layer: place 1x Brick 2x2 (3003) Light Bluish Gray on the left, and 1x Brick 1x2 (3004) Light Bluish Gray on the right (both aligned, forming a 3-stud-wide row)."
+    },
+    {
+      "step": 3,
+      "title": "Layer 2 (height 2 bricks)",
+      "description": "Alternate the seam: place 1x Brick 1x2 (3004) Red on the left, and 1x Brick 2x2 (3003) Light Bluish Gray on the right."
+    },
+    {
+      "step": 4,
+      "title": "Layer 3 (height 3 bricks)",
+      "description": "Repeat Layer 1: place 1x Brick 2x2 (3003) Light Bluish Gray on the left, and 1x Brick 1x2 (3004) Light Bluish Gray on the right."
+    },
+    {
+      "step": 5,
+      "title": "Tiled top cap",
+      "description": "Cover the top studs: place 1x Tile 2x2 (3068b) Light Bluish Gray over the 2x2 area, and 1x Tile 1x2 (3069b) Light Bluish Gray over the remaining 1x2 area."
+    }
+  ],
+  "notes": [
+    "Inventory check (suggested colors): 3021 LBG x1; 3003 LBG x3; 3004 LBG x2; 3004 Red x1; 3068b LBG x1; 3069b LBG x1.",
+    "If any tile type is unavailable in target library, substitute the cap with plates: 1x Plate 2x2 (3022) + 1x Plate 1x2 (3023) in Light Bluish Gray.",
+    "Reference image appears unrelated to the requested wall; blueprint follows the user request."
+  ]
+}

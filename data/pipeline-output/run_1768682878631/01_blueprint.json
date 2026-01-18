@@ -1,0 +1,104 @@
+{
+  "structure_plan": {
+    "overview": "Brick-built chibi minifigure in white robes holding a blue/trans-clear lightsaber; blocky legs, torso with red belt accent, white head with simple face, yellow hair silhouette.",
+    "subassemblies": [
+      {
+        "name": "A. Base + Feet",
+        "description": "Small standing base and feet blocks to stabilize figure."
+      },
+      {
+        "name": "B. Legs",
+        "description": "Two white blocky legs with slight front detailing, attached to base."
+      },
+      {
+        "name": "C. Torso + Belt",
+        "description": "White torso block with a red belt stripe at waist."
+      },
+      {
+        "name": "D. Arms + Grip",
+        "description": "Forward-facing arms built from white bricks/plates to hold the saber centered."
+      },
+      {
+        "name": "E. Lightsaber",
+        "description": "Light bluish gray hilt with a vertical blue/trans-clear blade."
+      },
+      {
+        "name": "F. Head + Face + Hair",
+        "description": "White head with SNOT face tiles and a yellow hair cap using slopes."
+      }
+    ]
+  },
+  "step_outline": [
+    {
+      "step": 1,
+      "title": "Base footprint",
+      "description": "Assemble a ~6x6 base using LBG/White plates (3020/3021/3022/3023/3024). Leave 4 studs centered-front for feet placement."
+    },
+    {
+      "step": 2,
+      "title": "Left foot + shin",
+      "description": "Build a 2x2 white foot (plate + brick) and stack to a 3-brick-tall shin (3003/3004 + 3022). Place on left-front of base."
+    },
+    {
+      "step": 3,
+      "title": "Right foot + shin",
+      "description": "Mirror Step 2 on right-front of base."
+    },
+    {
+      "step": 4,
+      "title": "Hips connection",
+      "description": "Bridge the two shins with a white 2x4 plate (3020) at the top to lock legs together; add 1x2/1x1 plates (3023/3024) to square the waist."
+    },
+    {
+      "step": 5,
+      "title": "Torso core",
+      "description": "Stack white bricks to form a 4-wide torso (use 3001/3003/3004). Keep front face flat for belt accent."
+    },
+    {
+      "step": 6,
+      "title": "Belt stripe",
+      "description": "Add a red belt line around the waist using red plates/tiles (3023/3024 and/or 3069b) on the front and sides. Use red 1x1 tiles (98138) as a small buckle accent centered."
+    },
+    {
+      "step": 7,
+      "title": "Shoulders with side studs",
+      "description": "Place two white headlight bricks (4070) at upper-left and upper-right of torso facing forward (studs pointing forward) to mount arm details and help center the saber grip."
+    },
+    {
+      "step": 8,
+      "title": "Arms forward",
+      "description": "Build two white 1-stud-thick arms extending forward from the shoulder area using plates/bricks (3023/3004). Use 1x1 plates (3024) to create a 2-stud-wide gap between hands for the saber hilt."
+    },
+    {
+      "step": 9,
+      "title": "Lightsaber hilt",
+      "description": "Create a short hilt stack using LBG round tiles (98138) and/or LBG 1x1 plates (3024) with a 2x2 LBG tile/plate (3068b/3022) as a small guard. Fit the hilt between the hands (stud connections)."
+    },
+    {
+      "step": 10,
+      "title": "Lightsaber blade",
+      "description": "Build a vertical blade above the hilt using alternating TransClear and Blue tiles/plates (3069b/3023), aiming for 6–8 studs tall. Cap with a TransClear 1x1 tile (98138)."
+    },
+    {
+      "step": 11,
+      "title": "Head block",
+      "description": "Build a 2x2x2 white head on top of torso. Use two white headlight bricks (4070) on the front of the head (studs forward) to receive face tiles."
+    },
+    {
+      "step": 12,
+      "title": "Face tiles",
+      "description": "Attach black 1x1 round tiles (98138 Black) as eyes on the two front studs; add a small red/black 1x1 tile (98138) centered lower as mouth."
+    },
+    {
+      "step": 13,
+      "title": "Hair silhouette",
+      "description": "Top the head with yellow slopes (3039/3040) to form a rounded hair cap; add yellow 1x1/1x2 tiles (98138/3069b) as smoothing where possible."
+    }
+  ],
+  "notes": [
+    "Color intent: White robes; Yellow hair; Red belt accent; LBG saber hilt; Blue/TransClear blade.",
+    "If 4070 quantities are tight, substitute 87087 for some SNOT points (face/shoulders) and keep face as simple studs.",
+    "Keep the saber centered and slightly angled forward by adjusting arm plates one stud outward/inward symmetrically.",
+    "Use tiles (3068b/3069b/98138) on exposed fronts (torso/legs) for a cleaner silhouette where inventory allows."
+  ]
+}

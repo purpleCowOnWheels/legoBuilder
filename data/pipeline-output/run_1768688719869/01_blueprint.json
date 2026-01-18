@@ -1,0 +1,32 @@
+{
+  "structure_plan": {
+    "overview": "Simple classic 2x4 brick silhouette (8 studs) built as a 1-brick-tall stack using plates for a quick, interesting mini-build.",
+    "subassemblies": [
+      {
+        "name": "A: 2x4 Brick Body",
+        "description": "Three 2x4 plates stacked to reach standard brick height; keep single color (Red suggested)."
+      }
+    ]
+  },
+  "step_outline": [
+    {
+      "step": 1,
+      "title": "Start the brick",
+      "description": "Place 3020 Plate 2 x 4 (Red) as the bottom layer."
+    },
+    {
+      "step": 2,
+      "title": "Build up height",
+      "description": "Stack a second 3020 Plate 2 x 4 (Red) aligned exactly on top."
+    },
+    {
+      "step": 3,
+      "title": "Finish to brick height",
+      "description": "Stack a third 3020 Plate 2 x 4 (Red) aligned; total height equals 1 standard brick."
+    }
+  ],
+  "notes": [
+    "Color swap allowed (any available color for 3020), but keep all three layers the same color to match a classic brick.",
+    "If you prefer a single-part build, substitute the entire model with 3001 Brick 2 x 4 in the same color (1 piece)."
+  ]
+}

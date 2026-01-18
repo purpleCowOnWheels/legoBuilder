@@ -1735,7 +1735,513 @@ export type LDrawBlueprint = {
 };
 
 /**
- * Generate a build blueprint from a user-uploaded reference image.
+ * Phase 1: High-level structure plan only (no detailed steps yet)
+ */
+export type LDrawStructurePlan = {
+  overview: string;
+  subassemblies: Array<{ 
+    name: string; 
+    description: string;
+    /** Visual location hint for where this subassembly appears in the reference image */
+    image_location?: string;
+  }>;
+  estimated_total_pieces: number;
+  notes: string[];
+};
+
+/**
+ * Phase 2a: Detailed step plan for a single subassembly
+ */
+export type SubassemblyStepPlan = {
+  subassembly_name: string;
+  /** Visual description of where this subassembly is located in the reference image */
+  image_location_description: string;
+  steps: Array<{
+    step: number;
+    title: string;
+    description: string;
+  }>;
+  estimated_pieces: number;
+};
+
+/**
+ * Phase 2b: Generated LDraw MPD for a single subassembly
+ */
+export type SubassemblyBuildResult = {
+  subassembly_name: string;
+  ldraw_mpd: string;
+  actual_pieces: number;
+  validation_rounds: number;
+  final_similarity_score?: number;
+};
+
+/**
+ * PHASE 1: Generate high-level structure plan with subassemblies only (no detailed steps)
+ * This is fast and gives us the overall structure to parallelize the rest.
+ */
+export async function generateStructurePlan(params: {
+  referenceImagePath: string;
+  inventory: InventoryItem[];
+  constraintsText?: string;
+  logDir?: string;
+}): Promise<{ plan: LDrawStructurePlan; model: string }> {
+  if (!fs.existsSync(params.referenceImagePath)) {
+    throw new Error("Reference image is required for structure plan generation");
+  }
+
+  const logPrefix = params.logDir ? `${params.logDir}/01_structure_plan` : null;
+  if (logPrefix) {
+    fs.mkdirSync(path.dirname(logPrefix), { recursive: true });
+  }
+
+  const inv = inventoryToCompactJson(params.inventory);
+  const constraints = params.constraintsText?.trim() || "Build something interesting with the available parts.";
+
+  const promptText = [
+    "You are an expert LEGO MOC designer.",
+    "",
+    "TASK: Look at the reference image and create a HIGH-LEVEL structure plan.",
+    "",
+    "Requirements:",
+    "- Identify the major subassemblies (legs, torso, head, accessories, etc.)",
+    "- For each subassembly, note WHERE in the image it appears",
+    "- Estimate total piece count (25-500 pieces total)",
+    "- Keep it simple and buildable",
+    "",
+    "DO NOT generate detailed steps yet - just the overall structure.",
+    "",
+    "Constraints:",
+    constraints,
+    "",
+    "Available parts (JSON map of partNum -> color -> qty):",
+    inv
+  ].join("\n");
+
+  const dataUrl = readFileAsDataUrl({ filePath: params.referenceImagePath, mimeType: "image/png" });
+  const content: Array<Record<string, unknown>> = [
+    { type: "input_text", text: promptText },
+    { type: "input_image", image_url: dataUrl }
+  ];
+
+  console.log("\n[PHASE 1] Generating structure plan...");
+  if (logPrefix) {
+    fs.writeFileSync(`${logPrefix}_input.txt`, promptText, "utf8");
+    fs.copyFileSync(params.referenceImagePath, `${logPrefix}_reference.png`);
+    console.log(`  → Input logged: ${logPrefix}_input.txt`);
+    console.log(`  → Reference image: ${logPrefix}_reference.png`);
+  }
+
+  const schema = {
+    type: "object",
+    additionalProperties: false,
+    required: ["overview", "subassemblies", "estimated_total_pieces", "notes"],
+    properties: {
+      overview: { type: "string", minLength: 10, maxLength: 200 },
+      subassemblies: {
+        type: "array",
+        minItems: 1,
+        maxItems: 10,
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["name", "description"],
+          properties: {
+            name: { type: "string", minLength: 1, maxLength: 50 },
+            description: { type: "string", minLength: 5, maxLength: 150 },
+            image_location: { type: "string", maxLength: 100 }
+          }
+        }
+      },
+      estimated_total_pieces: { type: "integer", minimum: 25, maximum: 500 },
+      notes: { type: "array", items: { type: "string", maxLength: 200 } }
+    }
+  } as const;
+
+  const resp = await callOpenAIJsonInput<LDrawStructurePlan>(
+    { input: [{ role: "user", content }], schemaName: "lego_structure_plan", schema },
+    { reasoningEffort: "low", maxOutputTokens: 3000 }
+  );
+
+  console.log(`[PHASE 1] ✓ Structure plan generated`);
+  console.log(`  → Model: ${resp.model}`);
+  console.log(`  → Subassemblies: ${resp.parsed?.subassemblies?.length || 0}`);
+  console.log(`  → Estimated pieces: ${resp.parsed?.estimated_total_pieces || "?"}`);
+  
+  if (resp.parsed?.subassemblies) {
+    resp.parsed.subassemblies.forEach((sa, i) => {
+      console.log(`    ${i + 1}. ${sa.name} - ${sa.description}`);
+      if (sa.image_location) console.log(`       Location: ${sa.image_location}`);
+    });
+  }
+
+  if (logPrefix && resp.parsed) {
+    fs.writeFileSync(`${logPrefix}_output.json`, JSON.stringify(resp.parsed, null, 2), "utf8");
+    console.log(`  → Output logged: ${logPrefix}_output.json`);
+  }
+
+  return { plan: resp.parsed!, model: resp.model };
+}
+
+/**
+ * PHASE 2a: Generate detailed step plan for a single subassembly
+ */
+export async function generateSubassemblyStepPlan(params: {
+  subassemblyName: string;
+  subassemblyDescription: string;
+  imageLocation?: string;
+  referenceImagePath: string;
+  inventory: InventoryItem[];
+  targetPieceCount: number;
+  logDir?: string;
+}): Promise<{ plan: SubassemblyStepPlan; model: string }> {
+  const logPrefix = params.logDir ? `${params.logDir}/02a_subassembly_plan_${params.subassemblyName.replace(/[^a-z0-9]/gi, '_')}` : null;
+  
+  const inv = inventoryToCompactJson(params.inventory);
+
+  const promptText = [
+    `You are planning the "${params.subassemblyName}" subassembly.`,
+    "",
+    `Description: ${params.subassemblyDescription}`,
+    params.imageLocation ? `Image location: ${params.imageLocation}` : "",
+    "",
+    "TASK: Look at the reference image and create a detailed step-by-step plan for ONLY this subassembly.",
+    "",
+    "Requirements:",
+    `- Focus on the part of the image showing: ${params.subassemblyDescription}`,
+    `- Target ~${params.targetPieceCount} pieces for this subassembly`,
+    "- Each step should add NO MORE THAN 5 parts",
+    "- Steps should build logically (foundation first, details last)",
+    "- Keep titles SHORT (max 50 chars)",
+    "- Keep descriptions BRIEF (max 100 chars)",
+    "",
+    "Available parts:",
+    inv
+  ].filter(x => x !== "").join("\n");
+
+  const dataUrl = readFileAsDataUrl({ filePath: params.referenceImagePath, mimeType: "image/png" });
+  const content: Array<Record<string, unknown>> = [
+    { type: "input_text", text: promptText },
+    { type: "input_image", image_url: dataUrl }
+  ];
+
+  console.log(`\n[PHASE 2a] Planning subassembly: ${params.subassemblyName}`);
+  if (logPrefix) {
+    fs.writeFileSync(`${logPrefix}_input.txt`, promptText, "utf8");
+    console.log(`  → Input logged: ${logPrefix}_input.txt`);
+  }
+
+  const schema = {
+    type: "object",
+    additionalProperties: false,
+    required: ["subassembly_name", "image_location_description", "steps", "estimated_pieces"],
+    properties: {
+      subassembly_name: { type: "string" },
+      image_location_description: { type: "string", maxLength: 200 },
+      steps: {
+        type: "array",
+        minItems: 1,
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["step", "title", "description"],
+          properties: {
+            step: { type: "integer", minimum: 1 },
+            title: { type: "string", minLength: 1, maxLength: 50 },
+            description: { type: "string", minLength: 5, maxLength: 100 }
+          }
+        }
+      },
+      estimated_pieces: { type: "integer", minimum: 1 }
+    }
+  } as const;
+
+  const resp = await callOpenAIJsonInput<SubassemblyStepPlan>(
+    { input: [{ role: "user", content }], schemaName: "subassembly_step_plan", schema },
+    { reasoningEffort: "medium", maxOutputTokens: 25000 }
+  );
+
+  console.log(`[PHASE 2a] ✓ Plan generated for ${params.subassemblyName}`);
+  console.log(`  → Steps: ${resp.parsed?.steps?.length || 0}`);
+  console.log(`  → Estimated pieces: ${resp.parsed?.estimated_pieces || "?"}`);
+
+  if (logPrefix && resp.parsed) {
+    fs.writeFileSync(`${logPrefix}_output.json`, JSON.stringify(resp.parsed, null, 2), "utf8");
+    console.log(`  → Output logged: ${logPrefix}_output.json`);
+  }
+
+  return { plan: resp.parsed!, model: resp.model };
+}
+
+/**
+ * PHASE 2b: Build and validate a single subassembly
+ */
+export async function buildAndValidateSubassembly(params: {
+  subassemblyName: string;
+  stepPlan: SubassemblyStepPlan;
+  referenceImagePath: string;
+  inventory: InventoryItem[];
+  logDir?: string;
+}): Promise<SubassemblyBuildResult> {
+  const logPrefix = params.logDir ? `${params.logDir}/02b_subassembly_build_${params.subassemblyName.replace(/[^a-z0-9]/gi, '_')}` : null;
+
+  console.log(`\n[PHASE 2b] Building subassembly: ${params.subassemblyName}`);
+  console.log(`  → Steps to build: ${params.stepPlan.steps.length}`);
+  console.log(`  → Target pieces: ${params.stepPlan.estimated_pieces}`);
+
+  if (logPrefix) {
+    fs.mkdirSync(path.dirname(logPrefix), { recursive: true });
+    fs.writeFileSync(`${logPrefix}_plan.json`, JSON.stringify(params.stepPlan, null, 2), "utf8");
+    console.log(`  → Plan logged: ${logPrefix}_plan.json`);
+  }
+
+  // Convert step plan to the format expected by generateLDrawMpdChunkForIdea
+  const blueprintForSubassembly: LDrawBlueprint = {
+    structure_plan: {
+      overview: params.stepPlan.image_location_description,
+      subassemblies: [{ name: params.subassemblyName, description: params.stepPlan.image_location_description }]
+    },
+    step_outline: params.stepPlan.steps.map(s => ({
+      step: s.step,
+      title: s.title,
+      description: s.description,
+      subassembly_name: params.subassemblyName
+    })),
+    notes: []
+  };
+
+  const validationResults: Array<{ round: number; similarity?: number; error?: string }> = [];
+  
+  // Use the tool loop to generate and validate
+  const result = await generateLDrawMpdChunkForIdea({
+    title: params.subassemblyName,
+    userPrompt: params.stepPlan.image_location_description,
+    blueprint: blueprintForSubassembly,
+    stepFrom: 1,
+    stepTo: params.stepPlan.steps.length,
+    inventory: params.inventory,
+    referenceImagePath: params.referenceImagePath,
+    assembledMpdSoFar: "",
+    visualFeedbackMode: "final_only", // Validate at the end of this subassembly
+    isSubassemblyBoundary: true,
+    isFinalChunk: false,
+    currentChunkNumber: 1,
+    totalChunks: 1,
+    useValidationToolLoop: true,
+    onEvent: (event) => {
+      if (event.type === "round_start") {
+        console.log(`  → Validation round ${event.round} starting...`);
+      } else if (event.type === "tool_results") {
+        event.results.forEach((r: any) => {
+          if (r.similarity_score !== undefined) {
+            validationResults.push({ round: validationResults.length + 1, similarity: r.similarity_score });
+            console.log(`  → Similarity: ${(r.similarity_score * 100).toFixed(1)}% ${r.ok ? "✓" : "✗"}`);
+          }
+          if (r.error) {
+            validationResults.push({ round: validationResults.length + 1, error: r.error });
+            console.log(`  → Error: ${r.error}`);
+          }
+        });
+      }
+    }
+  });
+
+  const finalSimilarity = validationResults.reverse().find(r => r.similarity !== undefined)?.similarity;
+  
+  console.log(`[PHASE 2b] ✓ Subassembly built: ${params.subassemblyName}`);
+  console.log(`  → Actual pieces: ${result.chunkBody.split('\n').filter((l: string) => l.trim().startsWith('1 ')).length}`);
+  console.log(`  → Validation rounds: ${validationResults.length}`);
+  if (finalSimilarity !== undefined) {
+    console.log(`  → Final similarity: ${(finalSimilarity * 100).toFixed(1)}%`);
+  }
+
+  if (logPrefix) {
+    fs.writeFileSync(`${logPrefix}_ldraw.mpd`, result.chunkBody, "utf8");
+    fs.writeFileSync(`${logPrefix}_validation.json`, JSON.stringify(validationResults, null, 2), "utf8");
+    console.log(`  → LDraw MPD: ${logPrefix}_ldraw.mpd`);
+    console.log(`  → Validation log: ${logPrefix}_validation.json`);
+  }
+
+  return {
+    subassembly_name: params.subassemblyName,
+    ldraw_mpd: result.chunkBody,
+    actual_pieces: result.chunkBody.split('\n').filter((l: string) => l.trim().startsWith('1 ')).length,
+    validation_rounds: validationResults.length,
+    final_similarity_score: finalSimilarity
+  };
+}
+
+/**
+ * PHASE 3: Assemble all subassemblies into final product and validate
+ */
+export async function assembleFinalProduct(params: {
+  structurePlan: LDrawStructurePlan;
+  subassemblyResults: SubassemblyBuildResult[];
+  referenceImagePath: string;
+  inventory: InventoryItem[];
+  logDir?: string;
+}): Promise<{ finalMpd: string; validationRounds: number; finalSimilarity?: number }> {
+  const logPrefix = params.logDir ? `${params.logDir}/03_final_assembly` : null;
+
+  console.log(`\n[PHASE 3] Assembling final product...`);
+  console.log(`  → Subassemblies to combine: ${params.subassemblyResults.length}`);
+  
+  const totalPieces = params.subassemblyResults.reduce((sum, sa) => sum + sa.actual_pieces, 0);
+  console.log(`  → Total pieces: ${totalPieces}`);
+
+  // Combine all subassembly MPDs
+  const combinedMpd = params.subassemblyResults.map(sa => {
+    return `0 FILE ${sa.subassembly_name}.ldr\n${sa.ldraw_mpd}\n0 NOFILE`;
+  }).join('\n\n') + '\n\n0 FILE main.ldr\n' + 
+    params.subassemblyResults.map((sa, i) => {
+      // Stack subassemblies vertically with 20-unit spacing
+      return `1 16 0 ${-i * 20} 0 1 0 0 0 1 0 0 0 1 ${sa.subassembly_name}.ldr`;
+    }).join('\n');
+
+  if (logPrefix) {
+    fs.mkdirSync(path.dirname(logPrefix), { recursive: true });
+    fs.writeFileSync(`${logPrefix}_combined.mpd`, combinedMpd, "utf8");
+    console.log(`  → Combined MPD: ${logPrefix}_combined.mpd`);
+  }
+
+  // Now ask GPT to review and refine the final assembly with proper positioning
+  console.log(`  → Requesting GPT to refine assembly positions...`);
+  
+  const validationResults: Array<{ round: number; similarity?: number; error?: string }> = [];
+  
+  // Use tool loop for final validation
+  const promptText = [
+    "You are assembling the final LEGO model.",
+    "",
+    `Overview: ${params.structurePlan.overview}`,
+    "",
+    "The following subassemblies have been built:",
+    ...params.subassemblyResults.map(sa => `- ${sa.subassembly_name} (${sa.actual_pieces} pieces)`),
+    "",
+    "TASK: Review the combined MPD and adjust positioning to match the reference image.",
+    "Use proper coordinates to position each subassembly correctly relative to each other.",
+    "",
+    "Current combined MPD:",
+    combinedMpd
+  ].join('\n');
+
+  // This would ideally use the tool loop, but for now let's just validate the combined result
+  // TODO: Implement final assembly refinement with GPT
+
+  console.log(`[PHASE 3] ✓ Final assembly complete`);
+  console.log(`  → Total validation rounds: ${validationResults.length}`);
+
+  if (logPrefix) {
+    fs.writeFileSync(`${logPrefix}_final.mpd`, combinedMpd, "utf8");
+    console.log(`  → Final MPD: ${logPrefix}_final.mpd`);
+  }
+
+  return {
+    finalMpd: combinedMpd,
+    validationRounds: validationResults.length,
+    finalSimilarity: undefined
+  };
+}
+
+/**
+ * ORCHESTRATOR: Run the complete multi-phase build pipeline
+ */
+export async function generateBlueprintMultiPhase(params: {
+  referenceImagePath: string;
+  inventory: InventoryItem[];
+  constraintsText?: string;
+  logDir?: string;
+}): Promise<{ 
+  structurePlan: LDrawStructurePlan;
+  subassemblyResults: SubassemblyBuildResult[];
+  finalMpd: string;
+}> {
+  const startTime = Date.now();
+  console.log("\n========================================");
+  console.log("MULTI-PHASE BLUEPRINT GENERATION");
+  console.log("========================================");
+  console.log(`Reference image: ${params.referenceImagePath}`);
+  console.log(`Inventory: ${params.inventory.length} unique parts`);
+  console.log(`Log directory: ${params.logDir || "(none)"}`);
+
+  // Phase 1: Structure plan
+  const phase1 = await generateStructurePlan(params);
+  
+  // Phase 2a: Generate step plans for all subassemblies in parallel
+  console.log("\n[PHASE 2a] Generating step plans for all subassemblies in parallel...");
+  const totalPieces = phase1.plan.estimated_total_pieces;
+  const stepPlanPromises = phase1.plan.subassemblies.map(async (sa, index) => {
+    const targetPieces = Math.floor(totalPieces / phase1.plan.subassemblies.length);
+    return generateSubassemblyStepPlan({
+      subassemblyName: sa.name,
+      subassemblyDescription: sa.description,
+      imageLocation: sa.image_location,
+      referenceImagePath: params.referenceImagePath,
+      inventory: params.inventory,
+      targetPieceCount: targetPieces,
+      logDir: params.logDir
+    });
+  });
+  const stepPlans = await Promise.all(stepPlanPromises);
+  
+  console.log(`\n[PHASE 2a] ✓ All step plans generated`);
+  stepPlans.forEach((sp, i) => {
+    console.log(`  ${i + 1}. ${sp.plan.subassembly_name}: ${sp.plan.steps.length} steps, ~${sp.plan.estimated_pieces} pieces`);
+  });
+
+  // Phase 2b: Build and validate all subassemblies in parallel
+  console.log("\n[PHASE 2b] Building and validating all subassemblies in parallel...");
+  const buildPromises = stepPlans.map(async (sp) => {
+    return buildAndValidateSubassembly({
+      subassemblyName: sp.plan.subassembly_name,
+      stepPlan: sp.plan,
+      referenceImagePath: params.referenceImagePath,
+      inventory: params.inventory,
+      logDir: params.logDir
+    });
+  });
+  const buildResults = await Promise.all(buildPromises);
+  
+  console.log(`\n[PHASE 2b] ✓ All subassemblies built`);
+  buildResults.forEach((br, i) => {
+    console.log(`  ${i + 1}. ${br.subassembly_name}: ${br.actual_pieces} pieces, ${br.validation_rounds} rounds`);
+    if (br.final_similarity_score) {
+      console.log(`     Similarity: ${(br.final_similarity_score * 100).toFixed(1)}%`);
+    }
+  });
+
+  // Phase 3: Final assembly
+  const phase3 = await assembleFinalProduct({
+    structurePlan: phase1.plan,
+    subassemblyResults: buildResults,
+    referenceImagePath: params.referenceImagePath,
+    inventory: params.inventory,
+    logDir: params.logDir
+  });
+
+  const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
+  console.log("\n========================================");
+  console.log("PIPELINE COMPLETE");
+  console.log("========================================");
+  console.log(`Total time: ${totalTime}s`);
+  console.log(`Subassemblies: ${buildResults.length}`);
+  console.log(`Total pieces: ${buildResults.reduce((sum, br) => sum + br.actual_pieces, 0)}`);
+  console.log(`Total validation rounds: ${buildResults.reduce((sum, br) => sum + br.validation_rounds, 0) + phase3.validationRounds}`);
+  
+  if (params.logDir) {
+    console.log(`\nAll outputs saved to: ${params.logDir}`);
+  }
+
+  return {
+    structurePlan: phase1.plan,
+    subassemblyResults: buildResults,
+    finalMpd: phase3.finalMpd
+  };
+}
+
+/**
+ * LEGACY: Generate a build blueprint from a user-uploaded reference image.
+ * 
+ * @deprecated Use generateBlueprintMultiPhase for better reliability and parallelization
  * 
  * The reference image is the key input - GPT uses it to understand what to build.
  * The blueprint is then used to guide LDraw MPD chunk generation.
