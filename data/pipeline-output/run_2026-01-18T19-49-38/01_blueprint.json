@@ -1,0 +1,66 @@
+{
+  "overview": "Build a LEGO-style minifigure hero holding an energy sword: 1 white-clad body with 1 blond hair/helmet-like top, 2 arms posed forward, and 1 cylindrical-hilt sword with a long blade.",
+  "subassemblies": [
+    {
+      "name": "Head + Hair",
+      "description": "1 head block (approx 2x2x2) with 2 printed eyes + 1 mouth/line on the front; 1 blond hair mass built as a rounded cap using 6–8 curved/cheese slopes around the top and sides.",
+      "imageRegion": "top third, centered (hair and face)",
+      "boundingBox": {
+        "x": 0.22,
+        "y": 0.02,
+        "width": 0.46,
+        "height": 0.32
+      },
+      "estimatedPieces": 12
+    },
+    {
+      "name": "Torso + Belt",
+      "description": "1 torso core (approx 2 studs wide x 2 studs deep x 3 bricks tall) in white; 1 brown belt band around the waist (1 plate layer) with 1 small front pouch/accent.",
+      "imageRegion": "middle third, center-left (chest and waist)",
+      "boundingBox": {
+        "x": 0.18,
+        "y": 0.26,
+        "width": 0.5,
+        "height": 0.32
+      },
+      "estimatedPieces": 18
+    },
+    {
+      "name": "Arms + Hands (2)",
+      "description": "2 arms built as 1x1/1x2 white segments each; 2 hands/claws (or small brackets) positioned together in front of the torso to grip the hilt.",
+      "imageRegion": "middle area, right of torso (forearms and hands)",
+      "boundingBox": {
+        "x": 0.28,
+        "y": 0.3,
+        "width": 0.6,
+        "height": 0.38
+      },
+      "estimatedPieces": 14
+    },
+    {
+      "name": "Legs + Feet (2)",
+      "description": "2 legs in a walking stance: each leg ~2 studs wide with 1 blocky foot; add 2 tan/gold accent tiles/plates on the outer shins to mimic printed markings.",
+      "imageRegion": "lower third, centered (hips to feet)",
+      "boundingBox": {
+        "x": 0.22,
+        "y": 0.55,
+        "width": 0.52,
+        "height": 0.43
+      },
+      "estimatedPieces": 20
+    },
+    {
+      "name": "Energy Sword (Hilt + Blade)",
+      "description": "1 cylindrical hilt (silver/gray look) built from stacked round bricks/1x1 rounds and small rings; 1 long blade made as a tapered light-blue bar using stacked 1x1 plates/tiles or a thin column (about 6–10 segments).",
+      "imageRegion": "right side, from mid-height to top-right corner",
+      "boundingBox": {
+        "x": 0.55,
+        "y": 0.06,
+        "width": 0.43,
+        "height": 0.78
+      },
+      "estimatedPieces": 18
+    }
+  ],
+  "totalEstimatedPieces": 82
+}

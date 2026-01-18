@@ -1,0 +1,20 @@
+[
+  {
+    "part_id": "3003",
+    "color": 15,
+    "attach_to": null,
+    "offset_x": 0,
+    "offset_z": 0,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3003",
+    "color": 15,
+    "attach_to": 0,
+    "offset_x": -4,
+    "offset_z": 0,
+    "stack": "below",
+    "rotation": 0
+  }
+]

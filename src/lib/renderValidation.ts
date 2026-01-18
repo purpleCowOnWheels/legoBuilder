@@ -77,8 +77,15 @@ export interface RenderValidationInput {
   /** The LDraw MPD content to validate */
   ldraw_mpd: string;
   
-  /** Path to reference image (PNG) to compare against */
+  /** Path to reference image (PNG) to compare against (used for single-view or as front-right view) */
   reference_image_path?: string;
+  
+  /** 
+   * Reference images for multi-view comparison. 
+   * Keys should match viewpoint names (e.g., "front-right", "back-left").
+   * If not provided but reference_image_path is set, single-view comparison is used.
+   */
+  reference_images?: Record<string, string>;
   
   /** Validation mode */
   mode: "full" | "partial" | "chunk";
@@ -107,6 +114,18 @@ export interface RenderValidationInput {
   
   /** Round number (for logging purposes) */
   validation_round?: number;
+  
+  /** 
+   * Enable multi-view rendering (renders from 2 opposite corners for full coverage).
+   * Default: false (single default view)
+   */
+  multi_view?: boolean;
+  
+  /** 
+   * Custom viewpoints for rendering. If not provided, uses STANDARD_VIEWPOINTS 
+   * (front-right and back-left) when multi_view is true.
+   */
+  viewpoints?: ViewpointConfig[];
 }
 
 export interface StructureIssue {
@@ -150,7 +169,7 @@ export interface RenderValidationResult {
   
   /** Image similarity results (if render comparison was done) */
   similarity?: {
-    score: number; // 0-100
+    score: number; // 0-100 (average across views if multi-view)
     passes_threshold: boolean;
     threshold: number;
     method: "python" | "imageMagick" | "basic" | "skipped";
@@ -159,6 +178,14 @@ export interface RenderValidationResult {
       mse?: number;
       psnr?: number;
     };
+    /** Per-view similarity scores (if multi-view rendering was used) */
+    per_view?: Array<{
+      view_name: string;
+      score: number;
+      passes_threshold: boolean;
+      rendered_path?: string;
+      reference_path?: string;
+    }>;
   };
   
   /** Continuity checks (parts connect properly, no floating pieces) */
@@ -204,11 +231,26 @@ export interface RenderValidationResult {
     issues: StructureIssue[];
   };
   
-  /** Path to rendered image (if render was done) */
+  /** Path to rendered image (if render was done) - for single view mode */
   rendered_image_path?: string;
   
-  /** Rendered image as base64 (for MCP response) */
+  /** Rendered image as base64 (for MCP response) - for single view mode */
   rendered_image_base64?: string;
+  
+  /** 
+   * Multi-view rendered images with labels.
+   * Each entry contains the view name/label and the image data.
+   */
+  rendered_views?: Array<{
+    /** View label (e.g., "front-right", "back-left") */
+    label: string;
+    /** Description of what this view shows */
+    description: string;
+    /** Path to the rendered image file */
+    path: string;
+    /** Image as base64 for sending to GPT */
+    base64: string;
+  }>;
   
   /** Execution metadata */
   meta: {
@@ -757,6 +799,251 @@ interface RenderResult {
   error?: LPub3DError;
 }
 
+// ============================================================================
+// Multi-View Rendering
+// ============================================================================
+
+export interface ViewpointConfig {
+  name: string;
+  description: string; // Human-readable description of what's visible
+  latitude: number;    // -90 to 90 (vertical angle)
+  longitude: number;   // 0 to 360 (horizontal rotation)
+}
+
+/**
+ * Standard viewpoints for comprehensive model coverage.
+ * Two opposite 3/4 isometric views capture all 4 sides + top.
+ */
+export const STANDARD_VIEWPOINTS: ViewpointConfig[] = [
+  { 
+    name: "front-right", 
+    description: "Shows TOP + FRONT + RIGHT side of model",
+    latitude: 30, 
+    longitude: 45 
+  },
+  { 
+    name: "back-left", 
+    description: "Shows TOP + BACK + LEFT side of model",
+    latitude: 30, 
+    longitude: 225 
+  },
+];
+
+/**
+ * Extended viewpoints for more thorough coverage (4 corners + top)
+ */
+export const EXTENDED_VIEWPOINTS: ViewpointConfig[] = [
+  { name: "front-right", description: "Shows TOP + FRONT + RIGHT", latitude: 30, longitude: 45 },
+  { name: "front-left", description: "Shows TOP + FRONT + LEFT", latitude: 30, longitude: 135 },
+  { name: "back-left", description: "Shows TOP + BACK + LEFT", latitude: 30, longitude: 225 },
+  { name: "back-right", description: "Shows TOP + BACK + RIGHT", latitude: 30, longitude: 315 },
+  { name: "top", description: "Shows TOP (bird's eye view)", latitude: 80, longitude: 0 },
+];
+
+export interface MultiViewRenderResult {
+  views: Array<{
+    name: string;
+    description: string;
+    imagePath: string | null;
+    error?: LPub3DError;
+  }>;
+  allSucceeded: boolean;
+}
+
+/**
+ * Render MPD from multiple viewpoints for comprehensive coverage.
+ */
+export function renderMpdMultiView(params: {
+  ldrawMpd: string;
+  outputDir: string;
+  baseName: string;
+  size: number;
+  viewpoints?: ViewpointConfig[];
+  timeoutMs?: number;
+  maxRetries?: number;
+}): MultiViewRenderResult {
+  const viewpoints = params.viewpoints ?? STANDARD_VIEWPOINTS;
+  const results: MultiViewRenderResult = {
+    views: [],
+    allSucceeded: true
+  };
+
+  for (const vp of viewpoints) {
+    const viewBaseName = `${params.baseName}_${vp.name}`;
+    const result = renderMpdToPngWithViewpoint({
+      ldrawMpd: params.ldrawMpd,
+      outputDir: params.outputDir,
+      baseName: viewBaseName,
+      size: params.size,
+      latitude: vp.latitude,
+      longitude: vp.longitude,
+      timeoutMs: params.timeoutMs,
+      maxRetries: params.maxRetries
+    });
+
+    results.views.push({
+      name: vp.name,
+      description: vp.description,
+      imagePath: result.imagePath,
+      error: result.error
+    });
+
+    if (!result.imagePath) {
+      results.allSucceeded = false;
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Render MPD to PNG with specific viewpoint (latitude/longitude)
+ */
+function renderMpdToPngWithViewpoint(params: {
+  ldrawMpd: string;
+  outputDir: string;
+  baseName: string;
+  size: number;
+  latitude: number;
+  longitude: number;
+  timeoutMs?: number;
+  maxRetries?: number;
+}): RenderResult {
+  const { ldrawMpd, outputDir, baseName, size, latitude, longitude } = params;
+  const timeoutMs = params.timeoutMs ?? 15000;
+  const maxRetries = params.maxRetries ?? 1;
+
+  // Write MPD to temp file
+  fs.mkdirSync(outputDir, { recursive: true });
+  const mpdPath = path.join(outputDir, `${baseName}.mpd`);
+  const pngPath = path.join(outputDir, `${baseName}.png`);
+
+  // Clean up any existing PNG
+  try {
+    if (fs.existsSync(pngPath)) {
+      fs.unlinkSync(pngPath);
+    }
+  } catch {
+    // Ignore cleanup errors
+  }
+
+  fs.writeFileSync(mpdPath, ldrawMpd, "utf8");
+
+  const ldviewBin = process.env.LDVIEW_BIN || "/Applications/LDView-4.5.app/Contents/MacOS/LDView";
+  const ldrawDir = process.env.LDRAW_DIR || process.env.LDRAWDIR || path.join(process.env.HOME || "", "ldraw");
+
+  if (!fs.existsSync(ldviewBin)) {
+    return {
+      imagePath: null,
+      error: {
+        type: "not_found",
+        message: `LDView not found at: ${ldviewBin}`
+      }
+    };
+  }
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const result = spawnSync(ldviewBin, [
+        mpdPath,
+        `-LDrawDir=${ldrawDir}`,
+        `-SaveSnapshot=${pngPath}`,
+        `-SaveWidth=${size}`,
+        `-SaveHeight=${size}`,
+        "-SaveAlpha=1",
+        "-SaveZoomToFit=1",
+        `-DefaultLatLong=${latitude},${longitude}`
+      ], {
+        encoding: "utf8",
+        timeout: timeoutMs
+      });
+
+      if (fs.existsSync(pngPath)) {
+        return { imagePath: pngPath };
+      }
+
+      if (result.error || result.status !== 0) {
+        console.warn(`[renderValidation] LDView render attempt ${attempt + 1} failed:`,
+          result.error?.message || `exit code ${result.status}`);
+      }
+    } catch (e) {
+      console.warn(`[renderValidation] LDView render exception (attempt ${attempt + 1}):`, e);
+    }
+
+    if (attempt < maxRetries) {
+      const delayUntil = Date.now() + 500;
+      while (Date.now() < delayUntil) { /* wait */ }
+    }
+  }
+
+  return { imagePath: null };
+}
+
+// ============================================================================
+// Viewpoint Definitions for Multi-Angle Rendering
+// ============================================================================
+
+export interface ViewpointConfig {
+  name: string;
+  label: string;
+  latitude: number;  // -90 to 90 (vertical angle, 0 = horizon, positive = looking down)
+  longitude: number; // 0 to 360 (horizontal rotation around model)
+}
+
+/**
+ * Predefined viewpoints for comprehensive model coverage.
+ * Two opposite corners capture all 4 sides + top.
+ */
+export const VIEWPOINTS: Record<string, ViewpointConfig> = {
+  "front-right": {
+    name: "front-right",
+    label: "Front-Right View",
+    latitude: 30,
+    longitude: 45
+  },
+  "back-left": {
+    name: "back-left", 
+    label: "Back-Left View",
+    latitude: 30,
+    longitude: 225
+  },
+  "front": {
+    name: "front",
+    label: "Front View",
+    latitude: 0,
+    longitude: 0
+  },
+  "back": {
+    name: "back",
+    label: "Back View",
+    latitude: 0,
+    longitude: 180
+  },
+  "left": {
+    name: "left",
+    label: "Left View",
+    latitude: 0,
+    longitude: 270
+  },
+  "right": {
+    name: "right",
+    label: "Right View",
+    latitude: 0,
+    longitude: 90
+  },
+  "top": {
+    name: "top",
+    label: "Top View",
+    latitude: 90,
+    longitude: 0
+  }
+};
+
+/**
+ * Default viewpoints for comprehensive coverage (2 angles)
+ */
+export const DEFAULT_MULTI_VIEWPOINTS = ["front-right", "back-left"] as const;
+
 /**
  * Fast-fail validation using LDView's check mode (if available)
  * Returns true if valid, false if invalid (with console warnings)
@@ -1226,13 +1513,15 @@ export function validateRender(input: RenderValidationInput): RenderValidationRe
   // 4. Render Progress Image (always for logging, optionally for comparison)
   // -------------------------------------------------------------------------
   const hasReferenceImage = input.reference_image_path && fs.existsSync(input.reference_image_path);
-  const shouldCompare = input.do_render_comparison !== false && hasReferenceImage;
+  const hasMultiViewReferences = input.reference_images && Object.keys(input.reference_images).length > 0;
+  const shouldCompare = input.do_render_comparison !== false && (hasReferenceImage || hasMultiViewReferences);
   const shouldRenderForLogging = input.always_render_for_logging === true;
   const shouldRender = shouldCompare || shouldRenderForLogging;
+  const useMultiView = input.multi_view === true || hasMultiViewReferences;
   
   if (shouldRender) {
-    checksRun.push(shouldCompare ? "render_comparison" : "render_progress");
-    console.log(`  [Validation] ${shouldCompare ? "Rendering and comparing to reference..." : "Rendering for progress logging..."}`);
+    checksRun.push(shouldCompare ? (useMultiView ? "render_comparison_multiview" : "render_comparison") : "render_progress");
+    console.log(`  [Validation] ${shouldCompare ? `Rendering${useMultiView ? " (multi-view)" : ""} and comparing to reference...` : "Rendering for progress logging..."}`);
     
     // Use run-specific renders folder if available, otherwise fall back to temp
     const runLogDir = getRunLogDir();
@@ -1249,113 +1538,200 @@ export function validateRender(input: RenderValidationInput): RenderValidationRe
       ? `0 FILE model.ldr\n${workingLdraw}\n0 NOFILE`
       : workingLdraw;
     
-    const renderResult = renderMpdToPng({
-      ldrawMpd: mpdForRender,
-      outputDir: tempDir,
-      baseName,
-      size: renderSize
-    });
-    
-    const renderedPath = renderResult.imagePath;
-    
-    if (renderedPath && fs.existsSync(renderedPath)) {
-      console.log(`  ✅ [Validation] Render succeeded: ${path.basename(renderedPath)}`);
-      result.rendered_image_path = renderedPath;
+    if (useMultiView) {
+      // Multi-view rendering: render from multiple angles for full coverage
+      const viewpoints = input.viewpoints ?? STANDARD_VIEWPOINTS;
+      const multiResult = renderMpdMultiView({
+        ldrawMpd: mpdForRender,
+        outputDir: tempDir,
+        baseName,
+        size: renderSize,
+        viewpoints
+      });
       
-      // Read as base64 for MCP response
-      try {
-        const imageBuffer = fs.readFileSync(renderedPath);
-        result.rendered_image_base64 = imageBuffer.toString("base64");
-      } catch {
-        // Ignore base64 encoding errors
+      // Build the rendered_views array with labels and base64 data
+      const renderedViews: Array<{
+        label: string;
+        description: string;
+        path: string;
+        base64: string;
+      }> = [];
+      
+      console.log(`\n  ========== MULTI-VIEW RENDERS ==========`);
+      
+      for (const view of multiResult.views) {
+        if (view.imagePath && fs.existsSync(view.imagePath)) {
+          try {
+            const imageBuffer = fs.readFileSync(view.imagePath);
+            const base64Data = imageBuffer.toString("base64");
+            
+            renderedViews.push({
+              label: view.name,
+              description: view.description,
+              path: view.imagePath,
+              base64: base64Data
+            });
+            
+            console.log(`  ✅ [${view.name.toUpperCase()}] ${view.description}`);
+            console.log(`     File: ${path.basename(view.imagePath)}`);
+          } catch (e) {
+            console.log(`  ⚠️ [${view.name.toUpperCase()}] Rendered but failed to read: ${e instanceof Error ? e.message : "unknown"}`);
+          }
+        } else {
+          console.log(`  ❌ [${view.name.toUpperCase()}] ${view.description}`);
+          console.log(`     RENDER FAILED${view.error ? `: ${view.error.message}` : ""}`);
+        }
       }
       
-      // Compare to reference (only if we have a reference image)
-      if (shouldCompare && input.reference_image_path) {
-        console.log(`  [Validation] Comparing to reference image...`);
+      console.log(`  ==========================================\n`);
+      
+      // Store rendered views for GPT
+      result.rendered_views = renderedViews;
+      
+      // Also set the first view as the primary for backward compatibility
+      if (renderedViews.length > 0) {
+        result.rendered_image_path = renderedViews[0].path;
+        result.rendered_image_base64 = renderedViews[0].base64;
+      }
+      
+      // Log summary
+      if (multiResult.allSucceeded) {
+        console.log(`  ✅ [Validation] All ${renderedViews.length} views rendered successfully`);
+      } else {
+        const succeeded = renderedViews.length;
+        const total = multiResult.views.length;
+        console.log(`  ⚠️ [Validation] ${succeeded}/${total} views rendered`);
+      }
+      
+      // Handle complete render failure
+      if (renderedViews.length === 0) {
+        console.log(`  ❌ [Validation] All renders FAILED`);
+        const firstError = multiResult.views.find(v => v.error)?.error;
+        if (firstError) {
+          const diagnostic = diagnoseRenderFailure(firstError, mpdForRender);
+          result.structure.issues.push({
+            type: "other",
+            severity: "error",
+            message: `RENDER FAILED: ${diagnostic.message}`
+          });
+        } else {
+          result.structure.issues.push({
+            type: "other",
+            severity: "error",
+            message: "RENDER FAILED: Could not generate any images"
+          });
+        }
+      }
+    } else {
+      // Single-view rendering (original behavior)
+      const renderResult = renderMpdToPng({
+        ldrawMpd: mpdForRender,
+        outputDir: tempDir,
+        baseName,
+        size: renderSize
+      });
+      
+      const renderedPath = renderResult.imagePath;
+      
+      if (renderedPath && fs.existsSync(renderedPath)) {
+        console.log(`  ✅ [Validation] Render succeeded: ${path.basename(renderedPath)}`);
+        result.rendered_image_path = renderedPath;
+        
+        // Read as base64 for MCP response
         try {
-          const similarity = compareImages(renderedPath, input.reference_image_path);
-          
-          result.similarity = {
-            score: similarity.overall,
-            passes_threshold: similarity.overall >= minSimilarity,
-            threshold: minSimilarity,
-            method: similarity.details?.method || "basic",
-            metrics: {
-              ssim: similarity.metrics.ssim,
-              mse: similarity.metrics.mse,
-              psnr: similarity.metrics.psnr
+          const imageBuffer = fs.readFileSync(renderedPath);
+          result.rendered_image_base64 = imageBuffer.toString("base64");
+        } catch {
+          // Ignore base64 encoding errors
+        }
+        
+        // Compare to reference (only if we have a reference image)
+        if (shouldCompare && input.reference_image_path) {
+          console.log(`  [Validation] Comparing to reference image...`);
+          try {
+            const similarity = compareImages(renderedPath, input.reference_image_path);
+            
+            result.similarity = {
+              score: similarity.overall,
+              passes_threshold: similarity.overall >= minSimilarity,
+              threshold: minSimilarity,
+              method: similarity.details?.method || "basic",
+              metrics: {
+                ssim: similarity.metrics.ssim,
+                mse: similarity.metrics.mse,
+                psnr: similarity.metrics.psnr
+              }
+            };
+            
+            if (result.similarity.passes_threshold) {
+              console.log(`  ✅ [Validation] Similarity check passed: ${similarity.overall.toFixed(1)}% (threshold: ${minSimilarity}%)`);
+            } else {
+              console.log(`  ❌ [Validation] Similarity check FAILED: ${similarity.overall.toFixed(1)}% < ${minSimilarity}%`);
             }
-          };
-          
-          if (result.similarity.passes_threshold) {
-            console.log(`  ✅ [Validation] Similarity check passed: ${similarity.overall.toFixed(1)}% (threshold: ${minSimilarity}%)`);
-          } else {
-            console.log(`  ❌ [Validation] Similarity check FAILED: ${similarity.overall.toFixed(1)}% < ${minSimilarity}%`);
+          } catch (e) {
+            console.log(`  ⚠️  [Validation] Image comparison error: ${e instanceof Error ? e.message : "unknown"}`);
+            result.similarity = {
+              score: 0,
+              passes_threshold: false,
+              threshold: minSimilarity,
+              method: "skipped"
+            };
+            result.structure.issues.push({
+              type: "other",
+              severity: "warning",
+              message: `Image comparison failed: ${e instanceof Error ? e.message : "unknown error"}`
+            });
           }
-        } catch (e) {
-          console.log(`  ⚠️  [Validation] Image comparison error: ${e instanceof Error ? e.message : "unknown"}`);
+        }
+      } else {
+        // Render failed - generate diagnostic feedback
+        console.log(`  ❌ [Validation] Render FAILED`);
+        if (renderResult.error) {
+          const diagnostic = diagnoseRenderFailure(renderResult.error, mpdForRender);
+          console.log(`    Error type: ${diagnostic.errorType}`);
+          console.log(`    Message: ${diagnostic.message}`);
+          
+          // Add render failure as ERROR (not warning) - this invalidates the build
+          result.structure.issues.push({
+            type: "other",
+            severity: "error",
+            message: `RENDER FAILED: ${diagnostic.message}`
+          });
+          
+          // Add detailed causes
+          for (const cause of diagnostic.likelyCauses) {
+            result.structure.issues.push({
+              type: "other",
+              severity: "error",
+              message: `Likely cause: ${cause}`
+            });
+          }
+          
+          // Add suggested fixes
+          for (const fix of diagnostic.suggestedFixes) {
+            result.structure.issues.push({
+              type: "other",
+              severity: "warning",
+              message: `Fix: ${fix}`
+            });
+          }
+        } else {
+          // Unknown render failure
+          result.structure.issues.push({
+            type: "other",
+            severity: "error",
+            message: "RENDER FAILED: Could not generate image (unknown error)"
+          });
+        }
+        
+        if (shouldCompare) {
           result.similarity = {
             score: 0,
             passes_threshold: false,
             threshold: minSimilarity,
             method: "skipped"
           };
-          result.structure.issues.push({
-            type: "other",
-            severity: "warning",
-            message: `Image comparison failed: ${e instanceof Error ? e.message : "unknown error"}`
-          });
         }
-      }
-    } else {
-      // Render failed - generate diagnostic feedback
-      console.log(`  ❌ [Validation] Render FAILED`);
-      if (renderResult.error) {
-        const diagnostic = diagnoseRenderFailure(renderResult.error, mpdForRender);
-        console.log(`    Error type: ${diagnostic.errorType}`);
-        console.log(`    Message: ${diagnostic.message}`);
-        
-        // Add render failure as ERROR (not warning) - this invalidates the build
-        result.structure.issues.push({
-          type: "other",
-          severity: "error",
-          message: `RENDER FAILED: ${diagnostic.message}`
-        });
-        
-        // Add detailed causes
-        for (const cause of diagnostic.likelyCauses) {
-          result.structure.issues.push({
-            type: "other",
-            severity: "error",
-            message: `Likely cause: ${cause}`
-          });
-        }
-        
-        // Add suggested fixes
-        for (const fix of diagnostic.suggestedFixes) {
-          result.structure.issues.push({
-            type: "other",
-            severity: "warning",
-            message: `Fix: ${fix}`
-          });
-        }
-      } else {
-        // Unknown render failure
-        result.structure.issues.push({
-          type: "other",
-          severity: "error",
-          message: "RENDER FAILED: Could not generate image (unknown error)"
-        });
-      }
-      
-      if (shouldCompare) {
-        result.similarity = {
-          score: 0,
-          passes_threshold: false,
-          threshold: minSimilarity,
-          method: "skipped"
-        };
       }
     }
   }
@@ -1428,8 +1804,20 @@ export interface ToolLoopValidationResult {
   similarity_score?: number;
   issues?: Array<{ type: string; message: string; subassembly?: string }>;
   subassembly_positions?: Array<{ name: string; position: string; valid: boolean }>;
-  /** Rendered image as base64 (for visual feedback to GPT) */
+  /** Rendered image as base64 (for visual feedback to GPT) - single view mode */
   rendered_image_base64?: string;
+  /** 
+   * Multiple rendered views with labels (for multi-view mode).
+   * Each view shows the model from a different angle for complete coverage.
+   */
+  rendered_views?: Array<{
+    /** View label (e.g., "front-right", "back-left") */
+    label: string;
+    /** What this view shows (e.g., "Shows TOP + FRONT + RIGHT side of model") */
+    description: string;
+    /** Base64 encoded PNG image */
+    image_base64: string;
+  }>;
 }
 
 /**
@@ -1454,13 +1842,24 @@ export function validateRenderForToolLoop(
       valid: s.position!.attachment_valid
     }));
   
+  // Build rendered views array for multi-view mode
+  const renderedViews = includeRenderedImage && result.rendered_views
+    ? result.rendered_views.map(v => ({
+        label: v.label,
+        description: v.description,
+        image_base64: v.base64
+      }))
+    : undefined;
+  
   // Base result object
   const baseResult: ToolLoopValidationResult = {
     ok: result.valid,
     similarity_score: result.similarity?.score,
     subassembly_positions: subPositions && subPositions.length > 0 ? subPositions : undefined,
-    // Include rendered image if requested and available
-    rendered_image_base64: includeRenderedImage ? result.rendered_image_base64 : undefined
+    // Include rendered views for multi-view mode
+    rendered_views: renderedViews,
+    // Include single rendered image for backward compatibility (single-view mode)
+    rendered_image_base64: includeRenderedImage && !renderedViews ? result.rendered_image_base64 : undefined
   };
   
   if (result.valid) {
@@ -1834,6 +2233,91 @@ export const FINAL_ONLY_VALIDATIONS = [
   "cross_subassembly_check",     // Connections between all subassemblies
   "image_similarity_ssim"        // Pixel-level SSIM comparison
 ] as const;
+
+// ============================================================================
+// Multi-View Reference Generation
+// ============================================================================
+
+/**
+ * Generate reference images from multiple viewpoints for a given MPD.
+ * Useful for creating the reference image set for multi-view comparison.
+ * 
+ * @param ldrawMpd - The LDraw MPD content
+ * @param outputDir - Directory to save the reference images
+ * @param baseName - Base name for the output files (will have view names appended)
+ * @param options - Render options
+ * @returns Object with paths to generated images keyed by view name
+ */
+export function generateMultiViewReferences(
+  ldrawMpd: string,
+  outputDir: string,
+  baseName: string,
+  options?: {
+    size?: number;
+    viewpoints?: ViewpointConfig[];
+  }
+): Record<string, string> {
+  const size = options?.size ?? 512;
+  const viewpoints = options?.viewpoints ?? STANDARD_VIEWPOINTS;
+  
+  const result = renderMpdMultiView({
+    ldrawMpd,
+    outputDir,
+    baseName,
+    size,
+    viewpoints
+  });
+  
+  const paths: Record<string, string> = {};
+  for (const view of result.views) {
+    if (view.imagePath) {
+      paths[view.name] = view.imagePath;
+    }
+  }
+  
+  return paths;
+}
+
+/**
+ * Render a single view with specific viewpoint parameters.
+ * Exported for direct use when you need a specific angle.
+ */
+export function renderWithViewpoint(
+  ldrawMpd: string,
+  outputPath: string,
+  viewpoint: ViewpointConfig,
+  size: number = 512
+): { success: boolean; path?: string; error?: string } {
+  const outputDir = path.dirname(outputPath);
+  const baseName = path.basename(outputPath, path.extname(outputPath));
+  
+  const result = renderMpdToPngWithViewpoint({
+    ldrawMpd,
+    outputDir,
+    baseName,
+    size,
+    latitude: viewpoint.latitude,
+    longitude: viewpoint.longitude
+  });
+  
+  if (result.imagePath) {
+    // Rename to requested path if different
+    if (result.imagePath !== outputPath) {
+      try {
+        fs.renameSync(result.imagePath, outputPath);
+        return { success: true, path: outputPath };
+      } catch {
+        return { success: true, path: result.imagePath };
+      }
+    }
+    return { success: true, path: result.imagePath };
+  }
+  
+  return { 
+    success: false, 
+    error: result.error?.message || "Render failed" 
+  };
+}
 
 // ============================================================================
 // MCP-Ready Export

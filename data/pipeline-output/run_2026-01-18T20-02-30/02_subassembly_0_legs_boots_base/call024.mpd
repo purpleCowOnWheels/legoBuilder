@@ -1,0 +1,8 @@
+0 FILE legs_boots_base.ldr
+0 legs_boots_base
+0 Author: Pipeline
+1 15 0 0 0 1 0 0 0 1 0 0 0 1 3020.dat
+1 15 -20 -24 0 1 0 0 0 1 0 0 0 1 3003.dat
+1 15 20 -24 0 1 0 0 0 1 0 0 0 1 3003.dat
+0 STEP
+0 NOFILE

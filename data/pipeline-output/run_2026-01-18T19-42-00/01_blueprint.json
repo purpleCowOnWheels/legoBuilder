@@ -1,0 +1,66 @@
+{
+  "overview": "Reference appears to be a LEGO-style Luke Skywalker minifigure in a white outfit holding a blue lightsaber. Plan below breaks the model into 5 major sub-assemblies (keep it micro/brick-built, not a true minifig), totaling ~112 pieces.",
+  "subassemblies": [
+    {
+      "name": "Head+Hair",
+      "description": "1 head: build a tan 2x2 core with 1 face front (use 1 printed 2x2 tile if available; otherwise plain tile), and 1 blond hair cap using 6–10 curved slopes/tiles layered over the top and sides to suggest shaggy hair.",
+      "imageRegion": "top center (hair) and upper-middle (face)",
+      "boundingBox": {
+        "x": 0.18,
+        "y": 0.02,
+        "width": 0.52,
+        "height": 0.35
+      },
+      "estimatedPieces": 26
+    },
+    {
+      "name": "Torso+Robe",
+      "description": "1 torso: build a white chest block (roughly 4 studs wide) with 2 arms indicated by white side stacks. Add 1 belt stripe across the waist (brown/red using 2–4 plates/tiles) and 1 small pouch detail centered/left on the belt (1 small 1x1/1x2 element).",
+      "imageRegion": "middle of image (shoulders to belt)",
+      "boundingBox": {
+        "x": 0.16,
+        "y": 0.26,
+        "width": 0.56,
+        "height": 0.34
+      },
+      "estimatedPieces": 30
+    },
+    {
+      "name": "Arms+Hands (Saber Grip)",
+      "description": "2 arms forward: build 2 forearms in tan/white (each ~5–7 pieces) angled to meet at center. Add 2 hands as 1x1 round/clip-like details (or 1x1 bricks) to hold the hilt. Leave a 1-stud channel between hands for the lightsaber handle.",
+      "imageRegion": "center-right, in front of torso",
+      "boundingBox": {
+        "x": 0.28,
+        "y": 0.34,
+        "width": 0.54,
+        "height": 0.34
+      },
+      "estimatedPieces": 18
+    },
+    {
+      "name": "Lightsaber",
+      "description": "1 lightsaber: build 1 silver/gray hilt (stack of 4–6 small round/cylinder-like parts; substitute with 1x1 rounds/plates) plus 1 blue blade (a vertical stack of 8–12 translucent/light-blue 1x1 rounds/plates or a thin column of blue elements).",
+      "imageRegion": "right side, rising from hands to top-right corner",
+      "boundingBox": {
+        "x": 0.56,
+        "y": 0.02,
+        "width": 0.4,
+        "height": 0.66
+      },
+      "estimatedPieces": 18
+    },
+    {
+      "name": "Legs+Boots",
+      "description": "2 legs: build 2 white blocky legs (each ~8–10 pieces) with 2 larger feet/boots (each foot ~2–3 pieces). Add 2 tan/gold accent stripes on thighs/shins using 2–4 tiles/plates total to mimic printed markings.",
+      "imageRegion": "lower half (waist to feet)",
+      "boundingBox": {
+        "x": 0.16,
+        "y": 0.56,
+        "width": 0.56,
+        "height": 0.42
+      },
+      "estimatedPieces": 20
+    }
+  ],
+  "totalEstimatedPieces": 112
+}

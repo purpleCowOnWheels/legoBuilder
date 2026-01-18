@@ -371,7 +371,7 @@ async function cropImage(
   sourcePath: string,
   boundingBox: BoundingBox,
   outputPath: string,
-  padding: number = 0.10  // Add 10% padding on each side
+  padding: number = 0  // No padding - use exact bounding box
 ): Promise<void> {
   const image = sharp(sourcePath);
   const metadata = await image.metadata();

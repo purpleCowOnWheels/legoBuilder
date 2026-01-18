@@ -1,0 +1,54 @@
+{
+  "overview": "Model a minifigure-style Jedi in white robes holding a blue lightsaber. Build as 4 major sub-assemblies: legs/stance, torso+arms, head+hair, and lightsaber. Use mostly white/light pieces for the body, tan for skin, and gray+trans-blue accents for the saber.",
+  "subassemblies": [
+    {
+      "name": "Legs & lower robe/stance",
+      "description": "1 lower body block shaped like 2 legs: build a 2x2 core with 2 feet, plus 2 small front robe panels to suggest the white tunic; add 1 thin belt hint at the waistline (dark/tan accent).",
+      "imageRegion": "lower third, centered",
+      "boundingBox": {
+        "x": 0.22,
+        "y": 0.58,
+        "width": 0.56,
+        "height": 0.4
+      },
+      "estimatedPieces": 11
+    },
+    {
+      "name": "Torso (robe) + 2 arms",
+      "description": "1 torso block (white robe) with 2 shoulders; 2 arms angled forward to a 2-hand grip pose; include 1 belt stripe across the waist (reddish-brown/dark accent) and 1 V-neck detail using contrasting plates/tiles.",
+      "imageRegion": "middle of figure, center-left",
+      "boundingBox": {
+        "x": 0.18,
+        "y": 0.3,
+        "width": 0.54,
+        "height": 0.38
+      },
+      "estimatedPieces": 14
+    },
+    {
+      "name": "Head + hair",
+      "description": "1 head (tan/light) with 2 eyes + 1 mouth expression suggested via small dark tiles/plates; 1 shaggy blond hair cap made from layered curved slopes/tiles (3-5 pieces) over the top and sides.",
+      "imageRegion": "upper-left quadrant, above torso",
+      "boundingBox": {
+        "x": 0.2,
+        "y": 0.05,
+        "width": 0.44,
+        "height": 0.3
+      },
+      "estimatedPieces": 9
+    },
+    {
+      "name": "Lightsaber (hilt + blade)",
+      "description": "1 lightsaber: 1 cylindrical gray hilt (stack of 3–4 round/short elements) with 1 small emitter tip, plus 1 long blue blade (1 bar/rod) angled up-right; connect to the hands with 1 grip segment.",
+      "imageRegion": "right side, running from hands to top-right corner",
+      "boundingBox": {
+        "x": 0.46,
+        "y": 0.14,
+        "width": 0.52,
+        "height": 0.72
+      },
+      "estimatedPieces": 6
+    }
+  ],
+  "totalEstimatedPieces": 40
+}

@@ -1,0 +1,7 @@
+{
+  "valid": false,
+  "errors": [
+    "[7] 3023 on 3003: No stud connection at (2,1) → Try: (-1,0), (1,0), (-1,-2), (1,-2), (-1,2)"
+  ],
+  "summary": "INVALID (1):\n[7] 3023 on 3003: No stud connection at (2,1) → Try: (-1,0), (1,0), (-1,-2), (1,-2), (-1,2)"
+}

@@ -1,0 +1,66 @@
+{
+  "overview": "Reference shows a LEGO-style minifigure (Luke-like) in a white outfit holding a blue lightsaber. Build as a small brick-built statue: legs+hips base, torso with crossed arms pose, head with hair, and lightsaber accessory on the right.",
+  "subassemblies": [
+    {
+      "name": "Legs & boots base",
+      "description": "1 pair of blocky legs (2 legs) with 2 feet blocks; build as a 4x3-ish lower body pedestal using 6 bricks and 6 plates to suggest separated legs and squared boots.",
+      "imageRegion": "lower third, centered",
+      "boundingBox": {
+        "x": 0.28,
+        "y": 0.63,
+        "width": 0.44,
+        "height": 0.34
+      },
+      "estimatedPieces": 12
+    },
+    {
+      "name": "Torso & belt",
+      "description": "1 torso block with 1 belt stripe: stack 8 bricks for the chest/waist, add 4 plates as a belt band across the front, and 2 small plates/tiles as a belt buckle/pouch detail.",
+      "imageRegion": "middle, centered",
+      "boundingBox": {
+        "x": 0.22,
+        "y": 0.34,
+        "width": 0.5,
+        "height": 0.34
+      },
+      "estimatedPieces": 14
+    },
+    {
+      "name": "Arms & hands (grip pose)",
+      "description": "2 arms bent forward: build 2 symmetric arm blocks (3 pieces each) and 2 hands (1 piece each) that meet at center to hold the hilt; total 8 pieces for both arms/hands.",
+      "imageRegion": "middle, slightly right of center",
+      "boundingBox": {
+        "x": 0.3,
+        "y": 0.36,
+        "width": 0.5,
+        "height": 0.28
+      },
+      "estimatedPieces": 8
+    },
+    {
+      "name": "Head + hair",
+      "description": "1 head block and 1 hair cap: use 6 pieces for a rounded-ish head (2x2 core with 4 surrounding plates/tiles) plus 6 pieces for a swept hair silhouette (stacked plates/curves).",
+      "imageRegion": "top center-left",
+      "boundingBox": {
+        "x": 0.24,
+        "y": 0.03,
+        "width": 0.44,
+        "height": 0.34
+      },
+      "estimatedPieces": 12
+    },
+    {
+      "name": "Lightsaber (hilt + blade)",
+      "description": "1 lightsaber: 1 hilt cylinder/stack (5 pieces) and 1 blue blade beam (6 pieces) extending upward-right.",
+      "imageRegion": "right side, from hands to top-right corner",
+      "boundingBox": {
+        "x": 0.52,
+        "y": 0,
+        "width": 0.46,
+        "height": 0.7
+      },
+      "estimatedPieces": 11
+    }
+  ],
+  "totalEstimatedPieces": 57
+}

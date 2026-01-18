@@ -1,0 +1,66 @@
+{
+  "overview": "Build a small brick-built minifigure-style Jedi holding a blue lightsaber. The model is split into legs/boots, torso/arms pose, head+hair, and the lightsaber (hilt + blade). Colors in your inventory are unspecified, so prioritize shape; use light colors for the outfit and tan/yellow for hair/head if available.",
+  "subassemblies": [
+    {
+      "name": "Legs & Boots",
+      "description": "1 pair of blocky legs with 2 feet: build a 2x2 hips block, then 2 legs each ~2 studs wide ending in 2 chunky feet. Suggested parts: 6–8 bricks (3003/3004/3005) for the legs, 2 plates (3022/3023) to lock width, and 2 small plates/tiles (3024/3069b) as toe caps (optional).",
+      "imageRegion": "lower third, centered",
+      "boundingBox": {
+        "x": 0.18,
+        "y": 0.55,
+        "width": 0.52,
+        "height": 0.43
+      },
+      "estimatedPieces": 18
+    },
+    {
+      "name": "Torso & Belt Core",
+      "description": "1 torso block (chest/robe) with 1 belt band: make a 2x3 or 2x4 chest, 3–4 bricks tall. Add a 1-plate-thick belt stripe around the waist using 1x2 and 1x4 plates/tiles (3023/3710/3069b). Optional: add a small front buckle/pouch with 1x1 plates (3024) and a jumper/modified plate if available (e.g., 3795) to create a centered detail.",
+      "imageRegion": "middle, centered",
+      "boundingBox": {
+        "x": 0.16,
+        "y": 0.28,
+        "width": 0.56,
+        "height": 0.36
+      },
+      "estimatedPieces": 34
+    },
+    {
+      "name": "Arms & Hands (Saber Pose)",
+      "description": "2 arms bent forward + 2 hands clasping: build each arm as a 1-stud-thick stack using 1x2 plates (3023) and 1x1 plates (3024) to step inward toward the center. Create 2 hands as small 1x1 or 1x2 end caps (3024/3023) that meet at the centerline to \"grip\" the hilt. Reinforce shoulders into the torso with 1x4 plates (3710) or 2x plates spanning torso to arm roots.",
+      "imageRegion": "middle-right (arms extend toward the saber)",
+      "boundingBox": {
+        "x": 0.22,
+        "y": 0.28,
+        "width": 0.7,
+        "height": 0.42
+      },
+      "estimatedPieces": 28
+    },
+    {
+      "name": "Head & Hair",
+      "description": "1 head block + 1 hair cap: make a 2x2 head, 2 bricks tall (3003/3004). For hair, build a rounded/angled cap using 4–8 slopes/curved pieces from your pool (e.g., 3062b/3040b/3039/2420) arranged to overhang the forehead and sides. Add a small chin/mouth hint with a dark 1x1 tile/plate on the front (optional).",
+      "imageRegion": "top-left/upper center",
+      "boundingBox": {
+        "x": 0.1,
+        "y": 0.02,
+        "width": 0.56,
+        "height": 0.34
+      },
+      "estimatedPieces": 22
+    },
+    {
+      "name": "Lightsaber (Hilt + Blue Blade)",
+      "description": "1 hilt + 1 blade: build the hilt as a 1x1 round/stacked cylinder look using 1x1 plates/bricks and any round/clip-looking elements you have (use 1x1 plates 3024 plus small cylinders if present; otherwise a 1x1 brick stack). For the blade, make a long, thin bar using a 1xN plate stack (e.g., 1x6 3666 + 1x4 3710) with a taper at the tip using a 1x2 or 1x1 plate (3023/3024). Attach blade to hilt as a straight continuation.",
+      "imageRegion": "upper right (diagonal blue sword)",
+      "boundingBox": {
+        "x": 0.48,
+        "y": 0.02,
+        "width": 0.52,
+        "height": 0.7
+      },
+      "estimatedPieces": 16
+    }
+  ],
+  "totalEstimatedPieces": 118
+}

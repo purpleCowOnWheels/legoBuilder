@@ -1,0 +1,54 @@
+{
+  "overview": "Build a minifigure-scale Jedi-like character holding a lightsaber: white outfit with belt, blond hair, and a blue blade. Break into head/hair, torso/arms, legs/stance, and lightsaber accessory.",
+  "subassemblies": [
+    {
+      "name": "Head + Hair",
+      "description": "1 head (skin-tone) with 2 printed eyes/eyebrows and 1 mouth; 1 blond hairpiece swept to the sides (or brick-built hair: 1 top cap + 6–10 curved/cheese slopes layered).",
+      "imageRegion": "top center",
+      "boundingBox": {
+        "x": 0.18,
+        "y": 0.02,
+        "width": 0.52,
+        "height": 0.33
+      },
+      "estimatedPieces": 12
+    },
+    {
+      "name": "Torso + Arms (Robe + Belt)",
+      "description": "1 torso core in white with robe folds; 2 arms in white; 2 hands in skin-tone; 1 belt accent at waist (e.g., 1 thin plate/tiles in dark color + 1 small pouch tile/plate).",
+      "imageRegion": "middle left/center",
+      "boundingBox": {
+        "x": 0.08,
+        "y": 0.26,
+        "width": 0.62,
+        "height": 0.38
+      },
+      "estimatedPieces": 28
+    },
+    {
+      "name": "Legs + Feet (White Pants)",
+      "description": "2 legs in white; 2 feet blocks; add 2 tan/gold accent lines on each thigh/shin using small tiles/plates (4–8 small detail pieces total) to mimic printed leg patterns; stance slightly offset (one leg forward).",
+      "imageRegion": "lower center",
+      "boundingBox": {
+        "x": 0.12,
+        "y": 0.56,
+        "width": 0.55,
+        "height": 0.42
+      },
+      "estimatedPieces": 22
+    },
+    {
+      "name": "Lightsaber (Hilt + Blue Blade)",
+      "description": "1 cylindrical hilt (stack of 3–5 round/cylinder-like elements: 1 emitter, 1 grip, 1 pommel); 1 blue blade (1 bar/rod or stacked transparent pieces) extending upward; 2 hands positioned together on the hilt (already counted in torso).",
+      "imageRegion": "right side, extending from mid-body to top-right",
+      "boundingBox": {
+        "x": 0.38,
+        "y": 0.09,
+        "width": 0.6,
+        "height": 0.77
+      },
+      "estimatedPieces": 10
+    }
+  ],
+  "totalEstimatedPieces": 72
+}
