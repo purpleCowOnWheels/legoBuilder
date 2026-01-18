@@ -17,7 +17,7 @@
  *   3. Assemble final product and validate (skipped in debug mode)
  */
 
-import { generateBlueprintMultiPhase } from "@/lib/openai";
+import { generateBlueprintMultiPhase, setRunLogDir } from "@/lib/openai";
 import { readDb } from "@/lib/storage";
 import type { InventoryItem } from "@/lib/models";
 import fs from "node:fs";
@@ -59,29 +59,28 @@ function parseArgs(): Args {
 async function main() {
   const args = parseArgs();
   
-  console.log("========================================");
-  console.log("MULTI-PHASE LEGO BUILD PIPELINE");
-  console.log("========================================");
-  console.log(`Mode: ${args.fullMode ? "FULL (all subassemblies + final assembly)" : "DEBUG (first subassembly only)"}`);
-  console.log("");
-  
   // Setup logging directory
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
   const logDir = path.join(process.cwd(), "data", "pipeline-output", `run_${timestamp}`);
   fs.mkdirSync(logDir, { recursive: true });
   
-  console.log(`Log directory: ${logDir}\n`);
+  // Direct all debug artifacts to this run's folder
+  setRunLogDir(logDir);
   
   // Copy input image to log directory
   const inputImageDest = path.join(logDir, "00_input_image.png");
   fs.copyFileSync(args.imagePath, inputImageDest);
-  console.log(`Input image copied to: ${inputImageDest}\n`);
   
   // Load inventory
-  console.log("Loading inventory...");
   const db = readDb();
   const inventory: InventoryItem[] = db.inventory || [];
-  console.log(`  → ${inventory.length} unique part types loaded\n`);
+  
+  console.log("══════════════════════════════════════════════════");
+  console.log("LEGO BUILD PIPELINE");
+  console.log("══════════════════════════════════════════════════");
+  console.log(`Mode: ${args.fullMode ? "Full" : "Debug (1 sub-assembly)"}`);
+  console.log(`Inventory: ${inventory.length} part types`);
+  console.log(`Output: ${logDir}`);
   
   if (inventory.length === 0) {
     console.error("Error: Inventory is empty!");
@@ -98,7 +97,7 @@ async function main() {
       debugMode: !args.fullMode
     });
     
-    // Save final summary
+    // Save final summary to file
     const summary = {
       timestamp,
       inputImage: args.imagePath,
@@ -116,42 +115,10 @@ async function main() {
     const summaryPath = path.join(logDir, "99_summary.json");
     fs.writeFileSync(summaryPath, JSON.stringify(summary, null, 2), "utf8");
     
-    console.log("\n========================================");
-    console.log("SUMMARY");
-    console.log("========================================");
-    console.log(`Structure plan: ${logDir}/01_structure_plan_output.json`);
-    console.log(`\nSubassembly plans (Phase 2a):`);
-    result.structurePlan.subassemblies.forEach((sa, i) => {
-      const safeName = sa.name.replace(/[^a-z0-9]/gi, '_');
-      console.log(`  ${i + 1}. ${sa.name}`);
-      console.log(`     Plan: ${logDir}/02a_subassembly_plan_${safeName}_output.json`);
-    });
-    
-    console.log(`\nSubassembly builds (Phase 2b):`);
-    result.subassemblyResults.forEach((sa, i) => {
-      const safeName = sa.subassembly_name.replace(/[^a-z0-9]/gi, '_');
-      console.log(`  ${i + 1}. ${sa.subassembly_name}`);
-      console.log(`     LDraw: ${logDir}/02b_subassembly_build_${safeName}_ldraw.mpd`);
-      console.log(`     Validation: ${logDir}/02b_subassembly_build_${safeName}_validation.json`);
-    });
-    
-    if (result.finalMpd) {
-      console.log(`\nFinal assembly (Phase 3):`);
-      console.log(`  Input: ${logDir}/03_final_assembly_input_combined.mpd`);
-      console.log(`  Output: ${logDir}/03_final_assembly_output.mpd`);
-      console.log(`  Validation: ${logDir}/03_final_assembly_validation.json`);
-    } else {
-      console.log(`\nFinal assembly: skipped (debug mode)`);
-    }
-    
-    console.log(`\nSummary: ${summaryPath}`);
-    
     if (!args.fullMode) {
-      console.log("\n💡 To run full pipeline with all subassemblies + final assembly:");
-      console.log(`   npx tsx scripts/run-multiphase-pipeline.ts --image ${args.imagePath} --full`);
+      console.log("\nTo run full pipeline:");
+      console.log(`  npx tsx scripts/run-multiphase-pipeline.ts --image ${args.imagePath} --full`);
     }
-    
-    console.log("\n✓ Pipeline complete!");
     
   } catch (error) {
     console.error("\n✗ Pipeline failed:");
@@ -167,6 +134,9 @@ async function main() {
     console.error(`\nError log saved to: ${errorPath}`);
     
     process.exit(1);
+  } finally {
+    // Reset log directory for future runs
+    setRunLogDir(null);
   }
 }
 

@@ -6,6 +6,124 @@ import { TokenTracker, calculateCost, formatUsageEntry, type TokenUsage } from "
 import fs from "node:fs";
 import path from "node:path";
 
+// =============================================================================
+// Run-specific logging directory management
+// =============================================================================
+// When a pipeline run starts, it should call setRunLogDir() to direct all debug
+// artifacts to its run-specific folder instead of the global openai-debug folder.
+
+let _currentRunLogDir: string | null = null;
+
+/**
+ * Set the log directory for the current run.
+ * All debug artifacts will be written to subdirectories of this path.
+ * Call with null to reset to default (data/openai-debug).
+ */
+export function setRunLogDir(logDir: string | null) {
+  _currentRunLogDir = logDir;
+  if (logDir) {
+    // Create standard subdirectories
+    fs.mkdirSync(path.join(logDir, "api_calls"), { recursive: true });
+    fs.mkdirSync(path.join(logDir, "renders"), { recursive: true });
+    
+    // Initialize pipeline.log
+    const pipelineLog = path.join(logDir, "pipeline.log");
+    fs.writeFileSync(pipelineLog, `=== LEGO Build Pipeline ===\nStarted: ${new Date().toISOString()}\n`);
+  }
+}
+
+/**
+ * Get the current run's log directory, or null if not set.
+ */
+export function getRunLogDir(): string | null {
+  return _currentRunLogDir;
+}
+
+// =============================================================================
+// Simple status logger for human-readable progress
+// =============================================================================
+
+let _currentSubassemblyLog: string | null = null;
+
+function setCurrentSubassemblyLog(logPath: string | null) {
+  _currentSubassemblyLog = logPath;
+}
+
+function timestamp(): string {
+  return new Date().toISOString().slice(11, 19); // HH:MM:SS
+}
+
+function status(message: string, indent = 0) {
+  const prefix = "  ".repeat(indent);
+  const line = `${prefix}${message}`;
+  console.log(line);
+  
+  // Write to subassembly log if active
+  if (_currentSubassemblyLog && _currentRunLogDir) {
+    const logLine = `[${timestamp()}] ${line}\n`;
+    fs.appendFileSync(_currentSubassemblyLog, logLine);
+  }
+}
+
+function statusHeader(step: number, title: string) {
+  const line1 = `\n${"─".repeat(50)}`;
+  const line2 = `Step ${step}: ${title}`;
+  const line3 = "─".repeat(50);
+  console.log(line1);
+  console.log(line2);
+  console.log(line3);
+  
+  // Write to pipeline log
+  if (_currentRunLogDir) {
+    const pipelineLog = path.join(_currentRunLogDir, "pipeline.log");
+    fs.appendFileSync(pipelineLog, `\n[${timestamp()}] === Step ${step}: ${title} ===\n`);
+  }
+}
+
+function statusResult(label: string, success: boolean, detail?: string) {
+  const icon = success ? "✓" : "✗";
+  const suffix = detail ? ` (${detail})` : "";
+  const line = `  ${icon} ${label}${suffix}`;
+  console.log(line);
+  
+  // Write to subassembly log if active
+  if (_currentSubassemblyLog && _currentRunLogDir) {
+    fs.appendFileSync(_currentSubassemblyLog, `[${timestamp()}] ${line}\n`);
+  }
+}
+
+/**
+ * Create a clean folder name from a subassembly name.
+ * - Lowercase
+ * - Replace non-alphanumeric with underscores
+ * - Collapse multiple underscores
+ * - Trim leading/trailing underscores
+ */
+function toFolderName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')  // Replace non-alphanumeric sequences with single underscore
+    .replace(/^_|_$/g, '');        // Trim leading/trailing underscores
+}
+
+/**
+ * Write to subassembly log file only (no console output).
+ * Used for detailed progress during parallel builds.
+ */
+function logToFile(message: string) {
+  if (_currentSubassemblyLog) {
+    fs.appendFileSync(_currentSubassemblyLog, `[${timestamp()}] ${message}\n`);
+  }
+}
+
+function pipelineStatus(subassemblyName: string, stage: string) {
+  // Write high-level status to pipeline.log
+  if (_currentRunLogDir) {
+    const pipelineLog = path.join(_currentRunLogDir, "pipeline.log");
+    fs.appendFileSync(pipelineLog, `[${timestamp()}] ${subassemblyName}: ${stage}\n`);
+  }
+}
+
 /**
  * Visual feedback mode controls when rendered images are sent back to GPT for visual review.
  * 
@@ -108,6 +226,89 @@ export type OpenAIValidateEvent =
       trigger: "subassembly_boundary" | "final_validation";
     };
 
+/**
+ * Parse SSE (Server-Sent Events) stream from OpenAI streaming response.
+ * Accumulates events and returns the final response from the "response.completed" event.
+ */
+async function parseSSEStream(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  onProgress?: (event: { type: string; data?: unknown }) => void
+): Promise<OpenAIResponse> {
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let finalResponse: OpenAIResponse | null = null;
+  const eventTypes = new Set<string>();
+  let eventCount = 0;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    
+    // Keep the last incomplete line in the buffer
+    buffer = lines.pop() || "";
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith(":")) continue; // Skip empty lines and comments
+      
+      if (trimmed === "data: [DONE]") {
+        continue; // End of stream marker
+      }
+
+      if (trimmed.startsWith("data: ")) {
+        try {
+          const jsonStr = trimmed.slice(6); // Remove "data: " prefix
+          const event = JSON.parse(jsonStr);
+          eventCount++;
+          
+          // Track event types for debugging
+          if (event.type) {
+            eventTypes.add(event.type);
+          }
+          
+          // Report progress for certain event types
+          if (onProgress) {
+            onProgress({ type: event.type, data: event });
+          }
+
+          // The "response.completed" event signals successful completion
+          // The response data may be in event.response or at the event root level
+          if (event.type === "response.completed") {
+            if (event.response) {
+              finalResponse = event.response as OpenAIResponse;
+            } else if (event.id && event.output) {
+              // Response data is at the root level of the event
+              finalResponse = event as OpenAIResponse;
+            }
+          }
+          
+          // Also check for "response.done" (legacy/alternative event name)
+          if (event.type === "response.done") {
+            if (event.response) {
+              finalResponse = event.response as OpenAIResponse;
+            } else if (event.id && event.output) {
+              finalResponse = event as OpenAIResponse;
+            }
+          }
+        } catch {
+          // Skip malformed JSON lines
+        }
+      }
+    }
+  }
+
+  if (!finalResponse) {
+    // Log what we did receive for debugging
+    logOpenAI("warn", `Stream ended without final response. Received ${eventCount} events. Types: ${Array.from(eventTypes).join(", ") || "none"}`);
+    throw new Error("Stream ended without receiving response.completed event");
+  }
+
+  return finalResponse;
+}
+
 async function fetchResponsesJsonWithRetry(params: {
   apiKey: string;
   body: Record<string, unknown>;
@@ -119,7 +320,13 @@ async function fetchResponsesJsonWithRetry(params: {
   
   // Log the request being sent
   const summary = summarizeRequestBody(params.body);
-  logOpenAI("info", `API Request [round ${params.roundForLogging}]: model=${params.body.model}, input=${summary.inputType}(len=${summary.inputLength}), images=${summary.imageCount}, tools=${params.body.tools ? (params.body.tools as unknown[]).length : 0}`);
+  const toolCount = params.body.tools ? (params.body.tools as unknown[]).length : 0;
+  const imageInfo = summary.imageCount > 0 ? `, ${summary.imageCount} image(s)` : "";
+  const toolInfo = toolCount > 0 ? `, ${toolCount} tool(s)` : "";
+  logOpenAI("info", `  [Round ${params.roundForLogging}] Calling ${params.body.model}${imageInfo}${toolInfo}...`);
+  
+  // Use streaming to prevent network-level timeouts on long requests
+  const useStreaming = true;
   
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const startMs = Date.now();
@@ -127,12 +334,17 @@ async function fetchResponsesJsonWithRetry(params: {
       // Hard timeout so a single OpenAI request can't hang indefinitely.
       // Extended reasoning + tool loops + visual feedback can take longer.
       // Use environment variable or default based on context.
-      const defaultTimeout = 360_000; // 6 minutes default for reasoning models
+      const defaultTimeout = 900_000; // 15 minutes default for reasoning models with complex tasks
       const timeoutMs = process.env.OPENAI_TIMEOUT_MS 
         ? parseInt(process.env.OPENAI_TIMEOUT_MS, 10) 
         : defaultTimeout;
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+      // Add stream: true to the request body
+      const requestBody = useStreaming 
+        ? { ...params.body, stream: true }
+        : params.body;
 
       const res = await fetch(endpoint, {
         method: "POST",
@@ -140,15 +352,14 @@ async function fetchResponsesJsonWithRetry(params: {
           Authorization: `Bearer ${params.apiKey}`,
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(params.body),
+        body: JSON.stringify(requestBody),
         signal: controller.signal
       });
-      clearTimeout(timeout);
 
-      const rawText = await res.text();
-      const durationMs = Date.now() - startMs;
-      
       if (!res.ok) {
+        clearTimeout(timeout);
+        const rawText = await res.text();
+        const durationMs = Date.now() - startMs;
         logOpenAI("error", `API Error [round ${params.roundForLogging}]: status=${res.status}, duration=${durationMs}ms`, rawText.slice(0, 500));
         
         // Retry transient OpenAI/server issues.
@@ -161,11 +372,35 @@ async function fetchResponsesJsonWithRetry(params: {
         throw new Error(`OpenAI error ${res.status}: ${rawText}`);
       }
 
-      const responseJson = JSON.parse(rawText) as OpenAIResponse;
+      let responseJson: OpenAIResponse;
+      
+      if (useStreaming && res.body) {
+        // Parse streaming response
+        const reader = res.body.getReader();
+        let lastProgressLog = Date.now();
+        
+        responseJson = await parseSSEStream(reader, (event) => {
+          // Log progress every 30 seconds to show the connection is alive
+          const now = Date.now();
+          if (now - lastProgressLog > 30000) {
+            const elapsedSec = ((now - startMs) / 1000).toFixed(0);
+            logOpenAI("info", `  [Round ${params.roundForLogging}] Still processing... (${elapsedSec}s)`);
+            lastProgressLog = now;
+          }
+        });
+      } else {
+        // Non-streaming fallback
+        const rawText = await res.text();
+        responseJson = JSON.parse(rawText) as OpenAIResponse;
+      }
+      
+      clearTimeout(timeout);
+      const durationMs = Date.now() - startMs;
       const usage = (responseJson as any).usage;
       
       // Log the response
-      logOpenAI("info", `API Response [round ${params.roundForLogging}]: status=${responseJson.status}, duration=${durationMs}ms, tokens=${usage?.total_tokens || "?"}`);
+      const durationSec = (durationMs / 1000).toFixed(1);
+      logOpenAI("info", `  [Round ${params.roundForLogging}] Response received (${durationSec}s, ${usage?.total_tokens || "?"} tokens)`);
       
       // Write full API call artifact for debugging
       writeApiCallArtifact({
@@ -257,26 +492,25 @@ function isDebugEnabled() {
 // Always log OpenAI communication to console (regardless of DEBUG_OPENAI)
 // DEBUG_OPENAI controls whether full artifacts are written to disk
 function logOpenAI(level: "info" | "debug" | "warn" | "error", message: string, data?: unknown) {
-  const timestamp = new Date().toISOString();
-  const prefix = `[openai ${timestamp}]`;
-  
   if (level === "error") {
     // eslint-disable-next-line no-console
-    console.error(`${prefix} ${message}`, data ? JSON.stringify(data, null, 2).slice(0, 2000) : "");
+    console.error(message, data ? JSON.stringify(data, null, 2).slice(0, 2000) : "");
   } else if (level === "warn") {
     // eslint-disable-next-line no-console
-    console.warn(`${prefix} ${message}`, data ? JSON.stringify(data, null, 2).slice(0, 1000) : "");
+    console.warn(message, data ? JSON.stringify(data, null, 2).slice(0, 1000) : "");
   } else if (level === "debug" && isDebugEnabled()) {
     // eslint-disable-next-line no-console
-    console.log(`${prefix} [debug] ${message}`, data ? JSON.stringify(data, null, 2).slice(0, 2000) : "");
+    console.log(`[debug] ${message}`, data ? JSON.stringify(data, null, 2).slice(0, 2000) : "");
   } else if (level === "info") {
     // eslint-disable-next-line no-console
-    console.log(`${prefix} ${message}`);
+    console.log(message);
   }
 }
 
-function getDebugDir() {
-  const dir = path.join(process.cwd(), "data", "openai-debug");
+function getDebugDir(subdir?: "api_calls" | "renders") {
+  // Use run-specific directory if set, otherwise fall back to global openai-debug
+  const baseDir = _currentRunLogDir || path.join(process.cwd(), "data", "openai-debug");
+  const dir = subdir ? path.join(baseDir, subdir) : baseDir;
   fs.mkdirSync(dir, { recursive: true });
   return dir;
 }
@@ -294,7 +528,7 @@ function writeOpenAIDebugArtifact(params: {
 }) {
   if (!isDebugEnabled()) return null as string | null;
 
-  const dir = getDebugDir();
+  const dir = getDebugDir("api_calls");
   const id = generateArtifactId(params.tag);
   const filePath = path.join(dir, `${id}.json`);
 
@@ -309,7 +543,7 @@ function writeOpenAIDebugArtifact(params: {
   };
 
   fs.writeFileSync(filePath, JSON.stringify(payload, null, 2), "utf8");
-  logOpenAI("info", `Debug artifact written: ${filePath}`);
+  logOpenAI("debug", `Debug artifact written: ${filePath}`);
   return id;
 }
 
@@ -329,7 +563,7 @@ function writeApiCallArtifact(params: {
 }) {
   if (!isDebugEnabled()) return null as string | null;
 
-  const dir = getDebugDir();
+  const dir = getDebugDir("api_calls");
   const id = generateArtifactId(params.tag);
   const filePath = path.join(dir, `${id}.json`);
 
@@ -362,7 +596,7 @@ function writeApiCallArtifact(params: {
   };
 
   fs.writeFileSync(filePath, JSON.stringify(payload, null, 2), "utf8");
-  logOpenAI("info", `API call artifact: ${filePath}`);
+  logOpenAI("debug", `API call artifact: ${filePath}`);
   return id;
 }
 
@@ -378,7 +612,7 @@ function saveImageArtifact(params: {
 }): string | null {
   if (!isDebugEnabled()) return null;
 
-  const dir = getDebugDir();
+  const dir = getDebugDir("renders");
   const id = generateArtifactId(params.tag);
   const imagePath = path.join(dir, `${id}.png`);
   const metaPath = path.join(dir, `${id}_meta.json`);
@@ -400,7 +634,7 @@ function saveImageArtifact(params: {
   };
   fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2), "utf8");
 
-  logOpenAI("info", `Image artifact saved: ${imagePath} (${buffer.length} bytes, purpose: ${params.purpose})`);
+  logOpenAI("debug", `Image artifact saved: ${imagePath} (${buffer.length} bytes, purpose: ${params.purpose})`);
   return id;
 }
 
@@ -485,7 +719,7 @@ function writeToolArtifact(params: {
 }) {
   if (!isDebugEnabled()) return null as string | null;
 
-  const dir = getDebugDir();
+  const dir = getDebugDir("api_calls");
   const id = generateArtifactId(params.tag);
   const filePath = path.join(dir, `${id}.json`);
 
@@ -643,7 +877,7 @@ async function callOpenAIJson<T>(
   }
 
   // Log the request
-  logOpenAI("info", `callOpenAIJson: schema=${params.schemaName}, model=${model}, promptLen=${params.prompt.length}`);
+  logOpenAI("info", `Requesting ${params.schemaName}...`);
 
   const body: Record<string, unknown> = {
     model,
@@ -684,7 +918,7 @@ async function callOpenAIJson<T>(
   const text = extractTextFromResponses(json);
   try {
     const parsed = parseJsonObjectFromText(text) as T;
-    logOpenAI("info", `callOpenAIJson: Success (schema=${params.schemaName})`);
+    logOpenAI("info", `✓ ${params.schemaName} received`);
     return { parsed, model, rawResponseJson: json, extractedText: text };
   } catch {
     logOpenAI("error", `callOpenAIJson: JSON parse failed (schema=${params.schemaName})`);
@@ -716,7 +950,8 @@ async function callOpenAIJsonInput<T>(
 
   // Log the request
   const inputSummary = summarizeRequestBody({ input: params.input });
-  logOpenAI("info", `callOpenAIJsonInput: schema=${params.schemaName}, model=${model}, input=${inputSummary.inputType}(len=${inputSummary.inputLength}), images=${inputSummary.imageCount}`);
+  const imageNote = inputSummary.imageCount > 0 ? ` with ${inputSummary.imageCount} image(s)` : "";
+  logOpenAI("info", `Requesting ${params.schemaName}${imageNote}...`);
 
   const body: Record<string, unknown> = {
     model,
@@ -756,7 +991,7 @@ async function callOpenAIJsonInput<T>(
   const text = extractTextFromResponses(json);
   try {
     const parsed = parseJsonObjectFromText(text) as T;
-    logOpenAI("info", `callOpenAIJsonInput: Success (schema=${params.schemaName})`);
+    logOpenAI("info", `✓ ${params.schemaName} received`);
     return { parsed, model, rawResponseJson: json, extractedText: text };
   } catch {
     logOpenAI("error", `callOpenAIJsonInput: JSON parse failed (schema=${params.schemaName})`);
@@ -903,20 +1138,41 @@ async function callOpenAIJsonWithToolLoop<T>(params: {
     "The server will automatically:",
     "- Combine it with previous chunks",
     "- Run structure validation (syntax, part lines, coordinates)",
-    "- Run continuity checks (alignment, isolated parts)"
+    "- Run continuity checks (alignment, isolated parts)",
+    "- Render the current build and return the image"
   ];
   
-  if (validationLevel === "full_validation") {
-    descriptionParts.push("- Run render comparison against reference image");
-    descriptionParts.push("- Check subassembly positioning");
-    if (shouldIncludeVisualFeedback) {
-      descriptionParts.push("");
-      descriptionParts.push("After validation, you will receive a rendered image. Compare it to the reference and fix any issues.");
-    }
+  if (params.isFinalValidation) {
+    descriptionParts.push("- Compare rendered image to reference (similarity scoring)");
+    descriptionParts.push("");
+    descriptionParts.push("This is the FINAL validation - similarity score must pass threshold.");
+    descriptionParts.push("");
+    descriptionParts.push("IMPORTANT: When you receive the rendered image, carefully check for:");
+    descriptionParts.push("1. Discontinuities/floating parts (all pieces must connect)");
+    descriptionParts.push("2. Gaps or holes in surfaces that should be solid");
+    descriptionParts.push("3. Missing key features from the reference");
+    descriptionParts.push("4. Wrong proportions or orientations");
+    descriptionParts.push("5. Structural stability issues");
+    descriptionParts.push("6. Major deviations from the description");
+  } else if (shouldIncludeVisualFeedback) {
+    descriptionParts.push("");
+    descriptionParts.push("You will receive a rendered image of your subassembly.");
+    descriptionParts.push("");
+    descriptionParts.push("COMPARE TO REFERENCE: Look at the INPUT/REFERENCE IMAGE and find the sub-region that corresponds to this subassembly. Your render should match that sub-region's shape and structure.");
+    descriptionParts.push("");
+    descriptionParts.push("CHECK FOR ISSUES:");
+    descriptionParts.push("1. DISCONTINUITIES: Floating/disconnected parts (critical - fix immediately)");
+    descriptionParts.push("2. GAPS: Unintentional holes where surfaces should be solid");
+    descriptionParts.push("3. MISSING FEATURES: Key visual elements from that sub-region not present");
+    descriptionParts.push("4. PROPORTIONS: Shape doesn't match the sub-region (too wide, tall, thin, etc.)");
+    descriptionParts.push("5. ORIENTATION: Parts facing wrong direction vs reference");
+    descriptionParts.push("6. STRUCTURAL ISSUES: Parts that wouldn't stay connected in real LEGO");
+    descriptionParts.push("");
+    descriptionParts.push("If ANY issue is found, fix it and re-validate. Focus especially on discontinuities.");
   }
   
   descriptionParts.push("");
-  descriptionParts.push("Returns ok=true if valid, ok=false with error details if not.");
+  descriptionParts.push("Returns ok=true if structure is valid. For subassemblies, YOU decide if the visual matches.");
 
   const tools = [
     {
@@ -1021,11 +1277,9 @@ async function callOpenAIJsonWithToolLoop<T>(params: {
 
     // Execute tool calls locally, then send tool outputs back and continue.
     // Log full tool call arguments for debugging
-    logOpenAI("info", `Tool calls received [round ${round + 1}]: ${toolCalls.length} call(s)`);
+    logOpenAI("info", `  [Round ${round + 1}] Validating ${toolCalls.length} chunk(s)...`);
     for (const c of toolCalls) {
       const args = parseToolArgs(c.arguments) as any;
-      const chunkBody = typeof args.chunk_body === "string" ? args.chunk_body : "";
-      logOpenAI("info", `  Tool ${c.name} (${c.id}): chunk_body=${chunkBody.length} chars`);
       logOpenAI("debug", `  Full args for ${c.id}:`, args);
     }
     
@@ -1085,7 +1339,12 @@ async function callOpenAIJsonWithToolLoop<T>(params: {
       const assembledBody = params.assembledMpdSoFar 
         ? [params.assembledMpdSoFar.trim(), chunkBody.trim()].filter(Boolean).join("\n")
         : chunkBody.trim();
-      const assembledMpd = `0 FILE model.ldr\n${assembledBody}\n0 NOFILE`;
+      
+      // Don't wrap if the content already has FILE declarations (multi-file MPD)
+      const hasFileDeclarations = /^0\s+FILE\s+/m.test(assembledBody);
+      const assembledMpd = hasFileDeclarations
+        ? assembledBody  // Already structured, don't wrap
+        : `0 FILE model.ldr\n${assembledBody}\n0 NOFILE`;  // Simple chunk needs wrapper
       
       // Count pieces in this chunk and total accumulated
       const countPiecesInMpd = (mpd: string): number => {
@@ -1096,14 +1355,17 @@ async function callOpenAIJsonWithToolLoop<T>(params: {
         }).length;
       };
       
-      const chunkMpd = `0 FILE model.ldr\n${chunkBody.trim()}\n0 NOFILE`;
+      // For piece counting, handle both wrapped and unwrapped formats
+      const chunkHasFileDeclarations = /^0\s+FILE\s+/m.test(chunkBody.trim());
+      const chunkMpd = chunkHasFileDeclarations
+        ? chunkBody.trim()
+        : `0 FILE model.ldr\n${chunkBody.trim()}\n0 NOFILE`;
       const piecesInChunk = countPiecesInMpd(chunkMpd);
       const piecesInTotal = countPiecesInMpd(assembledMpd);
       
       // Log piece counts
       // eslint-disable-next-line no-console
-      console.log(`[Validation Round ${round + 1}] Pieces: +${piecesInChunk} in this chunk, ${piecesInTotal} total accumulated`);
-      logOpenAI("info", `  Piece count: +${piecesInChunk} this chunk, ${piecesInTotal} total`);
+      console.log(`[Validation Round ${round + 1}] Pieces: +${piecesInChunk} (${piecesInTotal} total)`);
       
       // SERVER-SIDE: Determine what to validate
       // For subassembly boundaries, only validate the CURRENT chunk (not accumulated build)
@@ -1113,7 +1375,9 @@ async function callOpenAIJsonWithToolLoop<T>(params: {
         : assembledMpd;  // Full accumulated build for final validation
       
       // SERVER-SIDE: Determine what validation to run
-      const doRenderComparison = validationLevel === "full_validation" && !!hasReferenceImage;
+      // Only do similarity comparison for FINAL validation - subassemblies just render for visual feedback
+      // GPT can see the render and decide if it looks right (semantic validation vs pixel comparison)
+      const doRenderComparison = params.isFinalValidation && !!hasReferenceImage;
       const hasBlueprint = params.blueprint && params.blueprint.subassemblies && params.blueprint.subassemblies.length > 0;
       
       const validationInput: RenderValidationInput = {
@@ -1148,9 +1412,9 @@ async function callOpenAIJsonWithToolLoop<T>(params: {
           toolCallId: c.id
         });
         if (progressImageId) {
-          logOpenAI("info", `  Progress image saved: ${progressImageId} (${validationLevel})`);
+          logOpenAI("debug", `  Progress image saved: ${progressImageId} (${validationLevel})`);
           // Build full path to the saved image
-          const debugDir = getDebugDir();
+          const debugDir = getDebugDir("renders");
           progressImagePath = path.join(debugDir, `${progressImageId}.png`);
         }
       }
@@ -1193,13 +1457,12 @@ async function callOpenAIJsonWithToolLoop<T>(params: {
       ? (params.isFinalValidation ? "final_model" : "subassembly")
       : "partial_build";
     
-    logOpenAI("info", `Tool results [round ${round + 1}]: ${toolOutputs.length} result(s)`);
     for (const t of toolOutputs) {
       try {
         const r = JSON.parse(t.output);
-        const okStatus = r.ok ? "✓ PASSED" : "✗ FAILED";
-        const similarity = r.similarity_score !== undefined ? ` (similarity: ${r.similarity_score}%)` : "";
-        logOpenAI("info", `  ${t.tool_call_id}: ${okStatus}${similarity}`);
+        const okStatus = r.ok ? "✓ Validation passed" : "✗ Validation failed";
+        const similarity = r.similarity_score !== undefined ? ` (${r.similarity_score}% similarity)` : "";
+        logOpenAI("info", `  [Round ${round + 1}] ${okStatus}${similarity}`);
         if (!r.ok && r.error) {
           logOpenAI("info", `    Error: ${r.error}`);
         }
@@ -1209,7 +1472,17 @@ async function callOpenAIJsonWithToolLoop<T>(params: {
           }
         }
         logOpenAI("debug", `  Full result for ${t.tool_call_id}:`, r);
-      } catch {
+        
+        // CRITICAL: 0% similarity indicates broken render - fail fast
+        if (r.similarity_score === 0 && validationLevel === "full_validation") {
+          logOpenAI("error", `FATAL: 0% similarity detected - render is likely broken (empty/transparent image)`);
+          logOpenAI("error", `This usually means LDraw file references have issues (spaces in names, missing files, etc.)`);
+          throw new Error("Render failure: 0% similarity indicates broken render output. Check LDraw file references.");
+        }
+      } catch (e) {
+        if (e instanceof Error && e.message.includes("0% similarity")) {
+          throw e; // Re-throw our intentional error
+        }
         logOpenAI("warn", `  ${t.tool_call_id}: Failed to parse output`);
       }
     }
@@ -1269,7 +1542,7 @@ async function callOpenAIJsonWithToolLoop<T>(params: {
     // Add rendered images for visual feedback (if any)
     // Must be wrapped in a "message" with role "user" and content array
     if (renderedImages.length > 0) {
-      logOpenAI("info", `Visual feedback [round ${round + 1}]: Sending ${renderedImages.length} rendered image(s) back to GPT`);
+      logOpenAI("info", `  [Round ${round + 1}] Sending render back to GPT for review...`);
       
       // Save each rendered image for debugging
       for (const img of renderedImages) {
@@ -1281,7 +1554,7 @@ async function callOpenAIJsonWithToolLoop<T>(params: {
           toolCallId: img.tool_call_id
         });
         if (imageId) {
-          logOpenAI("info", `  Saved feedback image: ${imageId}`);
+          logOpenAI("debug", `  Saved feedback image: ${imageId}`);
         }
       }
       
@@ -1289,26 +1562,56 @@ async function callOpenAIJsonWithToolLoop<T>(params: {
       
       // Build context-aware feedback message
       const subassemblyName = params.currentSubassembly || "current section";
-      const targetScore = minSimilarity;
+      let feedbackText: string;
       
-      // Get the similarity score from the validation result
-      let currentScore: number | undefined;
-      try {
-        if (toolOutputs.length > 0) {
-          const result = JSON.parse(toolOutputs[0].output);
-          currentScore = result.similarity_score;
+      // Build the visual validation checklist that applies to all renderings
+      const visualChecklistItems = [
+        "DISCONTINUITIES: Are there floating/disconnected parts? All pieces must connect to the main structure.",
+        "GAPS & HOLES: Are there unintentional gaps where surfaces should be solid or continuous?",
+        "MISSING FEATURES: Are key visual features from the reference/description present?",
+        "PROPORTIONS: Is the overall shape correctly proportioned (not too wide, tall, thin, etc.)?",
+        "ORIENTATION: Are parts facing the correct direction? Check for backwards or upside-down pieces.",
+        "SYMMETRY: If the build should be symmetric, is it balanced on both sides?",
+        "STRUCTURAL STABILITY: Would this build stay together? Are connections secure?",
+        "MAJOR DEVIATIONS: Does the build fundamentally differ from what was described/shown?"
+      ];
+      
+      const checklistFormatted = visualChecklistItems.map((item, i) => `${i + 1}. ${item}`).join("\n");
+      
+      if (params.isFinalValidation) {
+        // Final validation - we have similarity scoring
+        const targetScore = minSimilarity;
+        let currentScore: number | undefined;
+        try {
+          if (toolOutputs.length > 0) {
+            const result = JSON.parse(toolOutputs[0].output);
+            currentScore = result.similarity_score;
+          }
+        } catch {
+          // Ignore parse errors
         }
-      } catch {
-        // Ignore parse errors
+        
+        const scoreInfo = currentScore !== undefined 
+          ? `Current similarity: ${currentScore}% (need ${targetScore}% to pass)`
+          : `Target similarity: ${targetScore}%`;
+        
+        feedbackText = `Here is the rendered output of your complete build. ${scoreInfo}.
+
+VISUAL VALIDATION CHECKLIST - Check each item carefully:
+${checklistFormatted}
+
+Compare this render against the reference image. If ANY checklist item fails, fix the issues and re-validate. Pay special attention to discontinuities and floating parts - these indicate structural problems.`;
+      } else {
+        // Subassembly - no similarity scoring, GPT judges visually
+        feedbackText = `Here is your rendered "${subassemblyName}" subassembly.
+
+COMPARE TO REFERENCE: Find the ${subassemblyName.toUpperCase()} sub-region in the reference image. Your render should match that sub-region's shape, structure, and proportions. Colors are secondary.
+
+VISUAL VALIDATION CHECKLIST - Check each item carefully:
+${checklistFormatted}
+
+If ANY checklist item fails (especially DISCONTINUITIES or MISSING FEATURES), revise your LDraw and re-validate. If it looks correct, you can proceed.`;
       }
-      
-      const scoreInfo = currentScore !== undefined 
-        ? `Current similarity: ${currentScore}% (need ${targetScore}% to pass)`
-        : `Target similarity: ${targetScore}%`;
-      
-      const feedbackText = params.isFinalValidation
-        ? `Here is the rendered output of your complete build. ${scoreInfo}.\n\nCompare it visually to the reference image and identify any discrepancies in shape, proportions, and layout.`
-        : `You just built the "${subassemblyName}" subassembly. ${scoreInfo}.\n\nCompare your render to the ${subassemblyName.toUpperCase()} portion of the reference image. Focus on:\n- Shape and overall form\n- Proportions and scale relative to this section\n- Layout and positioning of key features\n- Colors are secondary (shape/layout matter most)\n\nIgnore other parts of the reference image - only validate this subassembly.`;
       
       messageContent.push({
         type: "input_text",
@@ -1383,6 +1686,8 @@ export async function generateLDrawMpdChunkForIdea(params: {
   currentChunkNumber?: number;
   /** Total number of chunks for piece budget calculation */
   totalChunks?: number;
+  /** Skip validation that requires part lines (for assembly refinement that only adjusts coordinates) */
+  skipPartValidation?: boolean;
 }): Promise<{ chunkBody: string; model: string }> {
   const apiKey = process.env.OPENAI_API_KEY;
   const model = process.env.OPENAI_MODEL;
@@ -1446,8 +1751,16 @@ export async function generateLDrawMpdChunkForIdea(params: {
           "VALIDATION:",
           "- After generating your chunk, call validate_ldraw_chunk with your chunk_body.",
           "- The server handles everything else (combining with previous chunks, determining what to check).",
-          "- If ok=false, fix your output based on the error/issues and re-validate.",
-          "- Only return final JSON when ok=true.",
+          "- You will receive a RENDERED IMAGE of your build. CAREFULLY INSPECT IT for:",
+          "  1. DISCONTINUITIES: Floating/disconnected parts (CRITICAL - all pieces must connect)",
+          "  2. GAPS: Holes where surfaces should be solid",
+          "  3. MISSING FEATURES: Key elements from the description not present",
+          "  4. PROPORTIONS: Shape doesn't match reference (too wide, tall, etc.)",
+          "  5. ORIENTATION: Parts facing wrong direction",
+          "  6. STRUCTURAL ISSUES: Parts that would fall off",
+          "  7. MAJOR DEVIATIONS: Build doesn't match what was described",
+          "- If ok=false OR the render shows ANY of the above issues, fix your LDraw and re-validate.",
+          "- Only return final JSON when ok=true AND the render looks correct.",
           ""
         ].join("\n")
       : "",
@@ -1484,13 +1797,9 @@ export async function generateLDrawMpdChunkForIdea(params: {
   const useToolLoop = params.useValidationToolLoop === true;
   
   // Log chunk generation request
-  logOpenAI("info", `Chunk generation: steps ${stepFrom}-${stepTo}, toolLoop=${useToolLoop}, hasReference=${!!params.referenceImagePath}, assembledSoFar=${soFar.length} chars`);
-  if (params.isSubassemblyBoundary) {
-    logOpenAI("info", `  Subassembly boundary: ${params.currentSubassembly || "unknown"}`);
-  }
-  if (params.isFinalChunk) {
-    logOpenAI("info", `  FINAL CHUNK`);
-  }
+  const chunkInfo = params.isFinalChunk ? " (final)" : "";
+  const subassemblyInfo = params.isSubassemblyBoundary ? ` [${params.currentSubassembly || "subassembly"}]` : "";
+  logOpenAI("info", `Generating steps ${stepFrom}-${stepTo}${subassemblyInfo}${chunkInfo}`);
   
   // Convert blueprint to BlueprintInfo format for validation
   const blueprintForValidation: BlueprintInfo | undefined = params.blueprint ? {
@@ -1530,12 +1839,14 @@ export async function generateLDrawMpdChunkForIdea(params: {
     throw new Error("OpenAI returned invalid chunk_body");
   }
 
-  // Server-side validation:
-  validateLDrawMpdChunkBodyOrThrow({ chunkBody, stepFrom, stepTo });
-  // Also validate assembled MPD so far (including this chunk) as a partial MPD.
-  const assembledParts = [soFar, chunkBody].filter(Boolean).join("\n").trim();
-  const assembledCandidate = ["0 FILE model.ldr", assembledParts, "0 NOFILE"].join("\n");
-  validateLDrawPartialMpdOrThrow(assembledCandidate);
+  // Server-side validation (can be skipped for assembly refinement):
+  if (!params.skipPartValidation) {
+    validateLDrawMpdChunkBodyOrThrow({ chunkBody, stepFrom, stepTo });
+    // Also validate assembled MPD so far (including this chunk) as a partial MPD.
+    const assembledParts = [soFar, chunkBody].filter(Boolean).join("\n").trim();
+    const assembledCandidate = ["0 FILE model.ldr", assembledParts, "0 NOFILE"].join("\n");
+    validateLDrawPartialMpdOrThrow(assembledCandidate);
+  }
 
   return { chunkBody: chunkBody.trim() + "\n", model: resp.model };
 }
@@ -1594,14 +1905,14 @@ export async function analyzeImageForBuild(params: {
     }
   } as const;
 
-  logOpenAI("info", "Image analysis request: extracting title and build description");
+  logOpenAI("info", "Analyzing image...");
 
   const resp = await callOpenAIJsonInput<{ title: string; description: string }>(
     { input: [{ role: "user", content }], schemaName: "lego_build_analysis", schema },
     { reasoningEffort: "medium", maxOutputTokens: 500 }
   );
 
-  logOpenAI("info", `Image analysis complete: title="${resp.parsed?.title}", descLen=${resp.parsed?.description?.length || 0}`);
+  logOpenAI("info", `✓ Image analyzed: "${resp.parsed?.title}"`);
 
   return resp.parsed as { title: string; description: string };
 }
@@ -1789,9 +2100,9 @@ export async function generateStructurePlan(params: {
     throw new Error("Reference image is required for structure plan generation");
   }
 
-  const logPrefix = params.logDir ? `${params.logDir}/01_structure_plan` : null;
-  if (logPrefix) {
-    fs.mkdirSync(path.dirname(logPrefix), { recursive: true });
+  const logDir = params.logDir ? `${params.logDir}/01_structure_plan` : null;
+  if (logDir) {
+    fs.mkdirSync(logDir, { recursive: true });
   }
 
   const inv = inventoryToCompactJson(params.inventory);
@@ -1823,12 +2134,11 @@ export async function generateStructurePlan(params: {
     { type: "input_image", image_url: dataUrl }
   ];
 
-  console.log("\n[PHASE 1] Generating structure plan...");
-  if (logPrefix) {
-    fs.writeFileSync(`${logPrefix}_input.txt`, promptText, "utf8");
-    fs.copyFileSync(params.referenceImagePath, `${logPrefix}_reference.png`);
-    console.log(`  → Input logged: ${logPrefix}_input.txt`);
-    console.log(`  → Reference image: ${logPrefix}_reference.png`);
+  // Log to debug files only
+  logOpenAI("info", "Generating structure plan...");
+  if (logDir) {
+    fs.writeFileSync(`${logDir}/input.txt`, promptText, "utf8");
+    fs.copyFileSync(params.referenceImagePath, `${logDir}/reference.png`);
   }
 
   const schema = {
@@ -1862,21 +2172,11 @@ export async function generateStructurePlan(params: {
     { reasoningEffort: "low", maxOutputTokens: 5000 }
   );
 
-  console.log(`[PHASE 1] ✓ Structure plan generated`);
-  console.log(`  → Model: ${resp.model}`);
-  console.log(`  → Subassemblies: ${resp.parsed?.subassemblies?.length || 0}`);
-  console.log(`  → Estimated pieces: ${resp.parsed?.estimated_total_pieces || "?"}`);
-  
-  if (resp.parsed?.subassemblies) {
-    resp.parsed.subassemblies.forEach((sa, i) => {
-      console.log(`    ${i + 1}. ${sa.name} - ${sa.description}`);
-      console.log(`       Location: ${sa.image_location}`);
-    });
-  }
+  // Log to debug files only
+  logOpenAI("info", `✓ Structure plan: ${resp.parsed?.subassemblies?.length || 0} subassemblies, ~${resp.parsed?.estimated_total_pieces || "?"} pieces`);
 
-  if (logPrefix && resp.parsed) {
-    fs.writeFileSync(`${logPrefix}_output.json`, JSON.stringify(resp.parsed, null, 2), "utf8");
-    console.log(`  → Output logged: ${logPrefix}_output.json`);
+  if (logDir && resp.parsed) {
+    fs.writeFileSync(`${logDir}/output.json`, JSON.stringify(resp.parsed, null, 2), "utf8");
   }
 
   return { plan: resp.parsed!, model: resp.model };
@@ -1894,7 +2194,11 @@ export async function generateSubassemblyStepPlan(params: {
   targetPieceCount: number;
   logDir?: string;
 }): Promise<{ plan: SubassemblyStepPlan; model: string }> {
-  const logPrefix = params.logDir ? `${params.logDir}/02a_subassembly_plan_${params.subassemblyName.replace(/[^a-z0-9]/gi, '_')}` : null;
+  const safeName = toFolderName(params.subassemblyName);
+  const subassemblyDir = params.logDir ? `${params.logDir}/subassemblies/${safeName}` : null;
+  if (subassemblyDir) {
+    fs.mkdirSync(subassemblyDir, { recursive: true });
+  }
   
   const inv = inventoryToCompactJson(params.inventory);
 
@@ -1924,12 +2228,11 @@ export async function generateSubassemblyStepPlan(params: {
     { type: "input_image", image_url: dataUrl }
   ];
 
-  console.log(`\n[PHASE 2a] Planning subassembly: ${params.subassemblyName}`);
-  if (logPrefix) {
-    fs.writeFileSync(`${logPrefix}_input.txt`, promptText, "utf8");
-    fs.copyFileSync(params.referenceImagePath, `${logPrefix}_reference.png`);
-    console.log(`  → Input logged: ${logPrefix}_input.txt`);
-    console.log(`  → Reference image: ${logPrefix}_reference.png`);
+  // Log to debug files only
+  logOpenAI("info", `Planning "${params.subassemblyName}"...`);
+  if (subassemblyDir) {
+    fs.writeFileSync(`${subassemblyDir}/plan_input.txt`, promptText, "utf8");
+    fs.copyFileSync(params.referenceImagePath, `${subassemblyDir}/reference.png`);
   }
 
   const schema = {
@@ -1962,13 +2265,11 @@ export async function generateSubassemblyStepPlan(params: {
     { reasoningEffort: "medium", maxOutputTokens: 25000 }
   );
 
-  console.log(`[PHASE 2a] ✓ Plan generated for ${params.subassemblyName}`);
-  console.log(`  → Steps: ${resp.parsed?.steps?.length || 0}`);
-  console.log(`  → Estimated pieces: ${resp.parsed?.estimated_pieces || "?"}`);
+  // Log to debug files only
+  logOpenAI("info", `✓ Step plan: ${resp.parsed?.steps?.length || 0} steps, ~${resp.parsed?.estimated_pieces || "?"} pieces`);
 
-  if (logPrefix && resp.parsed) {
-    fs.writeFileSync(`${logPrefix}_output.json`, JSON.stringify(resp.parsed, null, 2), "utf8");
-    console.log(`  → Output logged: ${logPrefix}_output.json`);
+  if (subassemblyDir && resp.parsed) {
+    fs.writeFileSync(`${subassemblyDir}/plan_output.json`, JSON.stringify(resp.parsed, null, 2), "utf8");
   }
 
   return { plan: resp.parsed!, model: resp.model };
@@ -1984,18 +2285,34 @@ export async function buildAndValidateSubassembly(params: {
   inventory: InventoryItem[];
   logDir?: string;
 }): Promise<SubassemblyBuildResult> {
-  const logPrefix = params.logDir ? `${params.logDir}/02b_subassembly_build_${params.subassemblyName.replace(/[^a-z0-9]/gi, '_')}` : null;
+  const safeName = toFolderName(params.subassemblyName);
+  const subassemblyDir = params.logDir ? `${params.logDir}/subassemblies/${safeName}` : null;
+  const subassemblyLogFile = subassemblyDir ? `${subassemblyDir}/progress.log` : null;
 
-  console.log(`\n[PHASE 2b] Building subassembly: ${params.subassemblyName}`);
-  console.log(`  → Steps to build: ${params.stepPlan.steps.length}`);
-  console.log(`  → Target pieces: ${params.stepPlan.estimated_pieces}`);
+  // Ensure directory exists (may have been created by step plan)
+  if (subassemblyDir) {
+    fs.mkdirSync(subassemblyDir, { recursive: true });
+    fs.mkdirSync(`${subassemblyDir}/renders`, { recursive: true });
+  }
 
-  if (logPrefix) {
-    fs.mkdirSync(path.dirname(logPrefix), { recursive: true });
-    fs.writeFileSync(`${logPrefix}_plan.json`, JSON.stringify(params.stepPlan, null, 2), "utf8");
-    fs.copyFileSync(params.referenceImagePath, `${logPrefix}_reference.png`);
-    console.log(`  → Plan logged: ${logPrefix}_plan.json`);
-    console.log(`  → Reference image: ${logPrefix}_reference.png`);
+  // Set up subassembly-specific logging
+  if (subassemblyLogFile) {
+    fs.writeFileSync(subassemblyLogFile, `=== ${params.subassemblyName} ===\nStarted: ${new Date().toISOString()}\nSteps: ${params.stepPlan.steps.length}\nTarget pieces: ${params.stepPlan.estimated_pieces}\n\n`);
+    setCurrentSubassemblyLog(subassemblyLogFile);
+  }
+  
+  // Update pipeline-level status
+  pipelineStatus(params.subassemblyName, "Building started");
+
+  // Detailed logging for debug files
+  logOpenAI("info", `Building "${params.subassemblyName}" (${params.stepPlan.steps.length} steps, ~${params.stepPlan.estimated_pieces} pieces)`);
+
+  if (subassemblyDir) {
+    fs.writeFileSync(`${subassemblyDir}/build_plan.json`, JSON.stringify(params.stepPlan, null, 2), "utf8");
+    // Reference image should already be there from planning step
+    if (!fs.existsSync(`${subassemblyDir}/reference.png`)) {
+      fs.copyFileSync(params.referenceImagePath, `${subassemblyDir}/reference.png`);
+    }
   }
 
   // Convert step plan to the format expected by generateLDrawMpdChunkForIdea
@@ -2030,7 +2347,7 @@ export async function buildAndValidateSubassembly(params: {
     inventory: params.inventory,
     referenceImagePath: params.referenceImagePath,
     assembledMpdSoFar: "",
-    visualFeedbackMode: "final_only", // Validate at the end of this subassembly
+    visualFeedbackMode: "subassemblies", // Send visual feedback at subassembly completion
     isSubassemblyBoundary: true,
     isFinalChunk: false,
     currentChunkNumber: 1,
@@ -2038,7 +2355,7 @@ export async function buildAndValidateSubassembly(params: {
     useValidationToolLoop: true,
     onEvent: (event) => {
       if (event.type === "round_start") {
-        console.log(`  → Validation round ${event.round} starting...`);
+        logToFile(`GPT generating... (round ${event.round})`);
       } else if (event.type === "tool_results") {
         event.results.forEach((r: any) => {
           const roundNum = validationResults.length + 1;
@@ -2046,22 +2363,31 @@ export async function buildAndValidateSubassembly(params: {
             round: roundNum
           };
           
-          if (r.similarity_score !== undefined) {
+          if (r.ok) {
             entry.similarity = r.similarity_score;
-            console.log(`  → Similarity: ${(r.similarity_score * 100).toFixed(1)}% ${r.ok ? "✓" : "✗"}`);
-          }
-          if (r.error) {
+            logToFile(`Validation Round ${roundNum}: PASSED`);
+            logToFile(`  ✓ Structure`);
+            if (r.similarity_score !== undefined) {
+              logToFile(`  Similarity: ${(r.similarity_score * 100).toFixed(0)}%`);
+            }
+          } else {
             entry.error = r.error;
-            console.log(`  → Error: ${r.error}`);
+            logToFile(`Validation Round ${roundNum}: FAILED`);
+            if (r.issues) {
+              r.issues.forEach((issue: any) => {
+                logToFile(`  ✗ ${issue.type}: ${issue.message.split('\n')[0]}`);
+              });
+            } else if (r.error) {
+              logToFile(`  Error: ${r.error.split('\n')[0]}`);
+            }
+            logToFile(`  GPT refining...`);
           }
+          
           if (r.rendered_image_path) {
             entry.rendered_image_path = r.rendered_image_path;
-            
-            // Copy rendered image to log directory
-            if (logPrefix && fs.existsSync(r.rendered_image_path)) {
-              const destPath = `${logPrefix}_round${roundNum}.png`;
+            if (subassemblyDir && fs.existsSync(r.rendered_image_path)) {
+              const destPath = `${subassemblyDir}/renders/round${roundNum}.png`;
               fs.copyFileSync(r.rendered_image_path, destPath);
-              console.log(`  → Rendered image: ${destPath}`);
             }
           }
           
@@ -2072,25 +2398,29 @@ export async function buildAndValidateSubassembly(params: {
   });
 
   const finalSimilarity = validationResults.reverse().find(r => r.similarity !== undefined)?.similarity;
+  const actualPieces = result.chunkBody.split('\n').filter((l: string) => l.trim().startsWith('1 ')).length;
   
-  console.log(`[PHASE 2b] ✓ Subassembly built: ${params.subassemblyName}`);
-  console.log(`  → Actual pieces: ${result.chunkBody.split('\n').filter((l: string) => l.trim().startsWith('1 ')).length}`);
-  console.log(`  → Validation rounds: ${validationResults.length}`);
-  if (finalSimilarity !== undefined) {
-    console.log(`  → Final similarity: ${(finalSimilarity * 100).toFixed(1)}%`);
-  }
+  // Log to debug file only
+  logOpenAI("info", `✓ "${params.subassemblyName}" complete (${actualPieces} pieces, ${validationResults.length} rounds)`);
 
-  if (logPrefix) {
-    fs.writeFileSync(`${logPrefix}_ldraw.mpd`, result.chunkBody, "utf8");
-    fs.writeFileSync(`${logPrefix}_validation.json`, JSON.stringify(validationResults, null, 2), "utf8");
-    console.log(`  → LDraw MPD: ${logPrefix}_ldraw.mpd`);
-    console.log(`  → Validation log: ${logPrefix}_validation.json`);
+  if (subassemblyDir) {
+    fs.writeFileSync(`${subassemblyDir}/ldraw.mpd`, result.chunkBody, "utf8");
+    fs.writeFileSync(`${subassemblyDir}/validation.json`, JSON.stringify(validationResults, null, 2), "utf8");
   }
+  
+  // Finalize subassembly log
+  if (subassemblyLogFile) {
+    fs.appendFileSync(subassemblyLogFile, `\n=== COMPLETE ===\nPieces: ${actualPieces}\nValidation rounds: ${validationResults.length}\nFinished: ${new Date().toISOString()}\n`);
+    setCurrentSubassemblyLog(null);
+  }
+  
+  // Update pipeline-level status
+  pipelineStatus(params.subassemblyName, `Complete (${actualPieces} pieces, ${validationResults.length} rounds)`);
 
   return {
     subassembly_name: params.subassemblyName,
     ldraw_mpd: result.chunkBody,
-    actual_pieces: result.chunkBody.split('\n').filter((l: string) => l.trim().startsWith('1 ')).length,
+    actual_pieces: actualPieces,
     validation_rounds: validationResults.length,
     final_similarity_score: finalSimilarity
   };
@@ -2106,27 +2436,34 @@ export async function assembleFinalProduct(params: {
   inventory: InventoryItem[];
   logDir?: string;
 }): Promise<{ finalMpd: string; validationRounds: number; finalSimilarity?: number }> {
-  const logPrefix = params.logDir ? `${params.logDir}/03_final_assembly` : null;
+  const finalDir = params.logDir ? `${params.logDir}/final_assembly` : null;
+  if (finalDir) {
+    fs.mkdirSync(finalDir, { recursive: true });
+    fs.mkdirSync(`${finalDir}/renders`, { recursive: true });
+  }
 
-  console.log(`\n[PHASE 3] Assembling final product...`);
-  console.log(`  → Subassemblies to combine: ${params.subassemblyResults.length}`);
+  status("\nCombining subassemblies...");
+  status(`Subassemblies: ${params.subassemblyResults.length}`, 1);
   
   const totalPieces = params.subassemblyResults.reduce((sum, sa) => sum + sa.actual_pieces, 0);
-  console.log(`  → Total pieces: ${totalPieces}`);
+  status(`Total pieces: ${totalPieces}`, 1);
 
   // Combine all subassembly MPDs into a multi-part file
+  // Sanitize names: replace spaces with underscores for LDraw compatibility
+  const sanitizeName = (name: string) => name.replace(/\s+/g, '_');
+  
   const combinedMpd = params.subassemblyResults.map(sa => {
-    return `0 FILE ${sa.subassembly_name}.ldr\n${sa.ldraw_mpd}\n0 NOFILE`;
+    const safeName = sanitizeName(sa.subassembly_name);
+    return `0 FILE ${safeName}.ldr\n${sa.ldraw_mpd}\n0 NOFILE`;
   }).join('\n\n') + '\n\n0 FILE main.ldr\n' + 
     params.subassemblyResults.map((sa, i) => {
+      const safeName = sanitizeName(sa.subassembly_name);
       // Stack subassemblies vertically with 20-unit spacing (GPT will refine this)
-      return `1 16 0 ${-i * 20} 0 1 0 0 0 1 0 0 0 1 ${sa.subassembly_name}.ldr`;
+      return `1 16 0 ${-i * 20} 0 1 0 0 0 1 0 0 0 1 ${safeName}.ldr`;
     }).join('\n');
 
-  if (logPrefix) {
-    fs.mkdirSync(path.dirname(logPrefix), { recursive: true });
-    fs.writeFileSync(`${logPrefix}_input_combined.mpd`, combinedMpd, "utf8");
-    console.log(`  → Initial combined MPD: ${logPrefix}_input_combined.mpd`);
+  if (finalDir) {
+    fs.writeFileSync(`${finalDir}/input_combined.mpd`, combinedMpd, "utf8");
   }
 
   // Build a blueprint for the final assembly refinement
@@ -2164,14 +2501,12 @@ export async function assembleFinalProduct(params: {
     combinedMpd
   ].join('\n');
 
-  if (logPrefix) {
-    fs.writeFileSync(`${logPrefix}_input_prompt.txt`, promptText, "utf8");
-    fs.copyFileSync(params.referenceImagePath, `${logPrefix}_reference.png`);
-    console.log(`  → Input prompt: ${logPrefix}_input_prompt.txt`);
-    console.log(`  → Reference image: ${logPrefix}_reference.png`);
+  if (finalDir) {
+    fs.writeFileSync(`${finalDir}/prompt.txt`, promptText, "utf8");
+    fs.copyFileSync(params.referenceImagePath, `${finalDir}/reference.png`);
   }
 
-  console.log(`  → Requesting GPT to refine assembly positions...`);
+  status("GPT refining assembly positions...", 1);
   
   const validationResults: Array<{ 
     round: number; 
@@ -2181,6 +2516,7 @@ export async function assembleFinalProduct(params: {
   }> = [];
   
   // Use tool loop for final validation and refinement
+  // Skip part validation since we're only adjusting coordinates, not adding new parts
   const result = await generateLDrawMpdChunkForIdea({
     title: "Final Assembly",
     userPrompt: promptText,
@@ -2196,9 +2532,10 @@ export async function assembleFinalProduct(params: {
     currentChunkNumber: 1,
     totalChunks: 1,
     useValidationToolLoop: true,
+    skipPartValidation: true, // Assembly refinement only adjusts coordinates
     onEvent: (event) => {
       if (event.type === "round_start") {
-        console.log(`  → Validation round ${event.round} starting...`);
+        status(`Validation round ${event.round}...`, 1);
       } else if (event.type === "tool_results") {
         event.results.forEach((r: any) => {
           const roundNum = validationResults.length + 1;
@@ -2208,20 +2545,19 @@ export async function assembleFinalProduct(params: {
           
           if (r.similarity_score !== undefined) {
             entry.similarity = r.similarity_score;
-            console.log(`  → Similarity: ${(r.similarity_score * 100).toFixed(1)}% ${r.ok ? "✓" : "✗"}`);
+            status(`Similarity: ${(r.similarity_score * 100).toFixed(0)}% ${r.ok ? "✓" : "✗"}`, 2);
           }
           if (r.error) {
             entry.error = r.error;
-            console.log(`  → Error: ${r.error}`);
+            status(`Error: ${r.error.split('\n')[0]}`, 2);
           }
           if (r.rendered_image_path) {
             entry.rendered_image_path = r.rendered_image_path;
             
             // Copy rendered image to log directory
-            if (logPrefix && fs.existsSync(r.rendered_image_path)) {
-              const destPath = `${logPrefix}_round${roundNum}.png`;
+            if (finalDir && fs.existsSync(r.rendered_image_path)) {
+              const destPath = `${finalDir}/renders/round${roundNum}.png`;
               fs.copyFileSync(r.rendered_image_path, destPath);
-              console.log(`  → Rendered image: ${destPath}`);
             }
           }
           
@@ -2233,17 +2569,14 @@ export async function assembleFinalProduct(params: {
 
   const finalSimilarity = validationResults.reverse().find(r => r.similarity !== undefined)?.similarity;
 
-  console.log(`[PHASE 3] ✓ Final assembly complete`);
-  console.log(`  → Validation rounds: ${validationResults.length}`);
+  statusResult("Final assembly", true, `${validationResults.length} rounds`);
   if (finalSimilarity !== undefined) {
-    console.log(`  → Final similarity: ${(finalSimilarity * 100).toFixed(1)}%`);
+    status(`Final similarity: ${(finalSimilarity * 100).toFixed(0)}%`, 1);
   }
 
-  if (logPrefix) {
-    fs.writeFileSync(`${logPrefix}_output.mpd`, result.chunkBody, "utf8");
-    fs.writeFileSync(`${logPrefix}_validation.json`, JSON.stringify(validationResults, null, 2), "utf8");
-    console.log(`  → Final MPD: ${logPrefix}_output.mpd`);
-    console.log(`  → Validation log: ${logPrefix}_validation.json`);
+  if (finalDir) {
+    fs.writeFileSync(`${finalDir}/output.mpd`, result.chunkBody, "utf8");
+    fs.writeFileSync(`${finalDir}/validation.json`, JSON.stringify(validationResults, null, 2), "utf8");
   }
 
   return {
@@ -2269,31 +2602,37 @@ export async function generateBlueprintMultiPhase(params: {
   finalMpd: string | null;
 }> {
   const startTime = Date.now();
-  const debugMode = params.debugMode ?? true; // Default to true for cost savings
-  
-  console.log("\n========================================");
-  console.log("MULTI-PHASE BLUEPRINT GENERATION");
-  console.log("========================================");
-  console.log(`Reference image: ${params.referenceImagePath}`);
-  console.log(`Inventory: ${params.inventory.length} unique parts`);
-  console.log(`Log directory: ${params.logDir || "(none)"}`);
-  console.log(`Debug mode: ${debugMode ? "ON (first subassembly only)" : "OFF (all subassemblies)"}`);
+  const debugMode = params.debugMode ?? true;
 
-  // Phase 1: Structure plan
+  // =========================================================================
+  // STEP 1: Generate Structure Plan
+  // =========================================================================
+  statusHeader(1, "Generating Structure Plan");
+  status("Analyzing reference image...");
+  
   const phase1 = await generateStructurePlan(params);
   
-  // Phase 2a: Generate step plans (only first if debug mode)
-  console.log("\n[PHASE 2a] Generating step plans for subassemblies...");
+  status(`Approx. Parts: ${phase1.plan.estimated_total_pieces}`);
+  status(`Sub-Assemblies: ${phase1.plan.subassemblies.length}`);
+  phase1.plan.subassemblies.forEach((sa, i) => {
+    status(`${i + 1}. ${sa.name}`, 1);
+  });
+
+  // =========================================================================
+  // STEP 2: Generate Detailed Plans
+  // =========================================================================
+  statusHeader(2, "Generating Detailed Plans");
+  
   const totalPieces = phase1.plan.estimated_total_pieces;
   const subassembliesToProcess = debugMode 
     ? phase1.plan.subassemblies.slice(0, 1) 
     : phase1.plan.subassemblies;
   
   if (debugMode && phase1.plan.subassemblies.length > 1) {
-    console.log(`  → Debug mode: processing only 1 of ${phase1.plan.subassemblies.length} subassemblies`);
+    status(`(Debug mode: processing 1 of ${phase1.plan.subassemblies.length})`);
   }
   
-  const stepPlanPromises = subassembliesToProcess.map(async (sa, index) => {
+  const stepPlanPromises = subassembliesToProcess.map(async (sa) => {
     const targetPieces = Math.floor(totalPieces / phase1.plan.subassemblies.length);
     return generateSubassemblyStepPlan({
       subassemblyName: sa.name,
@@ -2307,40 +2646,52 @@ export async function generateBlueprintMultiPhase(params: {
   });
   const stepPlans = await Promise.all(stepPlanPromises);
   
-  console.log(`\n[PHASE 2a] ✓ Step plans generated`);
-  stepPlans.forEach((sp, i) => {
-    console.log(`  ${i + 1}. ${sp.plan.subassembly_name}: ${sp.plan.steps.length} steps, ~${sp.plan.estimated_pieces} pieces`);
+  stepPlans.forEach((sp) => {
+    statusResult(sp.plan.subassembly_name, true, `${sp.plan.steps.length} steps, ~${sp.plan.estimated_pieces} pieces`);
   });
 
-  // Phase 2b: Build and validate subassemblies
-  console.log("\n[PHASE 2b] Building and validating subassemblies...");
+  // =========================================================================
+  // STEP 3: Build Sub-Assemblies (parallel)
+  // =========================================================================
+  statusHeader(3, "Building Sub-Assemblies");
+  
+  // Show all triggered
+  status("Started:");
+  stepPlans.forEach(sp => status(sp.plan.subassembly_name, 1));
+  status("");
+  
+  // Track completions
+  let completedCount = 0;
+  const totalCount = stepPlans.length;
+  
+  // Build all in parallel
   const buildPromises = stepPlans.map(async (sp) => {
-    return buildAndValidateSubassembly({
+    const result = await buildAndValidateSubassembly({
       subassemblyName: sp.plan.subassembly_name,
       stepPlan: sp.plan,
       referenceImagePath: params.referenceImagePath,
       inventory: params.inventory,
       logDir: params.logDir
     });
+    completedCount++;
+    status(`Completed [${completedCount}/${totalCount}]: ${sp.plan.subassembly_name} (${result.actual_pieces} pieces)`);
+    return result;
   });
-  const buildResults = await Promise.all(buildPromises);
   
-  console.log(`\n[PHASE 2b] ✓ Subassemblies built`);
-  buildResults.forEach((br, i) => {
-    console.log(`  ${i + 1}. ${br.subassembly_name}: ${br.actual_pieces} pieces, ${br.validation_rounds} rounds`);
-    if (br.final_similarity_score) {
-      console.log(`     Similarity: ${(br.final_similarity_score * 100).toFixed(1)}%`);
-    }
-  });
+  const buildResults = await Promise.all(buildPromises);
 
-  // Phase 3: Final assembly (skip in debug mode)
+  // =========================================================================
+  // STEP 4: Final Assembly
+  // =========================================================================
   let finalMpd: string | null = null;
   let phase3ValidationRounds = 0;
   
   if (debugMode) {
-    console.log("\n[PHASE 3] Skipped (debug mode enabled)");
-    console.log("  → To run full assembly, set debugMode=false");
+    statusHeader(4, "Final Assembly (Skipped - Debug Mode)");
   } else {
+    statusHeader(4, "Combining Sub-Assemblies");
+    status("Assembling final model...");
+    
     const phase3 = await assembleFinalProduct({
       structurePlan: phase1.plan,
       subassemblyResults: buildResults,
@@ -2350,19 +2701,24 @@ export async function generateBlueprintMultiPhase(params: {
     });
     finalMpd = phase3.finalMpd;
     phase3ValidationRounds = phase3.validationRounds;
+    
+    statusResult("Final assembly", true, `${phase3ValidationRounds} validation rounds`);
   }
 
+  // =========================================================================
+  // SUMMARY
+  // =========================================================================
   const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
-  console.log("\n========================================");
-  console.log("PIPELINE COMPLETE");
-  console.log("========================================");
-  console.log(`Total time: ${totalTime}s`);
-  console.log(`Subassemblies processed: ${buildResults.length}${debugMode ? " (debug mode)" : ""}`);
-  console.log(`Total pieces: ${buildResults.reduce((sum, br) => sum + br.actual_pieces, 0)}`);
-  console.log(`Total validation rounds: ${buildResults.reduce((sum, br) => sum + br.validation_rounds, 0) + phase3ValidationRounds}`);
+  console.log(`\n${"═".repeat(50)}`);
+  console.log("COMPLETE");
+  console.log("═".repeat(50));
+  status(`Time: ${totalTime}s`);
+  status(`Sub-assemblies: ${buildResults.length}${debugMode ? " (debug)" : ""}`);
+  status(`Total pieces: ${buildResults.reduce((sum, br) => sum + br.actual_pieces, 0)}`);
+  status(`Validation rounds: ${buildResults.reduce((sum, br) => sum + br.validation_rounds, 0) + phase3ValidationRounds}`);
   
   if (params.logDir) {
-    console.log(`\nAll outputs saved to: ${params.logDir}`);
+    status(`Output: ${params.logDir}`);
   }
 
   return {
@@ -2443,13 +2799,13 @@ export async function generateBlueprintForIdea(params: {
   }
 
   // Log the blueprint request
-  logOpenAI("info", `Blueprint generation request: hasDescription=${!!params.description}, inventorySize=${params.inventory.length}`);
+  logOpenAI("info", `Generating blueprint (${params.inventory.length} parts available)...`);
   
   // Debug artifact: write the exact prompt + a copy of the reference image (if present) for review.
   let debugInputId: string | null = null;
   if (isDebugEnabled()) {
     try {
-      const dir = getDebugDir();
+      const dir = getDebugDir("api_calls");
       const id = generateArtifactId("blueprint_input");
       debugInputId = id;
       let copiedImageRelPath: string | null = null;
@@ -2457,7 +2813,7 @@ export async function generateBlueprintForIdea(params: {
         const outImg = path.join(dir, `${id}.png`);
         fs.copyFileSync(imagePath, outImg);
         copiedImageRelPath = path.relative(process.cwd(), outImg);
-        logOpenAI("info", `Blueprint reference image saved: ${outImg}`);
+        logOpenAI("debug", `Blueprint reference image saved: ${outImg}`);
       }
       const outJson = path.join(dir, `${id}.json`);
       const payload = {
@@ -2483,7 +2839,7 @@ export async function generateBlueprintForIdea(params: {
         }
       };
       fs.writeFileSync(outJson, JSON.stringify(payload, null, 2), "utf8");
-      logOpenAI("info", `Blueprint input artifact: ${outJson}`);
+      logOpenAI("debug", `Blueprint input artifact: ${outJson}`);
     } catch (e) {
       logOpenAI("warn", `Failed to write blueprint input artifact: ${e instanceof Error ? e.message : "unknown"}`);
     }
@@ -2550,7 +2906,7 @@ export async function generateBlueprintForIdea(params: {
   const reasoningEffort = baseReasoning === "high" ? "high" : "medium";
 
   const startedAtMs = Date.now();
-  logOpenAI("info", `Blueprint API call starting: schema=lego_ldraw_blueprint, reasoning=${reasoningEffort}, maxTokens=${maxOutputTokens}`);
+  logOpenAI("info", `Calling GPT for blueprint...`);
   
   const resp = await callOpenAIJsonInput<LDrawBlueprint>(
     { input: [{ role: "user", content }], schemaName: "lego_ldraw_blueprint", schema },
@@ -2560,12 +2916,13 @@ export async function generateBlueprintForIdea(params: {
   const rawResponse = resp.rawResponseJson as Record<string, unknown>;
   const rawUsage = (rawResponse as any)?.usage;
   
-  logOpenAI("info", `Blueprint API response: model=${resp.model}, duration=${durationMs}ms, tokens=${rawUsage?.total_tokens || "?"}`);
-  logOpenAI("info", `Blueprint result: ${resp.parsed?.step_outline?.length || 0} steps, ${resp.parsed?.structure_plan?.subassemblies?.length || 0} subassemblies`);
+  const durationSec = (durationMs / 1000).toFixed(1);
+  logOpenAI("info", `✓ Blueprint received (${durationSec}s, ${rawUsage?.total_tokens || "?"} tokens)`);
+  logOpenAI("info", `  ${resp.parsed?.step_outline?.length || 0} steps, ${resp.parsed?.structure_plan?.subassemblies?.length || 0} subassemblies`);
 
   if (isDebugEnabled()) {
     try {
-      const dir = getDebugDir();
+      const dir = getDebugDir("api_calls");
       const id = generateArtifactId("blueprint_response");
       const outJson = path.join(dir, `${id}.json`);
       const payload = {
@@ -2583,7 +2940,7 @@ export async function generateBlueprintForIdea(params: {
         extractedText: resp.extractedText?.slice(0, 5000) // Truncate if very long
       };
       fs.writeFileSync(outJson, JSON.stringify(payload, null, 2), "utf8");
-      logOpenAI("info", `Blueprint response artifact: ${outJson}`);
+      logOpenAI("debug", `Blueprint response artifact: ${outJson}`);
     } catch (e) {
       logOpenAI("warn", `Failed to write blueprint response artifact: ${e instanceof Error ? e.message : "unknown"}`);
     }

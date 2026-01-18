@@ -12,6 +12,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { compareImages, type SimilarityScore } from "@/lib/imageSimilarity";
+import { getRunLogDir } from "@/lib/openai";
 import { 
   executeLPub3D, 
   getLPub3DBin, 
@@ -38,6 +39,13 @@ import {
   type BlueprintStep,
   type Blueprint
 } from "@/lib/semanticValidator";
+import {
+  validateLegoConnections,
+  autoFixLegoConnections,
+  isConnectionValidationAvailable,
+  type ConnectionValidationResult,
+  type ConnectionAutoFixResult
+} from "@/lib/connectionValidator";
 
 // ============================================================================
 // Types (MCP-friendly: all JSON-serializable)
@@ -158,6 +166,28 @@ export interface RenderValidationResult {
     valid: boolean;
     issues: StructureIssue[];
   };
+  
+  /** Python connection auto-fix and validation results */
+  connections?: {
+    checked: boolean;
+    valid: boolean;
+    autoCorrected: boolean;
+    fixesApplied: number;
+    fixesSummary: string[];
+    iterations?: number;
+    originalErrors?: number;
+    stats?: {
+      total_parts: number;
+      supported_parts: number;
+      connections: number;
+      errors: number;
+      warnings: number;
+    };
+    issues: StructureIssue[];
+  };
+  
+  /** Corrected LDraw code after auto-fix (if fixes were applied) */
+  corrected_ldraw?: string;
   
   /** Collision detection results (if available) */
   collisions?: {
@@ -811,13 +841,16 @@ function renderMpdToPng(params: {
   const totalSteps = stepMatches ? stepMatches.length + 1 : 1;
   
   // Use LDView for all validation renders
-  // NOTE: LDView is REQUIRED - no fallbacks. Install from: https://github.com/tcobbs/ldview/releases
-  const ldviewBin = process.env.LDVIEW_BIN || "/Applications/LDView.app/Contents/MacOS/LDView";
+  // NOTE: LDView 4.5 is REQUIRED (4.6 has a macOS snapshot bug). 
+  // Install from: https://github.com/tcobbs/ldview/releases/tag/v4.5
+  const ldviewBin = process.env.LDVIEW_BIN || "/Applications/LDView-4.5.app/Contents/MacOS/LDView";
+  const ldrawDir = process.env.LDRAW_DIR || process.env.LDRAWDIR || path.join(process.env.HOME || "", "ldraw");
   
   if (!fs.existsSync(ldviewBin)) {
     throw new Error(
       `LDView is required for rendering but not found at: ${ldviewBin}\n` +
-      `Install from: https://github.com/tcobbs/ldview/releases\n` +
+      `Install LDView 4.5 from: https://github.com/tcobbs/ldview/releases/tag/v4.5\n` +
+      `(Note: LDView 4.6 has a macOS snapshot bug - use 4.5)\n` +
       `Or set LDVIEW_BIN environment variable to the correct path.`
     );
   }
@@ -826,10 +859,12 @@ function renderMpdToPng(params: {
     try {
       const result = spawnSync(ldviewBin, [
         mpdPath,
+        `-LDrawDir=${ldrawDir}`,
         `-SaveSnapshot=${pngPath}`,
         `-SaveWidth=${size}`,
         `-SaveHeight=${size}`,
-        "-SaveAlpha=1"
+        "-SaveAlpha=1",
+        "-SaveZoomToFit=1"
       ], {
         encoding: "utf8",
         timeout: timeoutMs
@@ -996,7 +1031,105 @@ export function validateRender(input: RenderValidationInput): RenderValidationRe
   console.log("  ✅ [Validation] Fast syntax check passed");
   
   // -------------------------------------------------------------------------
-  // 1. Structure Validation
+  // 1. Connection Auto-Fix (runs FIRST - corrected code used by all subsequent checks)
+  // -------------------------------------------------------------------------
+  let workingLdraw = ldraw; // This will be updated if auto-fix applies corrections
+  
+  if (isConnectionValidationAvailable()) {
+    checksRun.push("connection_autofix");
+    console.log("  [Validation] Running connection auto-fix...");
+    
+    // Write MPD to temp file for Python validator
+    const runLogDir = getRunLogDir();
+    const connTempDir = runLogDir 
+      ? path.join(runLogDir, "temp")
+      : path.join(process.cwd(), "data", "render-validation-temp");
+    fs.mkdirSync(connTempDir, { recursive: true });
+    const connTempFile = path.join(connTempDir, `conn_autofix_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.mpd`);
+    
+    // For chunk mode, wrap in FILE/NOFILE for validation
+    const mpdForConnValidation = mode === "chunk" 
+      ? `0 FILE model.ldr\n${ldraw}\n0 NOFILE`
+      : ldraw;
+    
+    try {
+      fs.writeFileSync(connTempFile, mpdForConnValidation, "utf8");
+      const autoFixResult = autoFixLegoConnections(connTempFile);
+      
+      result.connections = {
+        checked: true,
+        valid: autoFixResult.isValid,
+        autoCorrected: autoFixResult.autoCorrected,
+        fixesApplied: autoFixResult.fixesApplied,
+        fixesSummary: autoFixResult.fixesSummary,
+        iterations: autoFixResult.iterations,
+        originalErrors: autoFixResult.originalErrors,
+        stats: autoFixResult.stats,
+        issues: []
+      };
+      
+      // Convert remaining issues to StructureIssue format
+      for (const issue of autoFixResult.remainingIssues) {
+        result.connections.issues.push({
+          type: "continuity",
+          severity: issue.severity as "error" | "warning",
+          message: `[${issue.type}] ${issue.message}`
+        });
+      }
+      
+      if (autoFixResult.autoCorrected) {
+        // Use the corrected code for all subsequent validations!
+        if (mode === "chunk") {
+          // Extract just the chunk content (remove FILE/NOFILE wrapper)
+          const correctedLines = autoFixResult.correctedContent.split('\n');
+          const startIdx = correctedLines.findIndex(l => l.trim().startsWith('0 FILE'));
+          const endIdx = correctedLines.findIndex(l => l.trim().startsWith('0 NOFILE'));
+          if (startIdx >= 0 && endIdx > startIdx) {
+            workingLdraw = correctedLines.slice(startIdx + 1, endIdx).join('\n');
+          } else {
+            workingLdraw = autoFixResult.correctedContent;
+          }
+        } else {
+          workingLdraw = autoFixResult.correctedContent;
+        }
+        result.corrected_ldraw = workingLdraw;
+        
+        console.log(`  ✅ [Validation] Auto-fixed ${autoFixResult.fixesApplied} connection issues in ${autoFixResult.iterations} iteration(s)`);
+        if (autoFixResult.fixesSummary.length > 0) {
+          console.log(`     Fixes: ${autoFixResult.fixesSummary.slice(0, 3).join(', ')}${autoFixResult.fixesSummary.length > 3 ? ` (+${autoFixResult.fixesSummary.length - 3} more)` : ''}`);
+        }
+      } else if (autoFixResult.isValid) {
+        console.log(`  ✅ [Validation] Connection check passed (${autoFixResult.stats.connections} connections, no fixes needed)`);
+      } else {
+        console.log(`  ⚠️ [Validation] ${autoFixResult.finalErrors} connection issues remain after auto-fix`);
+        autoFixResult.remainingIssues.slice(0, 2).forEach((issue, i) => {
+          console.log(`    ${i + 1}. ${issue.message}`);
+        });
+      }
+      
+      // Clean up temp file
+      try { fs.unlinkSync(connTempFile); } catch { /* ignore */ }
+    } catch (e) {
+      console.log(`  ⚠️ [Validation] Connection auto-fix error: ${e instanceof Error ? e.message : String(e)}`);
+      result.connections = {
+        checked: false,
+        valid: true, // Don't fail validation if the tool itself fails
+        autoCorrected: false,
+        fixesApplied: 0,
+        fixesSummary: [],
+        issues: [{
+          type: "other",
+          severity: "warning",
+          message: `Connection auto-fix unavailable: ${e instanceof Error ? e.message : String(e)}`
+        }]
+      };
+    }
+  } else {
+    console.log("  [Validation] Skipping connection auto-fix (Python/numpy not available)");
+  }
+  
+  // -------------------------------------------------------------------------
+  // 2. Structure Validation (using corrected code if auto-fix was applied)
   // -------------------------------------------------------------------------
   checksRun.push("structure");
   console.log("  [Validation] Running structure validation...");
@@ -1004,14 +1137,14 @@ export function validateRender(input: RenderValidationInput): RenderValidationRe
   try {
     if (mode === "chunk") {
       // Chunk mode: just check it has parts and no FILE/NOFILE wrappers
-      if (ldraw.includes("0 FILE") || ldraw.includes("0 NOFILE")) {
+      if (workingLdraw.includes("0 FILE") || workingLdraw.includes("0 NOFILE")) {
         result.structure.issues.push({
           type: "syntax",
           severity: "error",
           message: "Chunk should not include FILE/NOFILE wrappers"
         });
       }
-      if (countParts(ldraw) === 0) {
+      if (countParts(workingLdraw) === 0) {
         result.structure.issues.push({
           type: "missing_parts",
           severity: "error",
@@ -1020,9 +1153,9 @@ export function validateRender(input: RenderValidationInput): RenderValidationRe
       }
       // Skip validateLDrawStructure for chunks - it checks for FILE/NOFILE
     } else if (mode === "partial") {
-      validateLDrawPartialMpdOrThrow(ldraw);
+      validateLDrawPartialMpdOrThrow(workingLdraw);
       // Run structural analysis for detailed issues
-      const structResult = validateLDrawStructure(ldraw);
+      const structResult = validateLDrawStructure(workingLdraw);
       for (const issue of structResult.issues) {
         result.structure.issues.push({
           type: issue.type === "collision" ? "collision" : 
@@ -1033,9 +1166,9 @@ export function validateRender(input: RenderValidationInput): RenderValidationRe
         });
       }
     } else {
-      validateLDrawMpdOrThrow(ldraw);
+      validateLDrawMpdOrThrow(workingLdraw);
       // Run structural analysis for detailed issues
-      const structResult = validateLDrawStructure(ldraw);
+      const structResult = validateLDrawStructure(workingLdraw);
       for (const issue of structResult.issues) {
         result.structure.issues.push({
           type: issue.type === "collision" ? "collision" : 
@@ -1074,7 +1207,7 @@ export function validateRender(input: RenderValidationInput): RenderValidationRe
   checksRun.push("continuity");
   console.log("  [Validation] Running continuity checks...");
   
-  const continuityIssues = checkContinuity(ldraw);
+  const continuityIssues = checkContinuity(workingLdraw);
   result.continuity.issues = continuityIssues;
   result.continuity.valid = continuityIssues.filter(i => i.severity === "error").length === 0;
   
@@ -1090,7 +1223,7 @@ export function validateRender(input: RenderValidationInput): RenderValidationRe
   }
   
   // -------------------------------------------------------------------------
-  // 3. Render Progress Image (always for logging, optionally for comparison)
+  // 4. Render Progress Image (always for logging, optionally for comparison)
   // -------------------------------------------------------------------------
   const hasReferenceImage = input.reference_image_path && fs.existsSync(input.reference_image_path);
   const shouldCompare = input.do_render_comparison !== false && hasReferenceImage;
@@ -1101,15 +1234,20 @@ export function validateRender(input: RenderValidationInput): RenderValidationRe
     checksRun.push(shouldCompare ? "render_comparison" : "render_progress");
     console.log(`  [Validation] ${shouldCompare ? "Rendering and comparing to reference..." : "Rendering for progress logging..."}`);
     
-    // Create temp directory for render
-    const tempDir = path.join(process.cwd(), "data", "render-validation-temp");
+    // Use run-specific renders folder if available, otherwise fall back to temp
+    const runLogDir = getRunLogDir();
+    const tempDir = runLogDir 
+      ? path.join(runLogDir, "renders")
+      : path.join(process.cwd(), "data", "render-validation-temp");
+    fs.mkdirSync(tempDir, { recursive: true });
     const roundSuffix = input.validation_round ? `_round${input.validation_round}` : "";
     const baseName = `validate_${Date.now()}${roundSuffix}_${Math.random().toString(36).slice(2, 8)}`;
     
     // For chunk mode, we need to wrap in FILE/NOFILE for rendering
+    // Use workingLdraw which may have been auto-corrected
     const mpdForRender = mode === "chunk" 
-      ? `0 FILE model.ldr\n${ldraw}\n0 NOFILE`
-      : ldraw;
+      ? `0 FILE model.ldr\n${workingLdraw}\n0 NOFILE`
+      : workingLdraw;
     
     const renderResult = renderMpdToPng({
       ldrawMpd: mpdForRender,
@@ -1258,15 +1396,17 @@ export function validateRender(input: RenderValidationInput): RenderValidationRe
   // -------------------------------------------------------------------------
   const structureErrors = result.structure.issues.filter(i => i.severity === "error").length;
   const continuityErrors = result.continuity.issues.filter(i => i.severity === "error").length;
+  const connectionErrors = result.connections?.issues.filter(i => i.severity === "error").length ?? 0;
   const subassemblyErrors = result.subassemblies?.issues.filter(i => i.severity === "error").length ?? 0;
   const similarityFails = result.similarity && !result.similarity.passes_threshold;
   
-  result.valid = structureErrors === 0 && continuityErrors === 0 && subassemblyErrors === 0 && !similarityFails;
+  result.valid = structureErrors === 0 && continuityErrors === 0 && connectionErrors === 0 && subassemblyErrors === 0 && !similarityFails;
   
   if (!result.valid) {
     const reasons: string[] = [];
     if (structureErrors > 0) reasons.push(`${structureErrors} structure error(s)`);
     if (continuityErrors > 0) reasons.push(`${continuityErrors} continuity error(s)`);
+    if (connectionErrors > 0) reasons.push(`${connectionErrors} connection error(s)`);
     if (subassemblyErrors > 0) reasons.push(`${subassemblyErrors} subassembly error(s)`);
     if (similarityFails && result.similarity) {
       reasons.push(`similarity ${result.similarity.score}% < threshold ${result.similarity.threshold}%`);
@@ -1342,6 +1482,15 @@ export function validateRenderForToolLoop(
     }
   }
   
+  // Include connection validation issues
+  if (result.connections) {
+    for (const issue of result.connections.issues) {
+      if (issue.severity === "error") {
+        allIssues.push({ type: issue.type, message: issue.message });
+      }
+    }
+  }
+  
   // Include subassembly-specific issues
   if (result.subassemblies) {
     for (const subResult of result.subassemblies.results) {
@@ -1358,9 +1507,36 @@ export function validateRenderForToolLoop(
   }
   
   if (result.similarity && !result.similarity.passes_threshold) {
+    const score = result.similarity.score;
+    let guidance = "";
+    
+    if (score < 30) {
+      guidance = `\n\nTo improve:
+- Review reference image
+- Ensure major shapes and structure present
+- Add more pieces to build basic shape
+- Focus on overall silhouette
+- Check positioning`;
+    } else if (score < 50) {
+      guidance = `\n\nTo improve:
+- Add more pieces to fill gaps
+- Build out thin sections
+- Add surface detail and texture
+- Ensure proportions match
+- Strengthen connections`;
+    } else {
+      guidance = `\n\nTo improve:
+- Add small detail pieces
+- Refine edges and corners
+- Check for missing elements
+- Verify detail levels
+- Add accent pieces or texture
+- Adjust colors`;
+    }
+    
     allIssues.push({
       type: "similarity",
-      message: `Rendered image similarity (${result.similarity.score}%) is below threshold (${result.similarity.threshold}%)`
+      message: `Rendered image similarity (${score.toFixed(1)}%) is below threshold (${result.similarity.threshold}%)${guidance}`
     });
   }
   

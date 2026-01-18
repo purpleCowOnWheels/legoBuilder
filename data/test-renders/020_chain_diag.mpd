@@ -1,0 +1,7 @@
+0 FILE model.ldr
+0 Test build
+1 4 0 0 0 1 0 0 0 1 0 0 0 1 3003.dat
+1 14 20 -24 20 1 0 0 0 1 0 0 0 1 3003.dat
+1 2 40 -48 40 1 0 0 0 1 0 0 0 1 3003.dat
+0 STEP
+0 NOFILE

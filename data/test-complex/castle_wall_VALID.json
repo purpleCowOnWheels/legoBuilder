@@ -1,0 +1,146 @@
+[
+  {
+    "part_id": "3001",
+    "color": 7,
+    "attach_to": null,
+    "offset_x": 0,
+    "offset_z": 0,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3001",
+    "color": 7,
+    "attach_to": 0,
+    "offset_x": 4,
+    "offset_z": 0,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3001",
+    "color": 7,
+    "attach_to": 1,
+    "offset_x": 4,
+    "offset_z": 0,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3001",
+    "color": 7,
+    "attach_to": 2,
+    "offset_x": 4,
+    "offset_z": 0,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3001",
+    "color": 7,
+    "attach_to": 0,
+    "offset_x": -2,
+    "offset_z": 0,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3001",
+    "color": 7,
+    "attach_to": 1,
+    "offset_x": 4,
+    "offset_z": 0,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3001",
+    "color": 7,
+    "attach_to": 2,
+    "offset_x": 4,
+    "offset_z": 0,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3001",
+    "color": 7,
+    "attach_to": 3,
+    "offset_x": 4,
+    "offset_z": 0,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3001",
+    "color": 7,
+    "attach_to": 4,
+    "offset_x": 2,
+    "offset_z": 0,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3001",
+    "color": 7,
+    "attach_to": 5,
+    "offset_x": 4,
+    "offset_z": 0,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3001",
+    "color": 7,
+    "attach_to": 6,
+    "offset_x": 4,
+    "offset_z": 0,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3001",
+    "color": 7,
+    "attach_to": 7,
+    "offset_x": 4,
+    "offset_z": 0,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3003",
+    "color": 7,
+    "attach_to": 8,
+    "offset_x": 0,
+    "offset_z": 0,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3003",
+    "color": 7,
+    "attach_to": 9,
+    "offset_x": 2,
+    "offset_z": 0,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3003",
+    "color": 7,
+    "attach_to": 10,
+    "offset_x": 0,
+    "offset_z": 0,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3003",
+    "color": 7,
+    "attach_to": 11,
+    "offset_x": 2,
+    "offset_z": 0,
+    "stack": "on_top",
+    "rotation": 0
+  }
+]

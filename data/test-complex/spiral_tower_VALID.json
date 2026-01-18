@@ -1,0 +1,236 @@
+[
+  {
+    "part_id": "3031",
+    "color": 7,
+    "attach_to": null,
+    "offset_x": 0,
+    "offset_z": 0,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3003",
+    "color": 71,
+    "attach_to": 0,
+    "offset_x": 0,
+    "offset_z": 0,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3003",
+    "color": 71,
+    "attach_to": 1,
+    "offset_x": 0,
+    "offset_z": 0,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3003",
+    "color": 71,
+    "attach_to": 2,
+    "offset_x": 0,
+    "offset_z": 0,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3003",
+    "color": 71,
+    "attach_to": 3,
+    "offset_x": 0,
+    "offset_z": 0,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3003",
+    "color": 71,
+    "attach_to": 4,
+    "offset_x": 0,
+    "offset_z": 0,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3003",
+    "color": 71,
+    "attach_to": 5,
+    "offset_x": 0,
+    "offset_z": 0,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3003",
+    "color": 71,
+    "attach_to": 6,
+    "offset_x": 0,
+    "offset_z": 0,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3003",
+    "color": 71,
+    "attach_to": 7,
+    "offset_x": 0,
+    "offset_z": 0,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3022",
+    "color": 6,
+    "attach_to": 1,
+    "offset_x": 2,
+    "offset_z": 0,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3022",
+    "color": 6,
+    "attach_to": 2,
+    "offset_x": 2,
+    "offset_z": 2,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3022",
+    "color": 6,
+    "attach_to": 3,
+    "offset_x": 0,
+    "offset_z": 2,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3022",
+    "color": 6,
+    "attach_to": 4,
+    "offset_x": -2,
+    "offset_z": 2,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3022",
+    "color": 6,
+    "attach_to": 5,
+    "offset_x": -2,
+    "offset_z": 0,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3022",
+    "color": 6,
+    "attach_to": 6,
+    "offset_x": -2,
+    "offset_z": -2,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3022",
+    "color": 6,
+    "attach_to": 7,
+    "offset_x": 0,
+    "offset_z": -2,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3022",
+    "color": 6,
+    "attach_to": 8,
+    "offset_x": 2,
+    "offset_z": -2,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3031",
+    "color": 7,
+    "attach_to": 8,
+    "offset_x": 0,
+    "offset_z": 0,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3005",
+    "color": 71,
+    "attach_to": 17,
+    "offset_x": -3,
+    "offset_z": -3,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3005",
+    "color": 71,
+    "attach_to": 17,
+    "offset_x": 3,
+    "offset_z": -3,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3005",
+    "color": 71,
+    "attach_to": 17,
+    "offset_x": -3,
+    "offset_z": 3,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3005",
+    "color": 71,
+    "attach_to": 17,
+    "offset_x": 3,
+    "offset_z": 3,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3005",
+    "color": 0,
+    "attach_to": 21,
+    "offset_x": 0,
+    "offset_z": 0,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3005",
+    "color": 0,
+    "attach_to": 22,
+    "offset_x": 0,
+    "offset_z": 0,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3005",
+    "color": 0,
+    "attach_to": 23,
+    "offset_x": 0,
+    "offset_z": 0,
+    "stack": "on_top",
+    "rotation": 0
+  },
+  {
+    "part_id": "3023",
+    "color": 4,
+    "attach_to": 24,
+    "offset_x": 1,
+    "offset_z": 0,
+    "stack": "on_top",
+    "rotation": 0
+  }
+]

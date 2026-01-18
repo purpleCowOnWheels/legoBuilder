@@ -29,6 +29,29 @@ export interface ConnectionValidationResult {
   };
 }
 
+export interface ConnectionAutoFixResult {
+  isValid: boolean;
+  autoCorrected: boolean;
+  iterations: number;
+  fixesApplied: number;
+  fixesSummary: string[];
+  correctedContent: string;
+  originalErrors: number;
+  finalErrors: number;
+  stats: {
+    total_parts: number;
+    supported_parts: number;
+    connections: number;
+    errors: number;
+    warnings: number;
+  };
+  remainingIssues: Array<{
+    type: string;
+    severity: string;
+    message: string;
+  }>;
+}
+
 /**
  * Validate LEGO part connections in an MPD file.
  * 
@@ -87,5 +110,59 @@ export function isConnectionValidationAvailable(): boolean {
     return result.status === 0 && result.stdout?.includes("ok");
   } catch {
     return false;
+  }
+}
+
+/**
+ * Auto-fix LEGO part connections in an MPD file.
+ * 
+ * Automatically adjusts positions of floating parts to connect properly.
+ * Iterates until all fixable issues are resolved or max iterations reached.
+ * 
+ * @param mpdPath - Path to the MPD file to validate and fix
+ * @param maxIterations - Maximum fix iterations (default 50)
+ * @returns Result with corrected content and fix summary
+ */
+export function autoFixLegoConnections(mpdPath: string, maxIterations: number = 50): ConnectionAutoFixResult {
+  const scriptPath = path.join(__dirname, "../../scripts/connection_validator/validate_connections.py");
+  
+  const result = spawnSync("python3", [
+    scriptPath, 
+    mpdPath, 
+    "--auto-fix", 
+    "--json",
+    "--max-iterations", 
+    String(maxIterations)
+  ], {
+    encoding: "utf8",
+    timeout: 120000, // 2 minutes for iterative fixing
+    maxBuffer: 50 * 1024 * 1024 // 50MB for large corrected content
+  });
+
+  if (result.error) {
+    throw new Error(`Connection auto-fix failed: ${result.error.message}`);
+  }
+
+  if (result.status === 2) {
+    // Script error (not validation failure)
+    throw new Error(`Connection auto-fix error: ${result.stderr}`);
+  }
+
+  try {
+    const data = JSON.parse(result.stdout);
+    return {
+      isValid: data.is_valid,
+      autoCorrected: data.auto_corrected,
+      iterations: data.iterations,
+      fixesApplied: data.fixes_applied,
+      fixesSummary: data.fixes_summary || [],
+      correctedContent: data.corrected_content,
+      originalErrors: data.original_errors,
+      finalErrors: data.final_errors,
+      stats: data.stats,
+      remainingIssues: data.remaining_issues || []
+    };
+  } catch (e) {
+    throw new Error(`Failed to parse auto-fix result: ${e instanceof Error ? e.message : String(e)}\nOutput: ${result.stdout}`);
   }
 }
