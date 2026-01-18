@@ -683,6 +683,15 @@ Your build is INCOMPLETE if you only build 1 when 2+ are specified.
 
 BEFORE calling finalize_build, verify you have the correct count of each element.
 
+## ORIENTATION - FRONT FACING FORWARD
+
+Build the sub-assembly so that its FRONT faces the same direction as in the reference image.
+- The render camera looks at the model from a consistent angle
+- If the reference shows the front of the legs, your build's front should face forward (+Z direction)
+- Positive X is RIGHT, Positive Z is FORWARD (toward camera), Positive Y is UP
+
+This ensures your render will match the reference orientation for easier comparison.
+
 ## CONNECTION SYSTEM
 
 Each part attaches to an existing part:
