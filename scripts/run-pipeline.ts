@@ -735,8 +735,10 @@ Common valid offsets:
 VALIDATE after every part addition (fast, text-only).
 PREVIEW every 3-5 parts to visually check progress.
 
-Once you've built about half the pieces, previews will show a similarity score (0-100).
-The score should increase as you build correctly. Follow the guidance provided with each score.
+BUILDING TOWARD THE GOAL:
+Your goal is to create a LEGO representation of the reference image.
+It won't match pixel-for-pixel - that's impossible with bricks.
+Focus on: same subject, similar proportions, correct orientation, right quantities.
 
 ## COMMON PARTS
 
@@ -790,7 +792,6 @@ async function buildSubassembly(params: {
   let finalParts: ConnectedPart[] = [];
   let validationRounds = 0;
   let toolCallCount = 0;
-  let lastSimilarityScore: number | undefined;
   const targetPieces = params.subassembly.estimatedPieces;
   const maxIterations = 50;
 
@@ -869,67 +870,44 @@ async function buildSubassembly(params: {
         if (rendered) {
           const renderDataUrl = readFileAsDataUrl(pngPath);
           
-          // Only calculate/show similarity once >= 50% of pieces are built
-          const showSimilarity = parts.length >= targetPieces * 0.5;
+          // Calculate similarity for logging only (not shown to GPT)
           let similarityScore: number | undefined;
-          let simGuidance = "";
-          
-          if (showSimilarity) {
-            try {
-              const similarity = compareImages(pngPath, params.croppedImagePath);
-              similarityScore = similarity.overall;
-              
-              // Determine guidance based on trend
-              if (lastSimilarityScore !== undefined) {
-                const diff = similarityScore - lastSimilarityScore;
-                if (diff < -3) {
-                  simGuidance = "Similarity DROPPED. Consider removing or revising recent additions.";
-                } else if (diff < 3) {
-                  simGuidance = "Similarity stable. Continue building to add more detail.";
-                } else {
-                  simGuidance = "Similarity improving. Keep going.";
-                }
-              }
-              
-              lastSimilarityScore = similarityScore;
-            } catch {
-              // Ignore similarity errors during preview
-            }
+          try {
+            const similarity = compareImages(pngPath, params.croppedImagePath);
+            similarityScore = similarity.overall;
+          } catch {
+            // Ignore similarity errors
           }
           
           const simStr = similarityScore !== undefined ? `, similarity: ${similarityScore}%` : "";
           console.log(`  [${callNum}] preview: ${parts.length} parts${simStr}`);
           
-          const simInfo = similarityScore !== undefined 
-            ? `Similarity: ${similarityScore}%\n${simGuidance}`
-            : "";
-          
           messages.push({
             type: "function_call_output",
             call_id: call.id,
-            output: JSON.stringify({ success: true, parts: parts.length, similarity: similarityScore })
+            output: JSON.stringify({ success: true, parts: parts.length })
           });
 
-          // Send image for review
+          // Send image for review - focus on semantic comparison
           messages.push({
             role: "user",
             content: [
               { type: "input_text", text: `Preview of "${params.subassembly.name}" (${parts.length} parts).
-${simInfo}
 
-SUB-ASSEMBLY DESCRIPTION: ${params.subassembly.description}
+GOAL: Build a LEGO representation of the reference image.
 
-Compare your render to the cropped reference image below.
+DESCRIPTION: ${params.subassembly.description}
 
-CHECK:
-1. ORIENTATION: Is the front facing the same direction as in the reference?
-2. QUANTITY: Did you build ALL items? (e.g., "2 legs" = BOTH legs)
-3. SHAPE: Does the overall form match the reference?
+Compare your render to the reference. Ask yourself:
+1. Does my build REPRESENT the same thing? (It won't match pixel-for-pixel)
+2. Are the PROPORTIONS right? (height vs width, spacing)
+3. Is the ORIENTATION correct? (front facing same direction)
+4. Did I build the right QUANTITY? (e.g., "2 legs" = BOTH legs)
 
-If any checks fail, fix before continuing.` },
+If your build doesn't look like it's heading toward the reference, revise it.` },
               { type: "input_text", text: "YOUR RENDER:" },
               { type: "input_image", image_url: renderDataUrl },
-              { type: "input_text", text: "CROPPED REFERENCE:" },
+              { type: "input_text", text: "REFERENCE (build toward this):" },
               { type: "input_image", image_url: imageDataUrl }
             ]
           });
@@ -954,7 +932,7 @@ If any checks fail, fix before continuing.` },
         if (rendered) {
           const renderDataUrl = readFileAsDataUrl(pngPath);
           
-          // Calculate similarity score BEFORE asking for confirmation
+          // Calculate similarity for logging (not shown to GPT)
           let finalSimilarity: number | undefined;
           try {
             const similarity = compareImages(pngPath, params.croppedImagePath);
@@ -962,14 +940,6 @@ If any checks fail, fix before continuing.` },
           } catch {
             // Ignore similarity errors
           }
-          
-          const simText = finalSimilarity !== undefined 
-            ? `\nSIMILARITY SCORE: ${finalSimilarity}%\n${finalSimilarity < 50 
-                ? "Score is LOW. Consider significant revisions to better match the reference."
-                : finalSimilarity < 70 
-                  ? "Score is MODERATE. Look for ways to improve the match."
-                  : "Score is GOOD."}`
-            : "";
           
           // Final confirmation: show render + reference image
           messages.push({
@@ -983,22 +953,22 @@ If any checks fail, fix before continuing.` },
             content: [
               { type: "input_text", text: `FINAL CONFIRMATION for "${params.subassembly.name}"
 
-SUB-ASSEMBLY DESCRIPTION: ${params.subassembly.description}
-${simText}
+DESCRIPTION: ${params.subassembly.description}
 
-Compare your final render to the cropped reference. ALL must be true:
+Compare your final LEGO build to the reference image. Remember: it won't match pixel-for-pixel, but it should REPRESENT the same thing.
 
-1. ORIENTATION: Front of your build faces same direction as reference
-2. QUANTITY: All items built (e.g., "2 legs" = BOTH legs present)
-3. SHAPE: Overall form matches the reference
-4. COMPLETENESS: Everything in description is included
+CHECK:
+1. Does your build look like the same subject? (legs look like legs, head looks like head)
+2. Are PROPORTIONS similar? (relative sizes and spacing)
+3. Is ORIENTATION correct? (front faces same direction)
+4. Did you build correct QUANTITY? (e.g., "2 legs" = BOTH present)
+5. Is description COMPLETE? (all specified elements included)
 
-If score is below 60%, make revisions to improve it before confirming.
-If ALL FOUR checks pass and score is acceptable: respond "CONFIRMED"
-If ANY are wrong: describe what's wrong and fix it.` },
+If your build is a reasonable LEGO representation of the reference: respond "CONFIRMED"
+If not: describe what's missing or wrong and fix it.` },
               { type: "input_text", text: "YOUR FINAL RENDER:" },
               { type: "input_image", image_url: renderDataUrl },
-              { type: "input_text", text: "CROPPED REFERENCE (this is the region you're building):" },
+              { type: "input_text", text: "REFERENCE (your build should represent this):" },
               { type: "input_image", image_url: imageDataUrl }
             ]
           });
