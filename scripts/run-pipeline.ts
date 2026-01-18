@@ -369,7 +369,8 @@ function readFileAsDataUrl(filePath: string): string {
 async function cropImage(
   sourcePath: string,
   boundingBox: BoundingBox,
-  outputPath: string
+  outputPath: string,
+  padding: number = 0.15  // Add 15% padding on each side
 ): Promise<void> {
   const image = sharp(sourcePath);
   const metadata = await image.metadata();
@@ -378,10 +379,19 @@ async function cropImage(
     throw new Error("Could not get image dimensions");
   }
   
-  const left = Math.round(boundingBox.x * metadata.width);
-  const top = Math.round(boundingBox.y * metadata.height);
-  const width = Math.round(boundingBox.width * metadata.width);
-  const height = Math.round(boundingBox.height * metadata.height);
+  // Calculate padded bounding box
+  const padX = boundingBox.width * padding;
+  const padY = boundingBox.height * padding;
+  
+  const x = Math.max(0, boundingBox.x - padX);
+  const y = Math.max(0, boundingBox.y - padY);
+  const right = Math.min(1, boundingBox.x + boundingBox.width + padX);
+  const bottom = Math.min(1, boundingBox.y + boundingBox.height + padY);
+  
+  const left = Math.round(x * metadata.width);
+  const top = Math.round(y * metadata.height);
+  const width = Math.round((right - x) * metadata.width);
+  const height = Math.round((bottom - y) * metadata.height);
   
   await image
     .extract({ left, top, width, height })
@@ -599,10 +609,11 @@ For each sub-assembly provide:
 - name: short identifier
 - description: what to build, with QUANTITIES (e.g., "2 legs", "4 wheels", "1 head with 2 eyes")
 - image_region: text description of where it appears (e.g., "lower third", "top center")
-- bounding_box: exact region as {x, y, width, height} where each value is 0-1
+- bounding_box: region as {x, y, width, height} where each value is 0-1
   - x=0 is left edge, x=1 is right edge
   - y=0 is top edge, y=1 is bottom edge
-  - Example: legs at bottom-center might be {x: 0.3, y: 0.6, width: 0.4, height: 0.4}
+  - Be GENEROUS with the box - include some surrounding context, not just the tight boundary
+  - Example: legs at bottom-center might be {x: 0.25, y: 0.5, width: 0.5, height: 0.5}
 - estimated_pieces: piece count for this sub-assembly
 
 Keep total between 25-200 pieces.`
