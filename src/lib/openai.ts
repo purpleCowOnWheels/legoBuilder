@@ -1743,7 +1743,7 @@ export type LDrawStructurePlan = {
     name: string; 
     description: string;
     /** Visual location hint for where this subassembly appears in the reference image */
-    image_location?: string;
+    image_location: string;
   }>;
   estimated_total_pieces: number;
   notes: string[];
@@ -1844,11 +1844,11 @@ export async function generateStructurePlan(params: {
         items: {
           type: "object",
           additionalProperties: false,
-          required: ["name", "description"],
+          required: ["name", "description", "image_location"],
           properties: {
             name: { type: "string", minLength: 1, maxLength: 50 },
             description: { type: "string", minLength: 5, maxLength: 150 },
-            image_location: { type: "string", maxLength: 100 }
+            image_location: { type: "string", minLength: 1, maxLength: 100 }
           }
         }
       },
@@ -1870,7 +1870,7 @@ export async function generateStructurePlan(params: {
   if (resp.parsed?.subassemblies) {
     resp.parsed.subassemblies.forEach((sa, i) => {
       console.log(`    ${i + 1}. ${sa.name} - ${sa.description}`);
-      if (sa.image_location) console.log(`       Location: ${sa.image_location}`);
+      console.log(`       Location: ${sa.image_location}`);
     });
   }
 

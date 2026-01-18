@@ -1,0 +1,16 @@
+Pipeline failed at 2026-01-18T01:45:55.362Z
+
+Error: OpenAI error 400: {
+  "error": {
+    "message": "Invalid schema for response_format 'lego_structure_plan': In context=('properties', 'subassemblies', 'items'), 'required' is required to be supplied and to be an array including every key in properties. Missing 'image_location'.",
+    "type": "invalid_request_error",
+    "param": "text.format.schema",
+    "code": "invalid_json_schema"
+  }
+}
+    at fetchResponsesJsonWithRetry (/Users/dan.costanza/Documents/GitHub/legoBuilder/src/lib/openai.ts:161:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async callOpenAIJsonInput (/Users/dan.costanza/Documents/GitHub/legoBuilder/src/lib/openai.ts:742:16)
+    at async generateStructurePlan (/Users/dan.costanza/Documents/GitHub/legoBuilder/src/lib/openai.ts:1860:16)
+    at async generateBlueprintMultiPhase (/Users/dan.costanza/Documents/GitHub/legoBuilder/src/lib/openai.ts:2283:18)
+    at async main (/Users/dan.costanza/Documents/GitHub/legoBuilder/scripts/run-multiphase-pipeline.ts:93:20)

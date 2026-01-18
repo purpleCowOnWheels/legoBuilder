@@ -1,0 +1,11 @@
+Pipeline failed at 2026-01-18T01:45:36.935Z
+
+Error: OPENAI_API_KEY is not set
+    at callOpenAIJsonInput (/Users/dan.costanza/Documents/GitHub/legoBuilder/src/lib/openai.ts:711:11)
+    at generateStructurePlan (/Users/dan.costanza/Documents/GitHub/legoBuilder/src/lib/openai.ts:1860:22)
+    at generateBlueprintMultiPhase (/Users/dan.costanza/Documents/GitHub/legoBuilder/src/lib/openai.ts:2283:24)
+    at main (/Users/dan.costanza/Documents/GitHub/legoBuilder/scripts/run-multiphase-pipeline.ts:89:26)
+    at <anonymous> (/Users/dan.costanza/Documents/GitHub/legoBuilder/scripts/run-multiphase-pipeline.ts:169:1)
+    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:654:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)

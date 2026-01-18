@@ -18,9 +18,14 @@
  */
 
 import { generateBlueprintMultiPhase } from "@/lib/openai";
-import { getInventory } from "@/lib/inventory";
+import { readDb } from "@/lib/storage";
+import type { InventoryItem } from "@/lib/models";
 import fs from "node:fs";
 import path from "node:path";
+import dotenv from "dotenv";
+
+// Load environment variables
+dotenv.config({ path: path.join(process.cwd(), ".env.local") });
 
 interface Args {
   imagePath: string;
@@ -74,8 +79,14 @@ async function main() {
   
   // Load inventory
   console.log("Loading inventory...");
-  const inventory = await getInventory();
+  const db = readDb();
+  const inventory: InventoryItem[] = db.inventory || [];
   console.log(`  → ${inventory.length} unique part types loaded\n`);
+  
+  if (inventory.length === 0) {
+    console.error("Error: Inventory is empty!");
+    process.exit(1);
+  }
   
   // Run the multi-phase pipeline
   try {
