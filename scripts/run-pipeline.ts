@@ -750,10 +750,16 @@ async function buildSubassembly(params: {
           "utf8"
         );
 
+        // Add quantity reminder when validation passes
+        let output = validation.summary;
+        if (validation.valid) {
+          output += `\n\nREMINDER: Stud connections are valid. Before finalizing, verify QUANTITIES match the description (e.g., "2 legs" = build BOTH legs, not just 1).`;
+        }
+
         messages.push({
           type: "function_call_output",
           call_id: call.id,
-          output: validation.summary
+          output
         });
 
       } else if (call.name === "preview_build") {
