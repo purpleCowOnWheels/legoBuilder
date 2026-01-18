@@ -1785,6 +1785,8 @@ export async function generateBlueprintForIdea(params: {
     "- Total piece budget: 25-500 pieces for complete model",
     "- Steps should be logical construction phases",
     "- Each step MUST include 'subassembly_name' matching one of your structure_plan.subassemblies[].name",
+    "- Keep step titles SHORT (max 50 chars)",
+    "- Keep step descriptions BRIEF (max 100 chars)",
     "",
     "Constraints:",
     constraints,
@@ -1879,11 +1881,11 @@ export async function generateBlueprintForIdea(params: {
         items: {
           type: "object",
           additionalProperties: false,
-          required: ["step", "title", "description", "subassembly_name"],
+          required: ["step", "title", "subassembly_name"],
           properties: {
             step: { type: "integer", minimum: 1 },
-            title: { type: "string", minLength: 1 },
-            description: { type: "string", minLength: 5 },
+            title: { type: "string", minLength: 1, maxLength: 50 },
+            description: { type: "string", minLength: 1, maxLength: 100 },
             subassembly_name: { 
               type: "string", 
               minLength: 1,
