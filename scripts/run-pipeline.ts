@@ -27,6 +27,7 @@ import sharp from "sharp";
 import { readDb } from "@/lib/storage";
 import type { InventoryItem } from "@/lib/models";
 import { compareImages } from "@/lib/imageSimilarity";
+import { renderMpdMultiView, STANDARD_VIEWPOINTS } from "@/lib/renderValidation";
 
 dotenv.config({ path: path.join(process.cwd(), ".env.local") });
 
@@ -861,22 +862,32 @@ async function buildSubassembly(params: {
 
       } else if (call.name === "preview_build") {
         const ldraw = partsToLDraw(parts, safeName);
-        const mpdPath = path.join(saDir, `call${callNum}.mpd`);
-        const pngPath = path.join(saDir, `call${callNum}.png`);
         
-        fs.writeFileSync(mpdPath, ldraw, "utf8");
-        const rendered = render(mpdPath, pngPath);
+        // Render from front and back angles
+        const multiResult = renderMpdMultiView({
+          ldrawMpd: ldraw,
+          outputDir: saDir,
+          baseName: `call${callNum}`,
+          size: 512,
+          viewpoints: STANDARD_VIEWPOINTS
+        });
 
-        if (rendered) {
-          const renderDataUrl = readFileAsDataUrl(pngPath);
+        if (multiResult.allSucceeded && multiResult.views.length >= 2) {
+          const frontView = multiResult.views.find(v => v.name === "front-right");
+          const backView = multiResult.views.find(v => v.name === "back-left");
           
-          // Calculate similarity for logging only (not shown to GPT)
+          const frontDataUrl = frontView?.imagePath ? readFileAsDataUrl(frontView.imagePath) : null;
+          const backDataUrl = backView?.imagePath ? readFileAsDataUrl(backView.imagePath) : null;
+          
+          // Calculate similarity for logging only (use front view)
           let similarityScore: number | undefined;
-          try {
-            const similarity = compareImages(pngPath, params.croppedImagePath);
-            similarityScore = similarity.overall;
-          } catch {
-            // Ignore similarity errors
+          if (frontView?.imagePath) {
+            try {
+              const similarity = compareImages(frontView.imagePath, params.croppedImagePath);
+              similarityScore = similarity.overall;
+            } catch {
+              // Ignore similarity errors
+            }
           }
           
           const simStr = similarityScore !== undefined ? `, similarity: ${similarityScore}%` : "";
@@ -888,29 +899,40 @@ async function buildSubassembly(params: {
             output: JSON.stringify({ success: true, parts: parts.length })
           });
 
-          // Send image for review - focus on semantic comparison
-          messages.push({
-            role: "user",
-            content: [
-              { type: "input_text", text: `Preview of "${params.subassembly.name}" (${parts.length} parts).
+          // Send both views for review
+          const content: Array<{ type: string; text?: string; image_url?: string }> = [
+            { type: "input_text", text: `Preview of "${params.subassembly.name}" (${parts.length} parts).
 
 GOAL: Build a LEGO representation of the reference image.
 
 DESCRIPTION: ${params.subassembly.description}
 
-Compare your render to the reference. Ask yourself:
+Compare BOTH views of your render to the reference. Ask yourself:
 1. Does my build REPRESENT the same thing? (It won't match pixel-for-pixel)
 2. Are the PROPORTIONS right? (height vs width, spacing)
 3. Is the ORIENTATION correct? (front facing same direction)
 4. Did I build the right QUANTITY? (e.g., "2 legs" = BOTH legs)
 
 If your build doesn't look like it's heading toward the reference, revise it.` },
-              { type: "input_text", text: "YOUR RENDER:" },
-              { type: "input_image", image_url: renderDataUrl },
-              { type: "input_text", text: "REFERENCE (build toward this):" },
-              { type: "input_image", image_url: imageDataUrl }
-            ]
-          });
+            { type: "input_text", text: "YOUR RENDER (FRONT VIEW):" }
+          ];
+          
+          if (frontDataUrl) {
+            content.push({ type: "input_image", image_url: frontDataUrl });
+          }
+          
+          content.push({ type: "input_text", text: "YOUR RENDER (BACK VIEW):" });
+          
+          if (backDataUrl) {
+            content.push({ type: "input_image", image_url: backDataUrl });
+          }
+          
+          content.push(
+            { type: "input_text", text: "REFERENCE (build toward this):" },
+            { type: "input_image", image_url: imageDataUrl }
+          );
+          
+          messages.push({ role: "user", content });
         } else {
           messages.push({
             type: "function_call_output",
@@ -923,39 +945,47 @@ If your build doesn't look like it's heading toward the reference, revise it.` }
         finalParts = parts;
         
         const ldraw = partsToLDraw(parts, safeName);
-        const mpdPath = path.join(saDir, "final.mpd");
-        const pngPath = path.join(saDir, "final.png");
         
-        fs.writeFileSync(mpdPath, ldraw, "utf8");
-        const rendered = render(mpdPath, pngPath);
+        // Render from front and back angles
+        const multiResult = renderMpdMultiView({
+          ldrawMpd: ldraw,
+          outputDir: saDir,
+          baseName: "final",
+          size: 512,
+          viewpoints: STANDARD_VIEWPOINTS
+        });
         
-        if (rendered) {
-          const renderDataUrl = readFileAsDataUrl(pngPath);
+        if (multiResult.allSucceeded && multiResult.views.length >= 2) {
+          const frontView = multiResult.views.find(v => v.name === "front-right");
+          const backView = multiResult.views.find(v => v.name === "back-left");
           
-          // Calculate similarity for logging (not shown to GPT)
+          const frontDataUrl = frontView?.imagePath ? readFileAsDataUrl(frontView.imagePath) : null;
+          const backDataUrl = backView?.imagePath ? readFileAsDataUrl(backView.imagePath) : null;
+          
+          // Calculate similarity for logging (use front view)
           let finalSimilarity: number | undefined;
-          try {
-            const similarity = compareImages(pngPath, params.croppedImagePath);
-            finalSimilarity = similarity.overall;
-          } catch {
-            // Ignore similarity errors
+          if (frontView?.imagePath) {
+            try {
+              const similarity = compareImages(frontView.imagePath, params.croppedImagePath);
+              finalSimilarity = similarity.overall;
+            } catch {
+              // Ignore similarity errors
+            }
           }
           
-          // Final confirmation: show render + reference image
+          // Final confirmation: show both views + reference image
           messages.push({
             type: "function_call_output",
             call_id: call.id,
             output: "Final render generated. Please confirm it matches before completing."
           });
           
-          messages.push({
-            role: "user",
-            content: [
-              { type: "input_text", text: `FINAL CONFIRMATION for "${params.subassembly.name}"
+          const content: Array<{ type: string; text?: string; image_url?: string }> = [
+            { type: "input_text", text: `FINAL CONFIRMATION for "${params.subassembly.name}"
 
 DESCRIPTION: ${params.subassembly.description}
 
-Compare your final LEGO build to the reference image. Remember: it won't match pixel-for-pixel, but it should REPRESENT the same thing.
+Compare BOTH views of your final LEGO build to the reference. Remember: it won't match pixel-for-pixel, but it should REPRESENT the same thing.
 
 CHECK:
 1. Does your build look like the same subject? (legs look like legs, head looks like head)
@@ -966,12 +996,25 @@ CHECK:
 
 If your build is a reasonable LEGO representation of the reference: respond "CONFIRMED"
 If not: describe what's missing or wrong and fix it.` },
-              { type: "input_text", text: "YOUR FINAL RENDER:" },
-              { type: "input_image", image_url: renderDataUrl },
-              { type: "input_text", text: "REFERENCE (your build should represent this):" },
-              { type: "input_image", image_url: imageDataUrl }
-            ]
-          });
+            { type: "input_text", text: "YOUR FINAL RENDER (FRONT VIEW):" }
+          ];
+          
+          if (frontDataUrl) {
+            content.push({ type: "input_image", image_url: frontDataUrl });
+          }
+          
+          content.push({ type: "input_text", text: "YOUR FINAL RENDER (BACK VIEW):" });
+          
+          if (backDataUrl) {
+            content.push({ type: "input_image", image_url: backDataUrl });
+          }
+          
+          content.push(
+            { type: "input_text", text: "REFERENCE (your build should represent this):" },
+            { type: "input_image", image_url: imageDataUrl }
+          );
+          
+          messages.push({ role: "user", content });
           
           // Get confirmation response
           const confirmResponse = await callOpenAI({ messages, tools: BUILD_TOOLS });
