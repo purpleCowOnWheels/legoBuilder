@@ -1836,7 +1836,7 @@ export async function generateStructurePlan(params: {
     additionalProperties: false,
     required: ["overview", "subassemblies", "estimated_total_pieces", "notes"],
     properties: {
-      overview: { type: "string", minLength: 10, maxLength: 200 },
+      overview: { type: "string", minLength: 10 },
       subassemblies: {
         type: "array",
         minItems: 1,
@@ -1846,20 +1846,20 @@ export async function generateStructurePlan(params: {
           additionalProperties: false,
           required: ["name", "description", "image_location"],
           properties: {
-            name: { type: "string", minLength: 1, maxLength: 50 },
-            description: { type: "string", minLength: 5, maxLength: 150 },
-            image_location: { type: "string", minLength: 1, maxLength: 100 }
+            name: { type: "string", minLength: 1 },
+            description: { type: "string", minLength: 5 },
+            image_location: { type: "string", minLength: 1 }
           }
         }
       },
       estimated_total_pieces: { type: "integer", minimum: 25, maximum: 500 },
-      notes: { type: "array", items: { type: "string", maxLength: 200 } }
+      notes: { type: "array", items: { type: "string" } }
     }
   } as const;
 
   const resp = await callOpenAIJsonInput<LDrawStructurePlan>(
     { input: [{ role: "user", content }], schemaName: "lego_structure_plan", schema },
-    { reasoningEffort: "low", maxOutputTokens: 3000 }
+    { reasoningEffort: "low", maxOutputTokens: 5000 }
   );
 
   console.log(`[PHASE 1] ✓ Structure plan generated`);

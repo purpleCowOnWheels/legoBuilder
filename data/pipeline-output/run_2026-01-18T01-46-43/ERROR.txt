@@ -1,0 +1,8 @@
+Pipeline failed at 2026-01-18T01:48:16.426Z
+
+Error: OpenAI response incomplete (schema=lego_structure_plan, reason=max_output_tokens). debugId=lego_structure_plan_incomplete_mkj2ui04_hsjex5
+    at callOpenAIJsonInput (/Users/dan.costanza/Documents/GitHub/legoBuilder/src/lib/openai.ts:752:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async generateStructurePlan (/Users/dan.costanza/Documents/GitHub/legoBuilder/src/lib/openai.ts:1860:16)
+    at async generateBlueprintMultiPhase (/Users/dan.costanza/Documents/GitHub/legoBuilder/src/lib/openai.ts:2283:18)
+    at async main (/Users/dan.costanza/Documents/GitHub/legoBuilder/scripts/run-multiphase-pipeline.ts:93:20)
