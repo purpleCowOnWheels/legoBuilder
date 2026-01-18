@@ -1081,6 +1081,306 @@ If not: use validate_build and preview_build to revise your build, then finalize
 }
 
 // ============================================================================
+// REFINEMENT AGENT
+// ============================================================================
+
+function getRefinementPrompt(subassembly: Blueprint["subassemblies"][0], initialPieceCount: number): string {
+  const minPieces = Math.floor(initialPieceCount * 0.5);
+  const maxPieces = Math.ceil(initialPieceCount * 1.5);
+  
+  return `You are REFINING an existing LEGO build of "${subassembly.name}".
+
+DESCRIPTION: ${subassembly.description}
+
+CURRENT BUILD: ${initialPieceCount} pieces
+ALLOWED RANGE: ${minPieces} to ${maxPieces} pieces (±50% from current)
+
+YOUR GOAL: Make the FRONT VIEW match the reference image as closely as possible.
+
+You can:
+- ADD pieces to improve the shape/detail
+- REMOVE pieces that don't contribute to the match
+- MODIFY positions/rotations of existing pieces
+
+WORKFLOW:
+1. Review the current build (you'll see front + back views)
+2. Identify what doesn't match the reference
+3. Use validate_build to check changes
+4. Use preview_build to see results
+5. Repeat until the FRONT VIEW looks like a good LEGO representation
+6. Call finalize_build when satisfied
+
+The back view helps identify alignment issues - but your target is the FRONT VIEW.
+
+## CONNECTION SYSTEM
+
+Each part attaches to an existing part:
+- attach_to: Index of parent (null for first part only)
+- offset_x/offset_z: Position in half-studs from parent center
+- stack: "on_top" or "below"
+- rotation: 0, 90, 180, or 270 degrees
+
+## COMMON PARTS
+
+Bricks: 3001=2x4, 3003=2x2, 3004=1x2, 3005=1x1
+Plates: 3020=2x4, 3022=2x2, 3023=1x2, 3024=1x1, 3031=4x4
+
+## COLORS
+
+SOLID: 0=Black, 1=Blue, 2=Green, 4=Red, 14=Yellow, 15=White
+GRAY: 7=Light Gray, 71=Light Bluish Gray, 72=Dark Bluish Gray`;
+}
+
+async function refineSubassembly(params: {
+  subassembly: Blueprint["subassemblies"][0];
+  initialBuild: SubassemblyResult;
+  croppedImagePath: string;
+  inventory: InventoryItem[];
+  logDir: string;
+  subassemblyIndex: number;
+}): Promise<SubassemblyResult> {
+  const safeName = params.subassembly.name.toLowerCase().replace(/[^a-z0-9]+/g, "_");
+  const refineDir = path.join(params.logDir, `02b_refine_${params.subassemblyIndex}_${safeName}`);
+  fs.mkdirSync(refineDir, { recursive: true });
+
+  // Copy cropped reference
+  const refCopyPath = path.join(refineDir, "00_reference_crop.png");
+  fs.copyFileSync(params.croppedImagePath, refCopyPath);
+
+  console.log(`\n[REFINE] ${params.subassembly.name}`);
+  console.log(`  Starting: ${params.initialBuild.pieceCount} pieces`);
+  console.log(`  Renders: ${refineDir}`);
+
+  const imageDataUrl = readFileAsDataUrl(params.croppedImagePath);
+  const initialPieceCount = params.initialBuild.pieceCount;
+  
+  // Render initial build to show refinement agent
+  const initialMultiResult = renderMpdMultiView({
+    ldrawMpd: params.initialBuild.ldraw,
+    outputDir: refineDir,
+    baseName: "initial",
+    size: 512,
+    viewpoints: STANDARD_VIEWPOINTS
+  });
+  
+  const initialFrontView = initialMultiResult.views.find(v => v.name === "front-right");
+  const initialBackView = initialMultiResult.views.find(v => v.name === "back-left");
+  const initialFrontUrl = initialFrontView?.imagePath ? readFileAsDataUrl(initialFrontView.imagePath) : null;
+  const initialBackUrl = initialBackView?.imagePath ? readFileAsDataUrl(initialBackView.imagePath) : null;
+
+  const messages: Array<any> = [
+    { role: "system", content: getRefinementPrompt(params.subassembly, initialPieceCount) },
+    {
+      role: "user",
+      content: [
+        { type: "input_text", text: "Here is the current build that needs refinement. Compare it to the reference and improve it." },
+        { type: "input_text", text: "CURRENT BUILD (FRONT VIEW):" },
+        ...(initialFrontUrl ? [{ type: "input_image", image_url: initialFrontUrl }] : []),
+        { type: "input_text", text: "CURRENT BUILD (BACK VIEW):" },
+        ...(initialBackUrl ? [{ type: "input_image", image_url: initialBackUrl }] : []),
+        { type: "input_text", text: "REFERENCE (make FRONT VIEW match this):" },
+        { type: "input_image", image_url: imageDataUrl },
+        { type: "input_text", text: `\nCurrent parts (${params.initialBuild.parts.length}):\n${JSON.stringify(params.initialBuild.parts, null, 2)}` }
+      ]
+    }
+  ];
+
+  let currentParts = [...params.initialBuild.parts];
+  let validationRounds = 0;
+  let toolCallCount = 0;
+  const maxIterations = 30;
+
+  for (let iter = 1; iter <= maxIterations; iter++) {
+    const response = await callOpenAI({ messages, tools: BUILD_TOOLS });
+    const toolCalls = extractToolCalls(response);
+
+    if (toolCalls.length === 0) {
+      for (const item of response.output || []) {
+        messages.push(item);
+      }
+      continue;
+    }
+
+    for (const item of response.output || []) {
+      messages.push(item);
+    }
+
+    for (const call of toolCalls) {
+      toolCallCount++;
+      const callNum = toolCallCount.toString().padStart(3, "0");
+
+      let args: { parts: ConnectedPart[] };
+      try {
+        args = JSON.parse(call.arguments);
+      } catch {
+        messages.push({
+          type: "function_call_output",
+          call_id: call.id,
+          output: JSON.stringify({ error: "Invalid JSON" })
+        });
+        continue;
+      }
+
+      const parts = args.parts || [];
+      currentParts = parts;
+
+      if (call.name === "validate_build") {
+        validationRounds++;
+        const validation = validateBuild(parts);
+        
+        fs.writeFileSync(
+          path.join(refineDir, `call${callNum}_parts.json`),
+          JSON.stringify(parts, null, 2),
+          "utf8"
+        );
+        fs.writeFileSync(
+          path.join(refineDir, `call${callNum}_validation.json`),
+          JSON.stringify(validation, null, 2),
+          "utf8"
+        );
+
+        const status = validation.valid ? "✓ valid" : `✗ ${validation.errors.length} errors`;
+        console.log(`  [${callNum}] validate: ${parts.length} parts → ${status}`);
+
+        let output = validation.summary;
+        if (validation.valid) {
+          output += `\n\nNow call preview_build to see if it better matches the reference.`;
+        }
+
+        messages.push({
+          type: "function_call_output",
+          call_id: call.id,
+          output
+        });
+
+      } else if (call.name === "preview_build") {
+        const ldraw = partsToLDraw(parts, safeName);
+        
+        const multiResult = renderMpdMultiView({
+          ldrawMpd: ldraw,
+          outputDir: refineDir,
+          baseName: `call${callNum}`,
+          size: 512,
+          viewpoints: STANDARD_VIEWPOINTS
+        });
+
+        if (multiResult.allSucceeded && multiResult.views.length >= 2) {
+          const frontView = multiResult.views.find(v => v.name === "front-right");
+          const backView = multiResult.views.find(v => v.name === "back-left");
+          
+          const frontDataUrl = frontView?.imagePath ? readFileAsDataUrl(frontView.imagePath) : null;
+          const backDataUrl = backView?.imagePath ? readFileAsDataUrl(backView.imagePath) : null;
+          
+          let similarityScore: number | undefined;
+          if (frontView?.imagePath) {
+            try {
+              const similarity = compareImages(frontView.imagePath, params.croppedImagePath);
+              similarityScore = similarity.overall;
+            } catch {}
+          }
+          
+          const simStr = similarityScore !== undefined ? `, similarity: ${similarityScore}%` : "";
+          console.log(`  [${callNum}] preview: ${parts.length} parts${simStr}`);
+          
+          messages.push({
+            type: "function_call_output",
+            call_id: call.id,
+            output: JSON.stringify({ success: true, parts: parts.length })
+          });
+
+          const content: Array<{ type: string; text?: string; image_url?: string }> = [
+            { type: "input_text", text: `Refined build: ${parts.length} parts (started with ${initialPieceCount}).
+
+Is the FRONT VIEW now a better match to the reference?
+- If yes and it's good enough: call finalize_build
+- If it can be improved: make more changes
+
+FRONT VIEW (should match reference):` }
+          ];
+          
+          if (frontDataUrl) {
+            content.push({ type: "input_image", image_url: frontDataUrl });
+          }
+          
+          content.push({ type: "input_text", text: "BACK VIEW (check alignment):" });
+          
+          if (backDataUrl) {
+            content.push({ type: "input_image", image_url: backDataUrl });
+          }
+          
+          content.push(
+            { type: "input_text", text: "REFERENCE:" },
+            { type: "input_image", image_url: imageDataUrl }
+          );
+          
+          messages.push({ role: "user", content });
+        } else {
+          messages.push({
+            type: "function_call_output",
+            call_id: call.id,
+            output: JSON.stringify({ success: false, error: "Render failed" })
+          });
+        }
+
+      } else if (call.name === "finalize_build") {
+        const ldraw = partsToLDraw(parts, safeName);
+        
+        const multiResult = renderMpdMultiView({
+          ldrawMpd: ldraw,
+          outputDir: refineDir,
+          baseName: "final",
+          size: 512,
+          viewpoints: STANDARD_VIEWPOINTS
+        });
+        
+        if (multiResult.allSucceeded && multiResult.views.length >= 2) {
+          const frontView = multiResult.views.find(v => v.name === "front-right");
+          
+          let finalSimilarity: number | undefined;
+          if (frontView?.imagePath) {
+            try {
+              const similarity = compareImages(frontView.imagePath, params.croppedImagePath);
+              finalSimilarity = similarity.overall;
+            } catch {}
+          }
+          
+          const simStr = finalSimilarity !== undefined ? `, similarity: ${finalSimilarity}%` : "";
+          console.log(`    ✓ Refined: ${parts.length} pieces (was ${initialPieceCount})${simStr}`);
+          
+          return {
+            name: params.subassembly.name,
+            description: params.subassembly.description,
+            parts: currentParts,
+            ldraw,
+            pieceCount: parts.length,
+            validationRounds,
+            similarityScore: finalSimilarity
+          };
+        } else {
+          messages.push({
+            type: "function_call_output",
+            call_id: call.id,
+            output: JSON.stringify({ success: false, error: "Render failed" })
+          });
+        }
+      }
+    }
+  }
+
+  // Max iterations - return current state
+  console.log(`    ⚠ Max refinement iterations reached`);
+  const ldraw = partsToLDraw(currentParts, safeName);
+  return {
+    name: params.subassembly.name,
+    description: params.subassembly.description,
+    parts: currentParts,
+    ldraw,
+    pieceCount: currentParts.length,
+    validationRounds
+  };
+}
+
+// ============================================================================
 // PHASE 3: FINAL ASSEMBLY
 // ============================================================================
 
@@ -1298,8 +1598,28 @@ async function runPipeline(params: {
     });
   });
 
-  const results = await Promise.all(buildPromises);
-  subassemblyResults.push(...results);
+  const buildResults = await Promise.all(buildPromises);
+  
+  // Refine each sub-assembly
+  console.log("\n── Phase 2b: Refining Sub-Assemblies ──");
+  
+  for (const buildResult of buildResults) {
+    const sa = subassembliesToBuild.find(s => s.name === buildResult.name)!;
+    const originalIndex = blueprint.subassemblies.findIndex(s => s.name === sa.name);
+    const safeName = sa.name.toLowerCase().replace(/[^a-z0-9]+/g, "_");
+    const croppedImagePath = path.join(logDir, `01_crop_${originalIndex}_${safeName}.png`);
+    
+    const refinedResult = await refineSubassembly({
+      subassembly: sa,
+      initialBuild: buildResult,
+      croppedImagePath,
+      inventory,
+      logDir,
+      subassemblyIndex: originalIndex
+    });
+    
+    subassemblyResults.push(refinedResult);
+  }
 
   // Phase 3: Final assembly (skip in debug mode)
   let finalAssembly = null;
