@@ -552,7 +552,14 @@ async function generateBlueprint(params: {
         content: `You are analyzing a reference image to plan a LEGO build.
 Identify 2-5 major sub-assemblies (e.g., legs, torso, head, accessories).
 For each, describe WHERE in the image it appears and estimate pieces needed.
-Keep total between 25-200 pieces.`
+Keep total between 25-200 pieces.
+
+IMPORTANT - COUNT CORRECTLY:
+- If there are TWO legs, name it "Legs" (plural) and describe "both left and right legs"
+- If there are TWO arms, name it "Arms" (plural) and describe "both arms"
+- If there are TWO wings, name it "Wings" (plural)
+- Count wheels, eyes, antennae, etc. and use plural names when >1
+- Each sub-assembly should build ALL instances (e.g., "Legs" builds BOTH legs together)`
       },
       {
         role: "user",
@@ -605,6 +612,18 @@ function getSubassemblyPrompt(subassembly: Blueprint["subassemblies"][0]): strin
 DESCRIPTION: ${subassembly.description}
 IMAGE REGION: ${subassembly.imageRegion}
 TARGET: ~${subassembly.estimatedPieces} pieces
+
+## IMPORTANT: COUNT MATTERS
+
+Build the CORRECT NUMBER of each element:
+- "Legs" = TWO legs (left and right)
+- "Arms" = TWO arms (left and right)
+- "Wings" = TWO wings (left and right)
+- "Eyes" = TWO eyes
+- "Wheels" = typically FOUR wheels
+
+Look at the reference image and count how many of each part is visible.
+If the name is plural ("legs", "arms"), build ALL of them, not just one.
 
 ## CONNECTION SYSTEM
 
