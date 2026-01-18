@@ -1927,7 +1927,9 @@ export async function generateSubassemblyStepPlan(params: {
   console.log(`\n[PHASE 2a] Planning subassembly: ${params.subassemblyName}`);
   if (logPrefix) {
     fs.writeFileSync(`${logPrefix}_input.txt`, promptText, "utf8");
+    fs.copyFileSync(params.referenceImagePath, `${logPrefix}_reference.png`);
     console.log(`  → Input logged: ${logPrefix}_input.txt`);
+    console.log(`  → Reference image: ${logPrefix}_reference.png`);
   }
 
   const schema = {
@@ -1991,7 +1993,9 @@ export async function buildAndValidateSubassembly(params: {
   if (logPrefix) {
     fs.mkdirSync(path.dirname(logPrefix), { recursive: true });
     fs.writeFileSync(`${logPrefix}_plan.json`, JSON.stringify(params.stepPlan, null, 2), "utf8");
+    fs.copyFileSync(params.referenceImagePath, `${logPrefix}_reference.png`);
     console.log(`  → Plan logged: ${logPrefix}_plan.json`);
+    console.log(`  → Reference image: ${logPrefix}_reference.png`);
   }
 
   // Convert step plan to the format expected by generateLDrawMpdChunkForIdea
@@ -2009,7 +2013,12 @@ export async function buildAndValidateSubassembly(params: {
     notes: []
   };
 
-  const validationResults: Array<{ round: number; similarity?: number; error?: string }> = [];
+  const validationResults: Array<{ 
+    round: number; 
+    similarity?: number; 
+    error?: string;
+    rendered_image_path?: string;
+  }> = [];
   
   // Use the tool loop to generate and validate
   const result = await generateLDrawMpdChunkForIdea({
@@ -2032,14 +2041,31 @@ export async function buildAndValidateSubassembly(params: {
         console.log(`  → Validation round ${event.round} starting...`);
       } else if (event.type === "tool_results") {
         event.results.forEach((r: any) => {
+          const roundNum = validationResults.length + 1;
+          const entry: { round: number; similarity?: number; error?: string; rendered_image_path?: string } = {
+            round: roundNum
+          };
+          
           if (r.similarity_score !== undefined) {
-            validationResults.push({ round: validationResults.length + 1, similarity: r.similarity_score });
+            entry.similarity = r.similarity_score;
             console.log(`  → Similarity: ${(r.similarity_score * 100).toFixed(1)}% ${r.ok ? "✓" : "✗"}`);
           }
           if (r.error) {
-            validationResults.push({ round: validationResults.length + 1, error: r.error });
+            entry.error = r.error;
             console.log(`  → Error: ${r.error}`);
           }
+          if (r.rendered_image_path) {
+            entry.rendered_image_path = r.rendered_image_path;
+            
+            // Copy rendered image to log directory
+            if (logPrefix && fs.existsSync(r.rendered_image_path)) {
+              const destPath = `${logPrefix}_round${roundNum}.png`;
+              fs.copyFileSync(r.rendered_image_path, destPath);
+              console.log(`  → Rendered image: ${destPath}`);
+            }
+          }
+          
+          validationResults.push(entry);
         });
       }
     }
@@ -2150,26 +2176,39 @@ export async function generateBlueprintMultiPhase(params: {
   inventory: InventoryItem[];
   constraintsText?: string;
   logDir?: string;
+  /** Debug mode: only build first subassembly, skip final assembly (default: true) */
+  debugMode?: boolean;
 }): Promise<{ 
   structurePlan: LDrawStructurePlan;
   subassemblyResults: SubassemblyBuildResult[];
-  finalMpd: string;
+  finalMpd: string | null;
 }> {
   const startTime = Date.now();
+  const debugMode = params.debugMode ?? true; // Default to true for cost savings
+  
   console.log("\n========================================");
   console.log("MULTI-PHASE BLUEPRINT GENERATION");
   console.log("========================================");
   console.log(`Reference image: ${params.referenceImagePath}`);
   console.log(`Inventory: ${params.inventory.length} unique parts`);
   console.log(`Log directory: ${params.logDir || "(none)"}`);
+  console.log(`Debug mode: ${debugMode ? "ON (first subassembly only)" : "OFF (all subassemblies)"}`);
 
   // Phase 1: Structure plan
   const phase1 = await generateStructurePlan(params);
   
-  // Phase 2a: Generate step plans for all subassemblies in parallel
-  console.log("\n[PHASE 2a] Generating step plans for all subassemblies in parallel...");
+  // Phase 2a: Generate step plans (only first if debug mode)
+  console.log("\n[PHASE 2a] Generating step plans for subassemblies...");
   const totalPieces = phase1.plan.estimated_total_pieces;
-  const stepPlanPromises = phase1.plan.subassemblies.map(async (sa, index) => {
+  const subassembliesToProcess = debugMode 
+    ? phase1.plan.subassemblies.slice(0, 1) 
+    : phase1.plan.subassemblies;
+  
+  if (debugMode && phase1.plan.subassemblies.length > 1) {
+    console.log(`  → Debug mode: processing only 1 of ${phase1.plan.subassemblies.length} subassemblies`);
+  }
+  
+  const stepPlanPromises = subassembliesToProcess.map(async (sa, index) => {
     const targetPieces = Math.floor(totalPieces / phase1.plan.subassemblies.length);
     return generateSubassemblyStepPlan({
       subassemblyName: sa.name,
@@ -2183,13 +2222,13 @@ export async function generateBlueprintMultiPhase(params: {
   });
   const stepPlans = await Promise.all(stepPlanPromises);
   
-  console.log(`\n[PHASE 2a] ✓ All step plans generated`);
+  console.log(`\n[PHASE 2a] ✓ Step plans generated`);
   stepPlans.forEach((sp, i) => {
     console.log(`  ${i + 1}. ${sp.plan.subassembly_name}: ${sp.plan.steps.length} steps, ~${sp.plan.estimated_pieces} pieces`);
   });
 
-  // Phase 2b: Build and validate all subassemblies in parallel
-  console.log("\n[PHASE 2b] Building and validating all subassemblies in parallel...");
+  // Phase 2b: Build and validate subassemblies
+  console.log("\n[PHASE 2b] Building and validating subassemblies...");
   const buildPromises = stepPlans.map(async (sp) => {
     return buildAndValidateSubassembly({
       subassemblyName: sp.plan.subassembly_name,
@@ -2201,7 +2240,7 @@ export async function generateBlueprintMultiPhase(params: {
   });
   const buildResults = await Promise.all(buildPromises);
   
-  console.log(`\n[PHASE 2b] ✓ All subassemblies built`);
+  console.log(`\n[PHASE 2b] ✓ Subassemblies built`);
   buildResults.forEach((br, i) => {
     console.log(`  ${i + 1}. ${br.subassembly_name}: ${br.actual_pieces} pieces, ${br.validation_rounds} rounds`);
     if (br.final_similarity_score) {
@@ -2209,23 +2248,33 @@ export async function generateBlueprintMultiPhase(params: {
     }
   });
 
-  // Phase 3: Final assembly
-  const phase3 = await assembleFinalProduct({
-    structurePlan: phase1.plan,
-    subassemblyResults: buildResults,
-    referenceImagePath: params.referenceImagePath,
-    inventory: params.inventory,
-    logDir: params.logDir
-  });
+  // Phase 3: Final assembly (skip in debug mode)
+  let finalMpd: string | null = null;
+  let phase3ValidationRounds = 0;
+  
+  if (debugMode) {
+    console.log("\n[PHASE 3] Skipped (debug mode enabled)");
+    console.log("  → To run full assembly, set debugMode=false");
+  } else {
+    const phase3 = await assembleFinalProduct({
+      structurePlan: phase1.plan,
+      subassemblyResults: buildResults,
+      referenceImagePath: params.referenceImagePath,
+      inventory: params.inventory,
+      logDir: params.logDir
+    });
+    finalMpd = phase3.finalMpd;
+    phase3ValidationRounds = phase3.validationRounds;
+  }
 
   const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
   console.log("\n========================================");
   console.log("PIPELINE COMPLETE");
   console.log("========================================");
   console.log(`Total time: ${totalTime}s`);
-  console.log(`Subassemblies: ${buildResults.length}`);
+  console.log(`Subassemblies processed: ${buildResults.length}${debugMode ? " (debug mode)" : ""}`);
   console.log(`Total pieces: ${buildResults.reduce((sum, br) => sum + br.actual_pieces, 0)}`);
-  console.log(`Total validation rounds: ${buildResults.reduce((sum, br) => sum + br.validation_rounds, 0) + phase3.validationRounds}`);
+  console.log(`Total validation rounds: ${buildResults.reduce((sum, br) => sum + br.validation_rounds, 0) + phase3ValidationRounds}`);
   
   if (params.logDir) {
     console.log(`\nAll outputs saved to: ${params.logDir}`);
@@ -2234,7 +2283,7 @@ export async function generateBlueprintMultiPhase(params: {
   return {
     structurePlan: phase1.plan,
     subassemblyResults: buildResults,
-    finalMpd: phase3.finalMpd
+    finalMpd
   };
 }
 

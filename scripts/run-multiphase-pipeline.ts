@@ -4,13 +4,17 @@
  * Multi-phase build pipeline with parallel subassembly generation
  * 
  * Usage:
- *   tsx scripts/run-multiphase-pipeline.ts --image path/to/image.png
+ *   npx tsx scripts/run-multiphase-pipeline.ts --image path/to/image.png [--full]
+ * 
+ * Flags:
+ *   --full    Run all subassemblies + final assembly (more expensive)
+ *             Default: debug mode (first subassembly only)
  * 
  * Phases:
  *   1. Generate structure plan (subassemblies only)
- *   2a. Generate detailed step plans for each subassembly (parallel)
- *   2b. Build and validate each subassembly (parallel)
- *   3. Assemble final product and validate
+ *   2a. Generate detailed step plans for each subassembly (parallel, or first only in debug)
+ *   2b. Build and validate each subassembly (parallel, or first only in debug)
+ *   3. Assemble final product and validate (skipped in debug mode)
  */
 
 import { generateBlueprintMultiPhase } from "@/lib/openai";
@@ -20,6 +24,7 @@ import path from "node:path";
 
 interface Args {
   imagePath: string;
+  fullMode: boolean;
 }
 
 function parseArgs(): Args {
@@ -27,7 +32,11 @@ function parseArgs(): Args {
   const imageIndex = args.indexOf("--image");
   
   if (imageIndex === -1 || !args[imageIndex + 1]) {
-    console.error("Usage: tsx scripts/run-multiphase-pipeline.ts --image <path>");
+    console.error("Usage: npx tsx scripts/run-multiphase-pipeline.ts --image <path> [--full]");
+    console.error("");
+    console.error("Flags:");
+    console.error("  --full    Run all subassemblies + final assembly (more expensive)");
+    console.error("            Default: debug mode (first subassembly only)");
     process.exit(1);
   }
 
@@ -37,7 +46,9 @@ function parseArgs(): Args {
     process.exit(1);
   }
 
-  return { imagePath };
+  const fullMode = args.includes("--full");
+
+  return { imagePath, fullMode };
 }
 
 async function main() {
@@ -45,7 +56,9 @@ async function main() {
   
   console.log("========================================");
   console.log("MULTI-PHASE LEGO BUILD PIPELINE");
-  console.log("========================================\n");
+  console.log("========================================");
+  console.log(`Mode: ${args.fullMode ? "FULL (all subassemblies + final assembly)" : "DEBUG (first subassembly only)"}`);
+  console.log("");
   
   // Setup logging directory
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
@@ -70,7 +83,8 @@ async function main() {
       referenceImagePath: args.imagePath,
       inventory,
       constraintsText: "Build something interesting with the available parts.",
-      logDir
+      logDir,
+      debugMode: !args.fullMode
     });
     
     // Save final summary
@@ -103,8 +117,13 @@ async function main() {
       console.log(`     Build: ${logDir}/02b_subassembly_build_${safeName}_ldraw.mpd`);
       console.log(`     Validation: ${logDir}/02b_subassembly_build_${safeName}_validation.json`);
     });
-    console.log(`\nFinal assembly: ${logDir}/03_final_assembly_final.mpd`);
+    console.log(`\nFinal assembly: ${result.finalMpd ? logDir + "/03_final_assembly_final.mpd" : "skipped (debug mode)"}`);
     console.log(`Summary: ${summaryPath}`);
+    
+    if (!args.fullMode) {
+      console.log("\n💡 To run full pipeline with all subassemblies + final assembly:");
+      console.log(`   npx tsx scripts/run-multiphase-pipeline.ts --image ${args.imagePath} --full`);
+    }
     
     console.log("\n✓ Pipeline complete!");
     
