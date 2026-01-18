@@ -928,7 +928,7 @@ If either doesn't match: describe what's wrong and continue building.` },
           });
           
           // Get confirmation response
-          const confirmResponse = await callOpenAI(messages, BUILD_TOOLS, "auto");
+          const confirmResponse = await callOpenAI({ messages, tools: BUILD_TOOLS });
           
           if (confirmResponse.output_text?.toUpperCase().includes("CONFIRMED")) {
             console.log(`    ✓ ${parts.length} pieces, ${validationRounds} validation rounds`);
