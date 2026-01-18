@@ -611,11 +611,17 @@ DESCRIPTION: ${subassembly.description}
 IMAGE REGION: ${subassembly.imageRegion}
 TARGET: ~${subassembly.estimatedPieces} pieces
 
-## IMPORTANT: BUILD THE CORRECT QUANTITY
+## CRITICAL: BUILD ALL ITEMS - CHECK QUANTITIES
 
-The description specifies HOW MANY of each element to build.
-Build exactly that number - not just one when multiple are needed.
-Check the reference image to verify the count is correct.
+The description specifies EXACT QUANTITIES. You MUST build ALL of them:
+- "2 legs" means build BOTH legs, not just 1
+- "2 arms" means build BOTH arms, not just 1
+- "4 wheels" means build ALL 4 wheels
+
+READ THE DESCRIPTION CAREFULLY and count the items you need to build.
+Your build is INCOMPLETE if you only build 1 when 2+ are specified.
+
+BEFORE calling finalize_build, verify you have the correct count of each element.
 
 ## CONNECTION SYSTEM
 
@@ -670,7 +676,8 @@ async function buildSubassembly(params: {
   const saDir = path.join(params.logDir, `02_subassembly_${params.subassemblyIndex}_${safeName}`);
   fs.mkdirSync(saDir, { recursive: true });
 
-  console.log(`  Building: ${params.subassembly.name}`);
+  console.log(`\n[BUILD] ${params.subassembly.name}`);
+  console.log(`  Renders: ${saDir}`);
 
   const imageDataUrl = readFileAsDataUrl(params.imagePath);
   const inventoryDesc = buildInventoryDescription(params.inventory);
@@ -734,6 +741,9 @@ async function buildSubassembly(params: {
         validationRounds++;
         const validation = validateBuild(parts);
         
+        const status = validation.valid ? "✓ valid" : `✗ ${validation.errors.length} errors`;
+        console.log(`  [${callNum}] validate: ${parts.length} parts → ${status}`);
+        
         fs.writeFileSync(
           path.join(saDir, `call${callNum}_validation.json`),
           JSON.stringify(validation, null, 2),
@@ -768,9 +778,13 @@ async function buildSubassembly(params: {
             role: "user",
             content: [
               { type: "input_text", text: `Preview of ${params.subassembly.name} (${parts.length} parts).
-              
+
+QUANTITY CHECK: Re-read the description. Did you build ALL items?
+- If description says "2 legs" - do you have 2 legs? Not just 1?
+- If description says "2 arms" - do you have 2 arms? Not just 1?
+
 Compare to the ${params.subassembly.imageRegion.toUpperCase()} region of the reference.
-Does it match the shape and structure? If not, fix it. If yes, call finalize_build.` },
+Does it match the shape, structure, AND correct quantity? If not, fix it.` },
               { type: "input_image", image_url: renderDataUrl }
             ]
           });
