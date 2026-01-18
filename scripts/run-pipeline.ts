@@ -685,20 +685,15 @@ Your build is INCOMPLETE if you only build 1 when 2+ are specified.
 
 BEFORE calling finalize_build, verify you have the correct count of each element.
 
-## ORIENTATION - CRITICAL
+## ORIENTATION
 
-Your first part sets the orientation. Get it RIGHT from the start:
+Build so the FRONT faces +Z (toward camera):
 - Positive X = RIGHT
 - Positive Z = FORWARD (toward camera) 
 - Positive Y = UP
 
-Look at the reference image:
-- Which way does the FRONT of this sub-assembly face?
-- Your build's front must face +Z (toward camera)
-- If legs face forward in the reference, build them facing +Z
-
-IMPORTANT: If you realize orientation is wrong mid-build, START OVER with correct orientation.
-Do NOT try to rotate or fix an incorrectly oriented build - rebuild from scratch.
+Look at the reference: which way does the front face? Build yours the same way.
+If orientation looks wrong in a preview, adjust the parts to fix it.
 
 ## CONNECTION SYSTEM
 
@@ -875,13 +870,11 @@ SUB-ASSEMBLY DESCRIPTION: ${params.subassembly.description}
 Compare your render to the cropped reference image below.
 
 CHECK:
-1. ORIENTATION: Is the front of your build facing the SAME direction as in the reference?
-   - If the reference shows the front, your render should show the front
-   - If orientation is WRONG, start over - don't try to fix it mid-build
+1. ORIENTATION: Is the front facing the same direction as in the reference?
 2. QUANTITY: Did you build ALL items? (e.g., "2 legs" = BOTH legs)
 3. SHAPE: Does the overall form match the reference?
 
-If ORIENTATION is wrong, rebuild from scratch with correct orientation.` },
+If any are wrong, fix them before finalizing.` },
               { type: "input_text", text: "YOUR RENDER:" },
               { type: "input_image", image_url: renderDataUrl },
               { type: "input_text", text: "CROPPED REFERENCE:" },
